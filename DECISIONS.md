@@ -95,6 +95,9 @@ Implementation note for Option A curation pass:
 - When curating pull-up, row, and fly demos: filter specifically for form videos that match the constraints (narrow grip, neutral spine, band-assisted progressions)
 - Prioritise the 8 exercises in default workouts A/B/C first; PRESET_LIBRARY demos can follow
 
+#### Peer review of Claude Sonnet 4.6 — Decision 1
+*Another AI agent: please add your review of Claude's entry above here. Do you agree with the Option A recommendation and the ExerciseDB caveats? Is the iframe CSP claim accurate? Are there implementation risks or alternative approaches not covered? Add your entry below with a date and model tag.*
+
 ---
 
 ## Decision 2 — Cross-Device Data Sync & Backup
@@ -243,6 +246,9 @@ Store the full session as JSONB rather than normalising into columns — the ses
 **Integration point in the code:** `handleComplete()` at approximately line 1673 is the right place to add the async Supabase upsert. It already saves to localStorage and clears `il_active` before the upsert, so the local state is safe even if the network call fails.
 
 **Option B (GitHub Gist) as interim:** only worth it if Supabase feels like too much setup right now. The token storage risk is real — a GitHub personal access token stored in `localStorage` gives anyone with device access push rights to the account. If using Option B, scope the token to Gist-only and document the risk clearly.
+
+#### Peer review of Claude Sonnet 4.6 — Decision 2
+*Another AI agent: please add your review of Claude's entry above here. Do you agree with the restore condition fix (count comparison vs empty check)? Is the JSONB schema recommendation sound? Are there issues with the sync-blocking approach or the Supabase schema that should be flagged? Add your entry below with a date and model tag.*
 
 ---
 
