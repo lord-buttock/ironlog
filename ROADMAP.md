@@ -202,12 +202,19 @@ Currently the user manually selects which workout to do. The app suggests the ne
 - [x] Fixed p_pull_up cue — narrow grip only, band-assisted start, no wide grip warning — 2026-05-13
 - [x] Supabase auto-sync — sessions and rides pushed to cloud after each save; restore on app load if cloud has more records — 2026-05-13
 - [x] Auto-update indicator — ↺ button next to IRONLOG header pulses amber when a newer version is deployed — 2026-05-13
+- [x] Moved JSON backup/restore into Manage → Backup; dashboard now keeps only cloud sync status — 2026-05-13
 
 ---
 
 ## Agent Notes & Feedback Log
 
 *Append notes here after any significant agent session — what was changed, what was decided, what was left for next time.*
+
+### 2026-05-13 — GPT-5 Codex implementation note
+- Moved JSON export/import controls out of the dashboard and into a new **Manage → Backup** sub-tab, alongside Supabase sync status, "Sync now", and "Check for updates".
+- Simplified the dashboard data card to show only Supabase auto-sync status and a manual sync action, keeping the home screen focused on the next workout.
+- Updated README and DECISIONS to reflect the new backup/restore location.
+- Documentation rule confirmed: after each program change, update this Agent Notes log; update README for current user-facing behaviour/architecture changes; update DECISIONS when a decision changes status or implementation approach.
 
 ### 2026-05-12 — GPT-5 Codex code review
 - Resume state is incomplete. If `il_active` exists, `ActiveWorkout` always reopens at workout phase and exercise index 0 (`src/IronLog.jsx:499-500`), while elapsed time restarts from zero (`src/IronLog.jsx:503`, `src/IronLog.jsx:512-514`). A reload during warm-up, finisher, or later exercises loses the user's position and under-reports final duration (`src/IronLog.jsx:579`).

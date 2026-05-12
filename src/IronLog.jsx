@@ -325,7 +325,7 @@ function Nav({ view, setView, hasActive }) {
 // ═══════════════════════════════════════════════════════════════════════
 // DASHBOARD
 // ═══════════════════════════════════════════════════════════════════════
-function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, setSelectedWorkout, allExercises = EXERCISES, workoutCustom = {}, driveSync, onDriveSave, onDriveLoad, onCloudSync, updateAvailable }) {
+function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, setSelectedWorkout, allExercises = EXERCISES, workoutCustom = {}, driveSync, onCloudSync, updateAvailable }) {
   const suggested = nextWorkout(sessions);
   const wkt = WORKOUTS[selectedWorkout];
   const extraIds = workoutCustom[selectedWorkout] || [];
@@ -428,12 +428,9 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
         ))}
       </div>
 
-      {/* Data Export / Import */}
+      {/* Cloud sync status */}
       {driveSync && (
         <div style={{ ...st.card(), marginBottom: 16 }}>
-          <div style={{ ...st.label, marginBottom: 8 }}>Data Backup</div>
-
-          {/* Cloud sync status */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
             <span style={{ fontSize: 11, color: driveSync.cloudStatus === 'ok' ? C.green : driveSync.cloudStatus === 'error' ? C.red : C.muted, fontFamily: C.fMono }}>
               {driveSync.cloudStatus === 'ok' && `☁ Synced ${driveSync.lastCloudSync ? new Date(driveSync.lastCloudSync).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }) : ''}`}
@@ -447,34 +444,8 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
           </div>
 
           <div style={{ fontSize: 12, color: C.muted, marginBottom: 12, lineHeight: 1.5 }}>
-            Workouts sync automatically to the cloud after each session. Use JSON export/import to move data to a new device manually.
+            Workouts sync automatically after each session. Manual backup and restore lives in Manage.
           </div>
-
-          {driveSync.status === 'error' && (
-            <div style={{ fontSize: 12, color: C.red, marginBottom: 10, fontFamily: C.fMono }}>⚠ {driveSync.error}</div>
-          )}
-          {driveSync.status === 'done' && driveSync.lastSync && (
-            <div style={{ fontSize: 11, color: C.green, marginBottom: 10, fontFamily: C.fMono }}>
-              ✓ Exported {new Date(driveSync.lastSync).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}
-            </div>
-          )}
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            <button onClick={onDriveSave} style={{ ...st.btn() }}>
-              ↓ Export JSON
-            </button>
-            <label style={{ ...st.btn(C.dim, C.muted), textAlign: 'center', cursor: 'pointer', border: `1px solid ${C.border}` }}>
-              ↑ Import JSON
-              <input type="file" accept=".json" style={{ display: 'none' }}
-                onChange={e => { if (e.target.files[0]) onDriveLoad(e.target.files[0]); e.target.value = ''; }} />
-            </label>
-          </div>
-          <button
-            onClick={() => window.location.reload(true)}
-            style={{ ...st.btn(C.dim, C.muted), width: '100%', marginTop: 8, fontSize: 12 }}
-          >
-            ↺ Check for updates
-          </button>
         </div>
       )}
 
@@ -1402,7 +1373,7 @@ const PRESET_LIBRARY = {
 const MUSCLE_FILTERS = ['All','Arms','Shoulders','Push','Pull','Hinge','Legs','Glutes','Core'];
 const EMPTY_FORM = { name: '', muscle: 'Arms', unit: 'kg', defaultSets: 3, defaultReps: 10, repMax: 10, cue: '' };
 
-function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkoutCustom, allExercises }) {
+function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkoutCustom, allExercises, driveSync, onDriveSave, onDriveLoad, onCloudSync }) {
   const [tab, setTab] = useState('library');
   const [search, setSearch] = useState('');
   const [muscle, setMuscle] = useState('All');
@@ -1469,8 +1440,8 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
       <div style={{ ...st.h2, marginBottom: 16 }}>Manage</div>
 
       {/* Sub-tabs */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', marginBottom: 20, border: `1px solid ${C.border}`, borderRadius: 6, overflow: 'hidden' }}>
-        {[['library','Library'],['workouts','Workouts']].map(([id, label]) => (
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', marginBottom: 20, border: `1px solid ${C.border}`, borderRadius: 6, overflow: 'hidden' }}>
+        {[['library','Library'],['workouts','Workouts'],['backup','Backup']].map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)} style={{
             background: tab === id ? C.amber : C.dim, color: tab === id ? '#000' : C.muted,
             border: 'none', padding: '11px', fontFamily: C.fDisplay, fontSize: 13, fontWeight: 700,
@@ -1700,6 +1671,58 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
           })()}
         </div>
       )}
+
+      {/* ── Backup tab ── */}
+      {tab === 'backup' && (
+        <div>
+          <div style={{ ...st.card(), marginBottom: 16 }}>
+            <div style={{ ...st.label, marginBottom: 10 }}>Cloud Sync</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <span style={{ fontSize: 12, color: driveSync?.cloudStatus === 'ok' ? C.green : driveSync?.cloudStatus === 'error' ? C.red : C.muted, fontFamily: C.fMono }}>
+                {driveSync?.cloudStatus === 'ok' && `☁ Synced ${driveSync.lastCloudSync ? new Date(driveSync.lastCloudSync).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }) : ''}`}
+                {driveSync?.cloudStatus === 'error' && '☁ Sync failed'}
+                {driveSync?.cloudStatus === 'syncing' && '☁ Syncing…'}
+                {(!driveSync?.cloudStatus || driveSync.cloudStatus === 'idle') && '☁ Supabase auto-sync on'}
+              </span>
+              <button onClick={onCloudSync} style={{ ...st.btnSm(C.dim, C.muted), fontSize: 11, marginLeft: 'auto' }}>
+                Sync now
+              </button>
+            </div>
+            <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>
+              Sessions and rides are backed up automatically. Use JSON backup only for manual archives or emergency restore.
+            </div>
+          </div>
+
+          <div style={{ ...st.card(), marginBottom: 16 }}>
+            <div style={{ ...st.label, marginBottom: 10 }}>JSON Backup & Restore</div>
+            {driveSync?.status === 'error' && (
+              <div style={{ fontSize: 12, color: C.red, marginBottom: 10, fontFamily: C.fMono }}>⚠ {driveSync.error}</div>
+            )}
+            {driveSync?.status === 'done' && driveSync.lastSync && (
+              <div style={{ fontSize: 11, color: C.green, marginBottom: 10, fontFamily: C.fMono }}>
+                ✓ Exported {new Date(driveSync.lastSync).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}
+              </div>
+            )}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <button onClick={onDriveSave} style={{ ...st.btn() }}>
+                ↓ Export JSON
+              </button>
+              <label style={{ ...st.btn(C.dim, C.muted), textAlign: 'center', cursor: 'pointer', border: `1px solid ${C.border}` }}>
+                ↑ Import JSON
+                <input type="file" accept=".json" style={{ display: 'none' }}
+                  onChange={e => { if (e.target.files[0]) onDriveLoad(e.target.files[0]); e.target.value = ''; }} />
+              </label>
+            </div>
+          </div>
+
+          <button
+            onClick={() => window.location.reload(true)}
+            style={{ ...st.btn(C.dim, C.muted), width: '100%', fontSize: 12 }}
+          >
+            ↺ Check for updates
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -1832,7 +1855,7 @@ export default function App() {
           <Dashboard sessions={sessions} rides={rides} setView={setView} activeSession={activeSession}
             selectedWorkout={selectedWorkout} setSelectedWorkout={setSelectedWorkout}
             allExercises={allExercises} workoutCustom={workoutCustom}
-            driveSync={driveSync} onDriveSave={handleExport} onDriveLoad={handleImport} onCloudSync={handleCloudSync}
+            driveSync={driveSync} onCloudSync={handleCloudSync}
             updateAvailable={updateAvailable} />
         )}
         {view === 'workout' && (
@@ -1857,6 +1880,10 @@ export default function App() {
             workoutCustom={workoutCustom}
             setWorkoutCustom={setWorkoutCustom}
             allExercises={allExercises}
+            driveSync={driveSync}
+            onDriveSave={handleExport}
+            onDriveLoad={handleImport}
+            onCloudSync={handleCloudSync}
           />
         )}
       </div>

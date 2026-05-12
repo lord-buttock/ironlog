@@ -71,7 +71,7 @@ These are not preferences — they are physical limitations that must be honoure
 | Charts | Custom SVG (`MiniLineChart` component) | Recharts caused CSP errors on GitHub Pages |
 | Styling | Inline React style objects | Keeps everything in one file; no CSS to manage |
 | Storage | `localStorage` + Supabase | localStorage for offline-first; Supabase for auto-sync and cross-device restore |
-| Backup | JSON export / import + Supabase auto-sync | Manual JSON fallback; automatic cloud push after every session |
+| Backup | Supabase auto-sync + JSON export / import | Automatic cloud push after every session; manual JSON fallback in Manage |
 | Sync | Supabase (project `bhlbebdmuodscdgcwkyb`) | Sessions and rides auto-pushed on completion; count-based restore on load |
 | Fonts | Google Fonts CDN | Barlow Condensed, Barlow, JetBrains Mono |
 | Hosting | GitHub Pages | Free, single-file deployment, auto-deploys on push |
@@ -199,12 +199,12 @@ On completion: PR detection runs, progressive overload nudges are evaluated, ses
 
 | Tab | View key | Screen |
 |---|---|---|
-| Home | `dashboard` | Dashboard — next workout, recent sessions, data sync |
+| Home | `dashboard` | Dashboard — next workout, recent sessions, cloud sync status |
 | Train | `workout` | Active Workout — session flow |
 | Log | `history` | History — expandable session cards |
 | Stats | `progress` | Progress — SVG charts per exercise |
 | Rides | `rides` | Ride log with programme guide |
-| Manage | `manage` | Exercise library + workout builder |
+| Manage | `manage` | Exercise library + workout builder + backup/restore |
 
 ---
 
@@ -276,7 +276,7 @@ Tapping the link opens YouTube in the browser. This works but is not ideal — r
 
 ## Data Storage & Cross-Device Sync
 
-App data is saved locally first in `localStorage`, then sessions and rides are pushed to Supabase for automatic backup and cross-device restore. The app still includes manual JSON export/import as a fallback.
+App data is saved locally first in `localStorage`, then sessions and rides are pushed to Supabase for automatic backup and cross-device restore. The dashboard shows cloud sync status only; manual JSON export/import lives under **Manage → Backup** as a fallback.
 
 **Status:** Implemented 2026-05-13. Supabase sync is active for sessions and rides; restore currently uses the count-based rule documented in **DECISIONS.md → Decision 2**.
 
@@ -294,3 +294,4 @@ App data is saved locally first in `localStorage`, then sessions and rides are p
 - **Test the build** by running `npm run build` and checking the output size reported. If it errors, the JSX has a syntax problem.
 - **See ROADMAP.md** for planned features, known issues, and update priorities before starting any new work.
 - **See DECISIONS.md** for open architectural questions that need input before implementation begins.
+- **After every program change**, update `ROADMAP.md → Agent Notes & Feedback Log`. Also update `README.md` when current behaviour changes, and `DECISIONS.md` when an architectural decision is resolved or materially changed.

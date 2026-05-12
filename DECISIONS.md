@@ -202,6 +202,8 @@ Encode the entire dataset as base64 in a URL. The user can bookmark or share the
 ### Implementation (2026-05-13)
 **Option C (Supabase) was implemented.** See Agent Notes below for implementation details.
 
+**UI update (2026-05-13):** The dashboard now shows only cloud sync status and a manual "Sync now" action. JSON export/import remains available as an emergency/manual fallback under **Manage → Backup**, so the main workout dashboard is not dominated by backup controls.
+
 ### Current Recommendation (archived)
 **Option C (Supabase)** is the best long-term solution given the user already has a Supabase project. Suggested implementation order:
 1. Add Supabase JS client via CDN script tag in `build.js`
