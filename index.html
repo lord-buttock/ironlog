@@ -1062,7 +1062,15 @@ function Dashboard({
       if (e.target.files[0]) onDriveLoad(e.target.files[0]);
       e.target.value = '';
     }
-  })))), recent.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }))), /*#__PURE__*/React.createElement("button", {
+    onClick: () => window.location.reload(true),
+    style: {
+      ...st.btn(C.dim, C.muted),
+      width: '100%',
+      marginTop: 8,
+      fontSize: 12
+    }
+  }, "\u21BA Check for updates")), recent.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       ...st.label,
       marginBottom: 8

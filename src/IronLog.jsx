@@ -457,6 +457,12 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
                 onChange={e => { if (e.target.files[0]) onDriveLoad(e.target.files[0]); e.target.value = ''; }} />
             </label>
           </div>
+          <button
+            onClick={() => window.location.reload(true)}
+            style={{ ...st.btn(C.dim, C.muted), width: '100%', marginTop: 8, fontSize: 12 }}
+          >
+            ↺ Check for updates
+          </button>
         </div>
       )}
 
