@@ -29,6 +29,7 @@
   </div>
   <script>
 const { useState, useEffect, useRef, useCallback } = React;
+const APP_BUILD = 1778590849056;
 
 // ═══════════════════════════════════════════════════════════════════════
 // THEME
@@ -802,7 +803,8 @@ function Dashboard({
   driveSync,
   onDriveSave,
   onDriveLoad,
-  onCloudSync
+  onCloudSync,
+  updateAvailable
 }) {
   const suggested = nextWorkout(sessions);
   const wkt = WORKOUTS[selectedWorkout];
@@ -818,9 +820,12 @@ function Dashboard({
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      marginBottom: 24
+      marginBottom: 24,
+      display: 'flex',
+      alignItems: 'flex-end',
+      justifyContent: 'space-between'
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
       ...st.label,
       marginBottom: 6
@@ -833,7 +838,20 @@ function Dashboard({
     style: {
       color: C.amber
     }
-  }, "LOG"))), /*#__PURE__*/React.createElement("div", {
+  }, "LOG"))), /*#__PURE__*/React.createElement("button", {
+    onClick: () => window.location.reload(true),
+    title: updateAvailable ? 'Update available — tap to reload' : 'Check for updates',
+    style: {
+      background: 'none',
+      border: 'none',
+      cursor: 'pointer',
+      padding: '4px 0 4px 12px',
+      color: updateAvailable ? C.amber : C.muted,
+      fontSize: 20,
+      lineHeight: 1,
+      animation: updateAvailable ? 'pulse 1.5s ease-in-out infinite' : 'none'
+    }
+  }, "\u21BA"), updateAvailable && /*#__PURE__*/React.createElement("style", null, `@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}`)), /*#__PURE__*/React.createElement("div", {
     style: {
       ...st.card(),
       marginBottom: 12,
@@ -3900,6 +3918,7 @@ function App() {
     lastSync: null,
     error: null
   });
+  const [updateAvailable, setUpdateAvailable] = useState(false);
 
   // Keep a ref to current data so export always uses the latest state
   const dataRef = useRef({});
@@ -3935,6 +3954,11 @@ function App() {
       setSelectedWorkout(nextWorkout(finalSessions));
       setReady(true);
     })();
+  }, []);
+  useEffect(() => {
+    fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
+      if (d.v && d.v > APP_BUILD) setUpdateAvailable(true);
+    }).catch(() => {});
   }, []);
   useEffect(() => {
     if (ready) save('il_sessions', sessions);
@@ -4053,7 +4077,8 @@ function App() {
     driveSync: driveSync,
     onDriveSave: handleExport,
     onDriveLoad: handleImport,
-    onCloudSync: handleCloudSync
+    onCloudSync: handleCloudSync,
+    updateAvailable: updateAvailable
   }), view === 'workout' && /*#__PURE__*/React.createElement(ActiveWorkout, {
     sessions: sessions,
     activeSession: activeSession,

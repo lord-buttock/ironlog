@@ -35,7 +35,9 @@ fs.unlinkSync(TMP);
 fs.unlinkSync(`${TMP}.out.js`);
 
 // ── 3. Build final JS bundle ──────────────────────────────────────────
-const prefix = `const { useState, useEffect, useRef, useCallback } = React;\n\n`;
+const BUILD_TS = Date.now();
+fs.writeFileSync(path.join(__dirname, 'version.json'), JSON.stringify({ v: BUILD_TS }), 'utf8');
+const prefix = `const { useState, useEffect, useRef, useCallback } = React;\nconst APP_BUILD = ${BUILD_TS};\n\n`;
 const suffix = `\nReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));\n`;
 const appJs  = (prefix + compiled + suffix).replace(/<\/script>/g, '<\\/script>');
 

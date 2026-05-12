@@ -325,7 +325,7 @@ function Nav({ view, setView, hasActive }) {
 // ═══════════════════════════════════════════════════════════════════════
 // DASHBOARD
 // ═══════════════════════════════════════════════════════════════════════
-function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, setSelectedWorkout, allExercises = EXERCISES, workoutCustom = {}, driveSync, onDriveSave, onDriveLoad, onCloudSync }) {
+function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, setSelectedWorkout, allExercises = EXERCISES, workoutCustom = {}, driveSync, onDriveSave, onDriveLoad, onCloudSync, updateAvailable }) {
   const suggested = nextWorkout(sessions);
   const wkt = WORKOUTS[selectedWorkout];
   const extraIds = workoutCustom[selectedWorkout] || [];
@@ -337,9 +337,21 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
 
   return (
     <div style={{ padding: '20px 16px 8px' }}>
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ ...st.label, marginBottom: 6 }}>Training Log</div>
-        <div style={{ ...st.h1 }}>IRON<span style={{ color: C.amber }}>LOG</span></div>
+      <div style={{ marginBottom: 24, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+        <div>
+          <div style={{ ...st.label, marginBottom: 6 }}>Training Log</div>
+          <div style={{ ...st.h1 }}>IRON<span style={{ color: C.amber }}>LOG</span></div>
+        </div>
+        <button
+          onClick={() => window.location.reload(true)}
+          title={updateAvailable ? 'Update available — tap to reload' : 'Check for updates'}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0 4px 12px',
+            color: updateAvailable ? C.amber : C.muted, fontSize: 20, lineHeight: 1,
+            animation: updateAvailable ? 'pulse 1.5s ease-in-out infinite' : 'none',
+          }}
+        >↺</button>
+        {updateAvailable && <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}`}</style>}
       </div>
 
       {/* Next workout card */}
@@ -1699,6 +1711,7 @@ export default function App() {
   const [workoutCustom, setWorkoutCustom] = useState({ A: [], B: [], C: [] });
   const [ready, setReady] = useState(false);
   const [driveSync, setDriveSync] = useState({ status: 'idle', lastSync: null, error: null });
+  const [updateAvailable, setUpdateAvailable] = useState(false);
 
   // Keep a ref to current data so export always uses the latest state
   const dataRef = useRef({});
@@ -1732,6 +1745,13 @@ export default function App() {
       setSelectedWorkout(nextWorkout(finalSessions));
       setReady(true);
     })();
+  }, []);
+
+  useEffect(() => {
+    fetch('version.json?t=' + Date.now())
+      .then(r => r.json())
+      .then(d => { if (d.v && d.v > APP_BUILD) setUpdateAvailable(true); })
+      .catch(() => {});
   }, []);
 
   useEffect(() => { if (ready) save('il_sessions', sessions); }, [sessions, ready]);
@@ -1806,7 +1826,8 @@ export default function App() {
           <Dashboard sessions={sessions} rides={rides} setView={setView} activeSession={activeSession}
             selectedWorkout={selectedWorkout} setSelectedWorkout={setSelectedWorkout}
             allExercises={allExercises} workoutCustom={workoutCustom}
-            driveSync={driveSync} onDriveSave={handleExport} onDriveLoad={handleImport} onCloudSync={handleCloudSync} />
+            driveSync={driveSync} onDriveSave={handleExport} onDriveLoad={handleImport} onCloudSync={handleCloudSync}
+            updateAvailable={updateAvailable} />
         )}
         {view === 'workout' && (
           <ActiveWorkout
