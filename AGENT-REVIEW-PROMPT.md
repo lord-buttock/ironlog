@@ -1,6 +1,6 @@
 # IronLog — Peer Review Request for AI Agents
 
-This is a request for an AI agent to peer-review the feedback written by Claude Sonnet 4.6 in `DECISIONS.md`, and to publish a response directly into the file on GitHub.
+This is a request for an AI agent to peer-review the feedback written by Claude Sonnet 4.6 in `DECISIONS.md` and `ROADMAP.md`, and to publish responses directly into those files on GitHub.
 
 ---
 
@@ -10,8 +10,8 @@ IronLog is a single-file React 18 PWA fitness tracker deployed to GitHub Pages. 
 
 **Read these files before reviewing — they are essential context:**
 - `README.md` — full project architecture, user profile, medical constraints, tech stack, build process
-- `DECISIONS.md` — the file you will be reviewing and writing into
-- `ROADMAP.md` — known bugs, planned features, existing agent reviews
+- `DECISIONS.md` — open architectural decisions with agent feedback threads
+- `ROADMAP.md` — known bugs, planned features, bug fix priority table, existing agent reviews
 - `src/IronLog.jsx` — the full application source (1,735 lines)
 
 All files are at: https://github.com/lord-buttock/ironlog
@@ -26,9 +26,24 @@ Raw file URLs for direct access:
 
 ## What to Review
 
-`DECISIONS.md` contains two open architectural decisions, each with feedback from GPT-5 Codex and Claude Sonnet 4.6. Your job is to **peer-review Claude Sonnet 4.6's entries specifically** — not to repeat what has already been said, but to assess whether Claude's reasoning is sound, flag anything missed or incorrect, and add any new considerations.
+Your job is to **peer-review Claude Sonnet 4.6's entries specifically** — not to repeat what has already been said, but to assess whether Claude's reasoning is sound, flag anything missed or incorrect, and add any new considerations. Focus on corrections, gaps, and additions. If Claude got something right, a one-line confirmation is enough.
 
-### Decision 1 — Exercise Demo Videos
+---
+
+### ROADMAP.md — Code Review Entry
+
+Claude's code review entry (dated 2026-05-12) covers 10 bug findings with specific file and line references. The full bug fix priority table has 14 items combining findings from both Claude and GPT-5 Codex.
+
+**Review questions:**
+1. Are the line number references in Claude's entry accurate against the current `src/IronLog.jsx`? (Check at least: line 134 PR detection, line 500 exIdx, line 638 blank screen, line 1269 p_good_morning, line 1292 p_russian_twist)
+2. Is the proposed fix for PR detection (`ex.sets.filter(s => s.done)`) correct — does `s.done` exist on set objects in this codebase?
+3. Is the overload nudge fix description accurate — does requiring `repMax > defaultReps` actually solve the problem, or does the `>=` vs `>` distinction matter here?
+4. Are the medical constraint violations (p_good_morning, p_russian_twist, p_nordic_curl) correctly identified? Are there other contraindicated exercises in PRESET_LIBRARY not flagged?
+5. Are there bugs in `src/IronLog.jsx` that neither Claude nor GPT-5 Codex have identified?
+
+---
+
+### DECISIONS.md — Decision 1: Exercise Demo Videos
 
 Claude's entry covers:
 - Endorsing Option A (curated YouTube watch URLs) as the first step
@@ -42,7 +57,9 @@ Claude's entry covers:
 3. Is Option A truly a "no render logic changes" pass, given the current `demo` field is used in multiple places (`src/IronLog.jsx:676-684`, `src/IronLog.jsx:1463-1468`)?
 4. Are there other options or risks Claude did not consider?
 
-### Decision 2 — Cross-Device Data Sync & Backup
+---
+
+### DECISIONS.md — Decision 2: Cross-Device Data Sync & Backup
 
 Claude's entry covers:
 - Confirming Option C (Supabase) is correct
@@ -61,14 +78,15 @@ Claude's entry covers:
 
 ## How to Respond
 
-1. Read `DECISIONS.md` in full — pay particular attention to Claude Sonnet 4.6's entries
+1. Read `ROADMAP.md` and `DECISIONS.md` in full — pay particular attention to Claude Sonnet 4.6's entries
 2. Read the relevant sections of `src/IronLog.jsx` to verify any code claims
-3. Write your peer review directly into `DECISIONS.md`:
-   - For Decision 1: add your entry under the **"Peer review of Claude Sonnet 4.6 — Decision 1"** heading
-   - For Decision 2: add your entry under the **"Peer review of Claude Sonnet 4.6 — Decision 2"** heading
-4. Format your entry as: `#### YYYY-MM-DD — [Your model name]`
+3. Write your peer reviews directly into the files:
+   - **ROADMAP.md:** add your entry under **"Peer review of Claude Sonnet 4.6 — Code review"**
+   - **DECISIONS.md — Decision 1:** add your entry under **"Peer review of Claude Sonnet 4.6 — Decision 1"**
+   - **DECISIONS.md — Decision 2:** add your entry under **"Peer review of Claude Sonnet 4.6 — Decision 2"**
+4. Format each entry as: `#### YYYY-MM-DD — [Your model name]`
 5. Commit and push to `main` — the repo is: https://github.com/lord-buttock/ironlog
 
-**Do not repeat what has already been said.** Focus on corrections, gaps, and additions. If Claude got something right, a one-line confirmation is enough. If something is wrong or incomplete, explain why and what the correct approach is.
+**Do not repeat what has already been said.** If Claude got something right, say so briefly and move on. If something is wrong or incomplete, explain why and what the correct approach is.
 
 If you make any changes to `src/IronLog.jsx` as part of this session, note them in `ROADMAP.md` under the relevant priority item and run `npm run build` to verify the JSX compiles.
