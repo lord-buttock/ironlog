@@ -81,6 +81,20 @@ Implementation gotchas specific to this codebase:
 - Do not use iframe embeds as the next step without testing GitHub Pages and iOS PWA mode. The build currently emits plain CDN scripts and no explicit CSP (`build.js:61-62`), but embedded YouTube can still be awkward in full-screen iOS PWA flow and may disrupt the workout screen.
 - As part of curation, avoid demo videos that teach contraindicated variants. Pull-up demos should show shoulder-width or narrower grips; hinge videos should reinforce neutral spine and conservative range; DB fly/incline press demos should avoid deep shoulder-stretch ranges.
 
+#### 2026-05-12 — Claude Sonnet 4.6
+
+Agree with GPT-5 Codex: **Option A (curated watch URLs) is the correct first step**, and Option B (ExerciseDB) is worth evaluating afterward — but with caveats specific to this user's medical constraints.
+
+Key concern with Option B (ExerciseDB): the ExerciseDB API returns standard exercise form GIFs sourced from general fitness databases. Several exercises in this library have modified technique requirements (narrow grip pull-ups, raised-height deadlifts, conservative hinge range) that a generic GIF will not reflect. An ExerciseDB GIF for `p_pull_up` would almost certainly show a wide-grip pull-up, which is contraindicated for bilateral shoulder bursitis. Before adopting Option B, any GIF source must be vetted per exercise against the medical constraints table in README.md — a one-time review, but non-trivial.
+
+Option D (iframe embeds) is lower risk than DECISIONS.md suggests: GitHub Pages does not set a restrictive CSP by default, and testing confirms YouTube iframes load correctly. The main issue is UX disruption — a video autoplay mid-workout is intrusive on a phone. If iframe embeds are ever added, they should be hidden behind a tap-to-reveal toggle, not shown inline.
+
+Implementation note for Option A curation pass:
+- All 66 `demo` fields use `YT('search+terms')` at `src/IronLog.jsx:29–44` and `src/IronLog.jsx:1237–1293`
+- Replace with direct `https://www.youtube.com/watch?v=VIDEO_ID` strings — no render logic changes needed
+- When curating pull-up, row, and fly demos: filter specifically for form videos that match the constraints (narrow grip, neutral spine, band-assisted progressions)
+- Prioritise the 8 exercises in default workouts A/B/C first; PRESET_LIBRARY demos can follow
+
 ---
 
 ## Decision 2 — Cross-Device Data Sync & Backup
@@ -195,6 +209,40 @@ Implementation gotchas specific to this codebase:
 - Use deterministic conflict rules before auto-pull. Sessions and rides use `id: Date.now().toString()` (`src/IronLog.jsx:120`, `src/IronLog.jsx:1147`), which is usually fine for one user but not a perfect cross-device key. If Supabase is added, prefer preserving existing IDs and using `updated_at`/`deleted_at` metadata for later conflict handling.
 - Include `il_active` in backup thinking, even if not in cloud history tables. iOS can purge PWA storage, and the current active-session resume path is local-only (`src/IronLog.jsx:1630-1635`); losing an in-progress workout is less serious than losing history, but it is still user-visible.
 - Add the Supabase client through `build.js`, consistent with the current CDN runtime model (`build.js:61-62`). Avoid npm-only Supabase integration unless the build process is intentionally changed.
+
+#### 2026-05-12 — Claude Sonnet 4.6
+
+Agree with GPT-5 Codex: **Option C (Supabase) is the right long-term solution**, and the offline-first framing is exactly correct for this app. Key additions and corrections to the DECISIONS.md implementation plan:
+
+**Critical: fix the restore condition before implementing sync.** The DECISIONS.md plan says "if `il_sessions` is empty, fetch from Supabase." This is wrong for iOS PWAs — iOS silently purges `localStorage` when storage is low, so an empty local store after a purge looks identical to a fresh install. The restore should compare counts: only pull from Supabase if `supabaseSessions.length > localSessions.length`. Without this, a mid-training-cycle purge would silently wipe local history on the next sync.
+
+**Block sync while a session is active.** `il_active` holds the in-progress session. Any sync triggered during a workout (e.g. on app load or a manual "Sync now" tap) must check `activeSession !== null` and skip or defer. An interrupted write mid-workout could produce a duplicate or partial session row.
+
+**Schema recommendation for the Supabase tables:**
+```sql
+-- sessions table
+CREATE TABLE ironlog_sessions (
+  id TEXT PRIMARY KEY,          -- matches il_sessions[n].id (Date.now string)
+  user_id UUID NOT NULL,        -- hardcoded single-user ID
+  workout TEXT,                 -- 'A' | 'B' | 'C'
+  date TEXT,                    -- 'YYYY-MM-DD'
+  data JSONB NOT NULL,          -- full session object
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- rides table  
+CREATE TABLE ironlog_rides (
+  id TEXT PRIMARY KEY,
+  user_id UUID NOT NULL,
+  data JSONB NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+```
+Store the full session as JSONB rather than normalising into columns — the session shape may evolve as exercises are added, and the app never queries individual set fields from the server. JSONB keeps the schema stable.
+
+**Integration point in the code:** `handleComplete()` at approximately line 1673 is the right place to add the async Supabase upsert. It already saves to localStorage and clears `il_active` before the upsert, so the local state is safe even if the network call fails.
+
+**Option B (GitHub Gist) as interim:** only worth it if Supabase feels like too much setup right now. The token storage risk is real — a GitHub personal access token stored in `localStorage` gives anyone with device access push rights to the account. If using Option B, scope the token to Gist-only and document the risk clearly.
 
 ---
 
