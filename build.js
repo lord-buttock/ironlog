@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // IronLog build script
-// Compiles src/IronLog.jsx → dist/index.html
+// Compiles src/IronLog.jsx → index.html (root, served by GitHub Pages)
 // Run with: npm run build
 
 const { execSync } = require('child_process');
@@ -9,7 +9,7 @@ const path = require('path');
 
 const SRC  = path.join(__dirname, 'src', 'IronLog.jsx');
 const TMP  = path.join(__dirname, 'src', '_compiled.js');
-const OUT  = path.join(__dirname, 'dist', 'index.html');
+const OUT  = path.join(__dirname, 'index.html');
 
 // ── 1. Read and prepare source ───────────────────────────────────────
 let src = fs.readFileSync(SRC, 'utf8');
@@ -78,8 +78,7 @@ ${appJs}
 </body>
 </html>`;
 
-fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, html, 'utf8');
 
 const sizeKb = (fs.statSync(OUT).size / 1024).toFixed(1);
-console.log(`✓ Built dist/index.html (${sizeKb} KB)`);
+console.log(`✓ Built index.html (${sizeKb} KB)`);

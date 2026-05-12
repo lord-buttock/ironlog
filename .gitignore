@@ -1,4 +1,5 @@
 .DS_Store
 node_modules/
+dist/
 IronLog-backup-*.json
 src/_compiled.js
