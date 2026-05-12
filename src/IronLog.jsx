@@ -199,12 +199,12 @@ function detectPRs(newSess, prevSessions, allExercises = EXERCISES) {
   newSess.exercises.forEach(ex => {
     const def = allExercises[ex.id] || EXERCISES[ex.id];
     if (!def || def.unit !== 'kg') return;
-    const newMax = Math.max(...ex.sets.map(s => Number(s.weight) || 0));
+    const newMax = Math.max(...ex.sets.filter(s => s.done).map(s => Number(s.weight) || 0));
     if (!newMax) return;
     const prevMax = prevSessions.reduce((mx, sess) => {
       const pe = sess.exercises?.find(e => e.id === ex.id);
       if (!pe) return mx;
-      return Math.max(mx, ...pe.sets.map(s => Number(s.weight) || 0));
+      return Math.max(mx, ...pe.sets.filter(s => s.done).map(s => Number(s.weight) || 0));
     }, 0);
     if (newMax > prevMax) prs.push({ name: def.name, weight: newMax });
   });
