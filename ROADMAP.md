@@ -234,6 +234,7 @@ Currently the user manually selects which workout to do. The app suggests the ne
 - **Supabase sync (Decision 2) gotcha not in DECISIONS.md:** The current plan says "restore if localStorage is empty." iOS can purge PWA localStorage without warning — after a purge, localStorage is empty but this is not the same as a new device. Restore condition should compare counts (`localSessions.length < supabaseSessions.length`), not check for empty. Also: sync must be blocked while `activeSession !== null` to prevent mid-workout data loss.
 - **Equipment conflicts in PRESET_LIBRARY:** `p_cable_fly`, `p_lat_pulldown`, `p_seated_cable_row`, `p_leg_press`, `p_leg_extension`, `p_seated_leg_curl`, `p_cable_kickback`, `p_hip_abduction`, `p_cable_crunch`, `p_chest_dip`, `p_t_bar_row` all require equipment the user does not own. They appear in the mid-session picker.
 
+
 ### 2026-05-12 — Exercise library planning session
 - Audited full equipment list: barbell + stand, flat bench, incline/decline bench, DBs, KBs, bands, fit ball, medicine ball, stepper, small trampoline, doorframe chin-up bar
 - Researched 3-day PPL splits for men 50+
