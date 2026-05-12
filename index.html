@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <style>
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
     html,body{margin:0;padding:0;background:#0a0a0a;height:100%;overflow-x:hidden;}
@@ -333,6 +334,79 @@ const WORKOUTS = {
     finisher: ['Band external rotation — 2 × 10 each side', 'Single-leg balance — 30 sec each side']
   }
 };
+
+// ═══════════════════════════════════════════════════════════════════════
+// SUPABASE SYNC
+// ═══════════════════════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://bhlbebdmuodscdgcwkyb.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJobGJlYmRtdW9kc2NkZ2N3a3liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDY2MjEsImV4cCI6MjA5MzEyMjYyMX0.0Z6eLhcbVZIuSA9V_l4z9IRPbdrlfAlY6UOh8lvJFDU';
+const IRONLOG_UID = 'ba29275d-ad25-48b4-9d7d-43a5ad8124cf';
+const db = window.supabase?.createClient(SUPABASE_URL, SUPABASE_KEY);
+async function pushSession(session) {
+  if (!db) return;
+  try {
+    await db.from('ironlog_sessions').upsert({
+      id: session.id,
+      user_id: IRONLOG_UID,
+      workout: session.workout,
+      date: session.date,
+      data: session,
+      updated_at: new Date().toISOString()
+    }, {
+      onConflict: 'id'
+    });
+  } catch (e) {
+    console.warn('IronLog sync (session):', e);
+  }
+}
+async function pushRide(ride) {
+  if (!db) return;
+  try {
+    await db.from('ironlog_rides').upsert({
+      id: ride.id,
+      user_id: IRONLOG_UID,
+      data: ride,
+      updated_at: new Date().toISOString()
+    }, {
+      onConflict: 'id'
+    });
+  } catch (e) {
+    console.warn('IronLog sync (ride):', e);
+  }
+}
+async function pullSessions(localSessions) {
+  if (!db) return null;
+  try {
+    const {
+      data,
+      error
+    } = await db.from('ironlog_sessions').select('data').eq('user_id', IRONLOG_UID).order('date', {
+      ascending: false
+    });
+    if (error || !data) return null;
+    // Only restore if cloud has more sessions — guards against iOS localStorage purge
+    if (data.length > localSessions.length) return data.map(r => r.data);
+  } catch (e) {
+    console.warn('IronLog restore (sessions):', e);
+  }
+  return null;
+}
+async function pullRides(localRides) {
+  if (!db) return null;
+  try {
+    const {
+      data,
+      error
+    } = await db.from('ironlog_rides').select('data').eq('user_id', IRONLOG_UID).order('created_at', {
+      ascending: false
+    });
+    if (error || !data) return null;
+    if (data.length > localRides.length) return data.map(r => r.data);
+  } catch (e) {
+    console.warn('IronLog restore (rides):', e);
+  }
+  return null;
+}
 
 // ═══════════════════════════════════════════════════════════════════════
 // STORAGE  (localStorage — works in any browser)
@@ -727,7 +801,8 @@ function Dashboard({
   workoutCustom = {},
   driveSync,
   onDriveSave,
-  onDriveLoad
+  onDriveLoad,
+  onCloudSync
 }) {
   const suggested = nextWorkout(sessions);
   const wkt = WORKOUTS[selectedWorkout];
@@ -914,12 +989,35 @@ function Dashboard({
     }
   }, "Data Backup"), /*#__PURE__*/React.createElement("div", {
     style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      color: driveSync.cloudStatus === 'ok' ? C.green : driveSync.cloudStatus === 'error' ? C.red : C.muted,
+      fontFamily: C.fMono
+    }
+  }, driveSync.cloudStatus === 'ok' && `☁ Synced ${driveSync.lastCloudSync ? new Date(driveSync.lastCloudSync).toLocaleTimeString('en-AU', {
+    hour: '2-digit',
+    minute: '2-digit'
+  }) : ''}`, driveSync.cloudStatus === 'error' && '☁ Sync failed', driveSync.cloudStatus === 'syncing' && '☁ Syncing…', (!driveSync.cloudStatus || driveSync.cloudStatus === 'idle') && '☁ Supabase auto-sync on'), /*#__PURE__*/React.createElement("button", {
+    onClick: onCloudSync,
+    style: {
+      ...st.btnSm(C.dim, C.muted),
+      fontSize: 11,
+      marginLeft: 'auto'
+    }
+  }, "Sync now")), /*#__PURE__*/React.createElement("div", {
+    style: {
       fontSize: 12,
       color: C.muted,
       marginBottom: 12,
       lineHeight: 1.5
     }
-  }, "Export your data as a JSON file to back up or move to another device. Import it on any device to restore."), driveSync.status === 'error' && /*#__PURE__*/React.createElement("div", {
+  }, "Workouts sync automatically to the cloud after each session. Use JSON export/import to move data to a new device manually."), driveSync.status === 'error' && /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 12,
       color: C.red,
@@ -2411,14 +2509,16 @@ function Rides({
   const [notes, setNotes] = useState('');
   function log() {
     if (!dur) return;
-    setRides(p => [...p, {
+    const ride = {
       id: Date.now().toString(),
       date: new Date().toISOString(),
       duration: +dur,
       effort: rpe ? +rpe : null,
       type,
       notes
-    }]);
+    };
+    setRides(p => [...p, ride]);
+    pushRide(ride); // fire-and-forget cloud backup
     setOpen(false);
     setDur('');
     setRpe('');
@@ -3811,12 +3911,20 @@ function App() {
   useEffect(() => {
     (async () => {
       const [s, r, a, ce, wc] = await Promise.all([load('il_sessions'), load('il_rides'), load('il_active'), load('il_custom_exercises'), load('il_workout_custom')]);
-      if (s) setSessions(s);
-      if (r) setRides(r);
+      const localSessions = s || [];
+      const localRides = r || [];
+
+      // Attempt cloud restore — only replaces local if cloud has more records
+      const cloudSessions = await pullSessions(localSessions);
+      const cloudRides = await pullRides(localRides);
+      const finalSessions = cloudSessions || localSessions;
+      const finalRides = cloudRides || localRides;
+      setSessions(finalSessions);
+      setRides(finalRides);
       if (a) setActiveSession(a);
       if (ce) setCustomExercises(ce);
       if (wc) setWorkoutCustom(wc);
-      setSelectedWorkout(nextWorkout(s || []));
+      setSelectedWorkout(nextWorkout(finalSessions));
       setReady(true);
     })();
   }, []);
@@ -3870,16 +3978,34 @@ function App() {
       }));
     }
   }
-  async function driveSave() {
-    handleExport();
+  async function handleCloudSync() {
+    if (activeSession) return; // never sync mid-workout
+    setDriveSync(s => ({
+      ...s,
+      cloudStatus: 'syncing'
+    }));
+    try {
+      const {
+        sessions: cur,
+        rides: curRides
+      } = dataRef.current;
+      await Promise.all([...cur.map(pushSession), ...curRides.map(pushRide)]);
+      setDriveSync(s => ({
+        ...s,
+        cloudStatus: 'ok',
+        lastCloudSync: new Date().toISOString()
+      }));
+    } catch (e) {
+      setDriveSync(s => ({
+        ...s,
+        cloudStatus: 'error'
+      }));
+    }
   }
-  async function driveLoad() {}
   function handleComplete(sess) {
-    setSessions(p => {
-      const updated = [...p, sess];
-      return updated;
-    });
+    setSessions(p => [...p, sess]);
     setActiveSession(null);
+    pushSession(sess); // fire-and-forget cloud backup
   }
   if (!ready) return /*#__PURE__*/React.createElement("div", {
     style: {
@@ -3918,7 +4044,8 @@ function App() {
     workoutCustom: workoutCustom,
     driveSync: driveSync,
     onDriveSave: handleExport,
-    onDriveLoad: handleImport
+    onDriveLoad: handleImport,
+    onCloudSync: handleCloudSync
   }), view === 'workout' && /*#__PURE__*/React.createElement(ActiveWorkout, {
     sessions: sessions,
     activeSession: activeSession,
