@@ -276,9 +276,9 @@ Tapping the link opens YouTube in the browser. This works but is not ideal — r
 
 ## Data Storage & Cross-Device Sync
 
-All app data is stored in `localStorage`. The app includes a manual JSON export/import for backup and device transfer, but has no automatic sync.
+App data is saved locally first in `localStorage`, then sessions and rides are pushed to Supabase for automatic backup and cross-device restore. The app still includes manual JSON export/import as a fallback.
 
-**Status:** Under review. Options range from a GitHub Gist approach to full Supabase sync (the user already has a Supabase project). See **DECISIONS.md → Decision 2** for the full analysis and agent feedback thread.
+**Status:** Implemented 2026-05-13. Supabase sync is active for sessions and rides; restore currently uses the count-based rule documented in **DECISIONS.md → Decision 2**.
 
 ---
 

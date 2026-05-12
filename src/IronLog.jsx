@@ -513,7 +513,12 @@ function SetRow({ num, set, def, onUpdate, onDone }) {
   const isTimed = def.isTimed;
   const isBW = def.unit === 'bw' || def.unit === 'band';
 
-  const gridCols = isBW || isTimed ? '28px 1fr 56px 56px 38px' : '28px 1fr 1fr 56px 56px 38px';
+  const gridCols = isTimed
+    ? '28px minmax(52px,1fr) 56px 56px 38px'
+    : isBW
+      ? '28px minmax(48px,.8fr) minmax(48px,1fr) 56px 56px 38px'
+      : '28px minmax(0,1fr) minmax(0,1fr) 56px 56px 38px';
+  const loadLabel = def.unit === 'band' ? 'BAND' : 'BW';
 
   return (
     <div style={{ background: done ? C.green + '12' : C.dim, border: `1px solid ${done ? C.green + '44' : C.border}`, borderRadius: 6, padding: '8px 10px' }}>
@@ -526,7 +531,7 @@ function SetRow({ num, set, def, onUpdate, onDone }) {
           <input type="number" inputMode="numeric" value={set.duration} onChange={e => onUpdate('duration', e.target.value)}
             style={{ ...st.inp }} placeholder="sec" />
         ) : isBW ? (
-          <div style={{ ...st.inp, color: C.muted, fontSize: 11, lineHeight: '34px', border: `1px solid ${C.border}` }}>BW</div>
+          <div style={{ ...st.inp, color: C.muted, fontSize: 10, lineHeight: '34px', border: `1px solid ${C.border}` }}>{loadLabel}</div>
         ) : (
           <input type="number" inputMode="decimal" value={set.weight} onChange={e => onUpdate('weight', e.target.value)}
             style={{ ...st.inp }} placeholder="kg" />
@@ -571,8 +576,9 @@ function SetRow({ num, set, def, onUpdate, onDone }) {
         </div>
       )}
       {(isTimed || isBW) && (
-        <div style={{ display: 'grid', gridTemplateColumns: '28px 1fr 56px 56px 38px', gap: 5, marginTop: 3 }}>
-          <div/><div style={{ ...st.label, fontSize: 9, textAlign: 'center' }}>{isTimed ? 'secs' : 'bw'}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: gridCols, gap: 5, marginTop: 3 }}>
+          <div/><div style={{ ...st.label, fontSize: 9, textAlign: 'center' }}>{isTimed ? 'secs' : loadLabel.toLowerCase()}</div>
+          {isBW && <div style={{ ...st.label, fontSize: 9, textAlign: 'center' }}>reps</div>}
           <div style={{ ...st.label, fontSize: 9, textAlign: 'center' }}>rpe</div>
           <div style={{ ...st.label, fontSize: 9, textAlign: 'center' }}>pain</div>
           <div/>

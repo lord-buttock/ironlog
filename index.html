@@ -29,7 +29,7 @@
   </div>
   <script>
 const { useState, useEffect, useRef, useCallback } = React;
-const APP_BUILD = 1778590849056;
+const APP_BUILD = 1778620790934;
 
 // ═══════════════════════════════════════════════════════════════════════
 // THEME
@@ -1156,7 +1156,8 @@ function SetRow({
   const done = set.done;
   const isTimed = def.isTimed;
   const isBW = def.unit === 'bw' || def.unit === 'band';
-  const gridCols = isBW || isTimed ? '28px 1fr 56px 56px 38px' : '28px 1fr 1fr 56px 56px 38px';
+  const gridCols = isTimed ? '28px minmax(52px,1fr) 56px 56px 38px' : isBW ? '28px minmax(48px,.8fr) minmax(48px,1fr) 56px 56px 38px' : '28px minmax(0,1fr) minmax(0,1fr) 56px 56px 38px';
+  const loadLabel = def.unit === 'band' ? 'BAND' : 'BW';
   return /*#__PURE__*/React.createElement("div", {
     style: {
       background: done ? C.green + '12' : C.dim,
@@ -1192,11 +1193,11 @@ function SetRow({
     style: {
       ...st.inp,
       color: C.muted,
-      fontSize: 11,
+      fontSize: 10,
       lineHeight: '34px',
       border: `1px solid ${C.border}`
     }
-  }, "BW") : /*#__PURE__*/React.createElement("input", {
+  }, loadLabel) : /*#__PURE__*/React.createElement("input", {
     type: "number",
     inputMode: "decimal",
     value: set.weight,
@@ -1295,7 +1296,7 @@ function SetRow({
   }, "pain"), /*#__PURE__*/React.createElement("div", null)), (isTimed || isBW) && /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'grid',
-      gridTemplateColumns: '28px 1fr 56px 56px 38px',
+      gridTemplateColumns: gridCols,
       gap: 5,
       marginTop: 3
     }
@@ -1305,7 +1306,13 @@ function SetRow({
       fontSize: 9,
       textAlign: 'center'
     }
-  }, isTimed ? 'secs' : 'bw'), /*#__PURE__*/React.createElement("div", {
+  }, isTimed ? 'secs' : loadLabel.toLowerCase()), isBW && /*#__PURE__*/React.createElement("div", {
+    style: {
+      ...st.label,
+      fontSize: 9,
+      textAlign: 'center'
+    }
+  }, "reps"), /*#__PURE__*/React.createElement("div", {
     style: {
       ...st.label,
       fontSize: 9,
