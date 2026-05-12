@@ -24,6 +24,29 @@ The app is functional and in active daily use. Core features are complete:
 
 ---
 
+## Bug Fixes — Priority Order
+
+These are confirmed bugs and safety issues identified by code review (see Agent Notes). Fix these before working on new features.
+
+| # | Fix | File | Lines | Priority |
+|---|---|---|---|---|
+| 1 | PR detection: filter to `s.done` sets only — undone pre-filled weights can trigger false PRs | `IronLog.jsx` | 134–136 | High |
+| 2 | Overload nudge: require `repMax > defaultReps` + no sets with `pain >= 3` + avg RPE ≤ 8 — currently fires on first session for many exercises | `IronLog.jsx` | 148–157, 709 | High |
+| 3 | Import: add `Array.isArray()` validation + clear `activeSession` on import — bad JSON shape crashes app | `IronLog.jsx` | 1658–1663 | High |
+| 4 | Resume: restore `phase` + derive `exIdx` from first incomplete exercise + use timestamp-based elapsed — all three reset on app reload | `IronLog.jsx` | 499–503, 512 | High |
+| 5 | Blank Train screen: add recovery UI for malformed `activeSession` — `return null` at line 638 gives user no escape | `IronLog.jsx` | 634–638 | High |
+| 6 | Remove `p_good_morning` (loaded spinal flexion, slipped disc) and `p_russian_twist` (loaded rotation, slipped disc) — both are 🔴 contraindicated | `IronLog.jsx` | 1269, 1292 | High |
+| 7 | Flag `p_nordic_curl` as 🔴 or remove — extreme eccentric hamstring load, contraindicated with tight hamstrings | `IronLog.jsx` | 1277 | High |
+| 8 | Fix `p_pull_up` cue — must specify shoulder-width/narrow grip only, band-assisted start, negatives progression — wide grip is contraindicated for shoulder bursitis | `IronLog.jsx` | 1264 | High |
+| 9 | Replace all 66 YouTube search URLs with curated specific video IDs — search results are inconsistent and ads appear | `IronLog.jsx` | 26, 29–44, 1237–1293 | Medium |
+| 10 | Rest timer: switch to wall-clock timestamps — `setInterval`/`setTimeout` are throttled when iOS backgrounds the PWA | `IronLog.jsx` | 512, 517–521 | Medium |
+| 11 | Add `manifest.json` + service worker — app requires internet on every load; CDN assets are not cached offline | `build.js`, repo root | — | Medium |
+| 12 | Make `EXERCISES` browseable in Library tab — currently only `PRESET_LIBRARY` items appear; base exercises have no accessible form cues or demo links outside an active workout | `IronLog.jsx` | 1313–1317 | Medium |
+| 13 | Flag equipment-incompatible `PRESET_LIBRARY` entries (cable machine, leg press, T-bar, dip bars) — they appear in the mid-session Add Exercise picker | `IronLog.jsx` | 1262–1293 | Low |
+| 14 | Update stale Completed Features list (rest timer now 30/60/120s, not 60/90/120s) | `ROADMAP.md` | — | Low |
+
+---
+
 ## Priority 1 — Exercise Library Expansion
 
 **Status:** Planned — not yet started  
@@ -147,9 +170,11 @@ Currently the user manually selects which workout to do. The app suggests the ne
 
 | Issue | Detail |
 |---|---|
-| GitHub is behind local | Local `src/IronLog.jsx` is ~2 weeks newer than the last GitHub push (April 28). Need to build and push. |
-| `PRESET_LIBRARY` vs `EXERCISES` split | The distinction between these two objects is unclear. Consider merging into one `EXERCISE_LIBRARY` with a `inDefaultWorkout` flag. |
+| `PRESET_LIBRARY` vs `EXERCISES` split | The distinction between these two objects is unclear. Consider merging into one `EXERCISE_LIBRARY` with an `inDefaultWorkout` flag. |
 | No `repMax` on timed exercises | `isTimed` exercises have `repMax: null` which is fine, but the overload nudge logic should explicitly handle this case. |
+| `EXERCISES` not browseable in Library | Base workout exercises cannot be browsed from the Manage → Library tab — only `PRESET_LIBRARY` items appear. Form cues and demos are inaccessible outside an active workout. |
+| No offline support | No service worker or web app manifest. All CDN assets (React, fonts) require internet on every load. App cannot function offline even when installed as PWA. |
+| Silent localStorage failure | `save()` swallows all errors silently including `QuotaExceededError`. User has no feedback if iOS storage is full and data is not saving. |
 
 ---
 
@@ -159,9 +184,9 @@ Currently the user manually selects which workout to do. The app suggests the ne
 - [x] Per-set: weight, reps/duration, RPE, pain
 - [x] Pain ≥ 3 warning banner
 - [x] Pre-fill from last session
-- [x] Rest timer (60/90/120s)
+- [x] Rest timer (30/60/120s shortcuts, auto-starts at 30s)
 - [x] Session clock
-- [x] PR detection
+- [x] PR detection (top weight, kg exercises only)
 - [x] Progressive overload nudge
 - [x] SVG progress charts (weight, volume, RPE)
 - [x] Session history (expandable)
@@ -181,6 +206,33 @@ Currently the user manually selects which workout to do. The app suggests the ne
 ## Agent Notes & Feedback Log
 
 *Append notes here after any significant agent session — what was changed, what was decided, what was left for next time.*
+
+### 2026-05-12 — GPT-5 Codex code review
+- Resume state is incomplete. If `il_active` exists, `ActiveWorkout` always reopens at workout phase and exercise index 0 (`src/IronLog.jsx:499-500`), while elapsed time restarts from zero (`src/IronLog.jsx:503`, `src/IronLog.jsx:512-514`). A reload during warm-up, finisher, or later exercises loses the user's position and under-reports final duration (`src/IronLog.jsx:579`).
+- Progressive overload nudges are too eager for a conservative return-to-training app. Several defaults have `defaultReps === repMax` (for example goblet squat, DB bench, KB deadlift, split squat at `src/IronLog.jsx:29-34`, `src/IronLog.jsx:39`), so simply completing the prescribed first-session reps can trigger "add load" (`src/IronLog.jsx:148-154`, `src/IronLog.jsx:708-714`). The logic also ignores high pain and high RPE, so painful or maximal-effort sets can still be marked ready to progress.
+- PR detection is weight-only for `kg` exercises (`src/IronLog.jsx:131-145`). A heavier but much lower-rep set is treated as a PR, and bodyweight/band/timed progress is excluded entirely. That may be acceptable as "top weight PR", but the UI label says "Personal Records" without that nuance (`src/IronLog.jsx:840-845`).
+- Rest timer behaviour is inconsistent with the roadmap. The completed-features note said 60/90/120s, but the app offers 30/60/120s shortcuts and auto-starts 30s after every set (`src/IronLog.jsx:523-550`, `src/IronLog.jsx:700-705`). The timer is interval/timeout based and not wall-clock based, so iOS backgrounding can pause or skew rest and elapsed time.
+- Import/localStorage handling lacks shape validation. `load()` catches malformed JSON but accepts any parsed truthy value (`src/IronLog.jsx:68-74`); startup then assumes `sessions` is an array and passes it to `nextWorkout()` (`src/IronLog.jsx:84-89`, `src/IronLog.jsx:1627-1639`). `importData()` parses JSON only, without validating arrays or expected object shapes (`src/IronLog.jsx:205-214`, `src/IronLog.jsx:1654-1664`).
+- Empty or corrupted active sessions can blank the Train screen. If an active session has no valid `exercises`, workout phase returns `null` with no recovery path (`src/IronLog.jsx:634-639`).
+- `EXERCISES` vs `PRESET_LIBRARY` is already leaking into UX and data maintenance. Built-in default workout exercises live in both places (`WORKOUTS` references `p_` preset IDs at `src/IronLog.jsx:50-60`), but Manage's library intentionally lists only `PRESET_LIBRARY` and custom exercises (`src/IronLog.jsx:1313-1317`), so base `EXERCISES` items are not browsable from the Library tab even though they are part of the merged runtime library (`src/IronLog.jsx:1621`).
+- Several preset exercises conflict with the documented equipment or constraints and should be hidden, flagged, or removed before library expansion: machine/cable-only entries (`p_cable_fly`, `p_lat_pulldown`, `p_seated_cable_row`, `p_leg_press`, `p_leg_extension`, `p_seated_leg_curl`, `p_cable_kickback`, `p_hip_abduction`, `p_cable_crunch` at `src/IronLog.jsx:1262-1293`), higher-risk hinge/core entries for slipped disc constraints (`p_good_morning`, `p_russian_twist`, `p_cable_crunch` at `src/IronLog.jsx:1269`, `src/IronLog.jsx:1292-1293`), and shoulder-sensitive entries lacking cautions (`p_chest_dip`, `p_arnold_press`, `p_db_fly`, `p_incline_db_press`, `p_pull_up` at `src/IronLog.jsx:1253-1264`).
+- Pull-up guidance is under-specified for shoulder bursitis. `p_pull_up` says full hang to chin over bar but does not mention shoulder-width/narrow grip, band assistance, or negatives-only progression (`src/IronLog.jsx:1264`), even though the roadmap calls this out as a planned onboarding need.
+- All 66 built-in exercise demos are YouTube search URLs generated by `YT()` (`src/IronLog.jsx:26`, `src/IronLog.jsx:29-44`, `src/IronLog.jsx:1237-1293`); none are curated watch URLs or specific video IDs. This supports Decision 1's Option A as a low-risk data cleanup before any embed/API work.
+- iOS/PWA risk: `build.js` has iPhone home-screen meta tags and icons (`build.js:51-59`) but no web app manifest or service worker, and runtime React/ReactDOM/fonts load from CDNs (`build.js:60-62`). Once cached, the current page may remain usable from browser cache, but it is not a robust offline PWA install.
+
+### 2026-05-12 — Claude Sonnet 4.6 code review
+- Confirmed all GPT-5 Codex findings independently. Added the following:
+- **PR detection false positive:** `detectPRs` includes sets where `s.done === false` (line 134). Pre-filled weights from the previous session that were never lifted can register as PRs. Fix: `ex.sets.filter(s => s.done)` before mapping weights.
+- **Resume position:** `exIdx` (line 500) always initialises to 0, regardless of where in the session the user was. Warm-up and finisher phases also cannot be resumed — phase hardcodes to `'workout'` when `activeSession` exists (line 499). Three things need persisting: phase, exIdx, and startTime.
+- **Overload nudge too eager — medical concern:** Several exercises have `defaultReps === repMax` (goblet squat, db bench, kb deadlift, split squat — lines 29–39). The nudge fires on the first session at prescribed reps. For a user returning after 5 years at RPE 6–7, this is premature and potentially harmful. Fix: require `repMax > defaultReps`, no sets with `pain >= 3`, and average RPE ≤ 8.
+- **Blank Train screen has no recovery path:** Line 638 returns `null` if `exData` is falsy. If `il_active` contains a malformed session (missing or empty `exercises` array), the Train screen goes blank with no error state and no way out except clearing browser storage. Needs a fallback UI with a "Clear session" button.
+- **Medical constraint violations in PRESET_LIBRARY:** `p_good_morning` (line 1269, loaded spinal flexion) and `p_russian_twist` (line 1292, loaded spinal rotation) are both 🔴 contraindicated per README. `p_nordic_curl` (line 1277) is 🔴 for tight hamstrings. All three appear in the mid-session Add Exercise picker. Remove or hide from this user's library.
+- **`p_pull_up` cue is medically unsafe as written:** Line 1264 cue says "full hang to chin over bar" — does not specify grip width. Wide-grip pull-ups are contraindicated for bilateral shoulder bursitis. Cue must say: shoulder-width or narrower grip only, start band-assisted or negatives, no wide grip.
+- **Import clears nothing on success:** `handleImport` (lines 1658–1663) does not call `setActiveSession(null)`. Importing while mid-workout leaves a stale active session in state against the new data.
+- **iOS timer throttling:** Both `setInterval` (elapsed, line 512) and recursive `setTimeout` (rest timer, lines 517–521) are throttled by iOS when the PWA is backgrounded. Switch to wall-clock timestamps: store `startTime = Date.now()` and compute `elapsed = Date.now() - startTime` on each render.
+- **No offline support:** No service worker or `manifest.json`. React, ReactDOM, and Google Fonts all load from CDN at startup. Internet required on every load — app cannot start offline even when installed as a home screen PWA.
+- **Supabase sync (Decision 2) gotcha not in DECISIONS.md:** The current plan says "restore if localStorage is empty." iOS can purge PWA localStorage without warning — after a purge, localStorage is empty but this is not the same as a new device. Restore condition should compare counts (`localSessions.length < supabaseSessions.length`), not check for empty. Also: sync must be blocked while `activeSession !== null` to prevent mid-workout data loss.
+- **Equipment conflicts in PRESET_LIBRARY:** `p_cable_fly`, `p_lat_pulldown`, `p_seated_cable_row`, `p_leg_press`, `p_leg_extension`, `p_seated_leg_curl`, `p_cable_kickback`, `p_hip_abduction`, `p_cable_crunch`, `p_chest_dip`, `p_t_bar_row` all require equipment the user does not own. They appear in the mid-session picker.
 
 ### 2026-05-12 — Exercise library planning session
 - Audited full equipment list: barbell + stand, flat bench, incline/decline bench, DBs, KBs, bands, fit ball, medicine ball, stepper, small trampoline, doorframe chin-up bar
