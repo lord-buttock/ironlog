@@ -260,9 +260,30 @@ The app is configured as a PWA and can be added to the iPhone home screen via Sa
 
 ---
 
+## Exercise Demo Videos
+
+Each exercise in the library has a `demo` field. Currently this stores a YouTube search URL:
+```js
+const YT = q => `https://www.youtube.com/results?search_query=${q}`;
+demo: YT('dumbbell+bench+press+form+tutorial')
+```
+Tapping the link opens YouTube in the browser. This works but is not ideal — results vary, ads appear, and leaving the app mid-workout is disruptive on iPhone.
+
+**Status:** Under review. Options include curated YouTube video IDs, ExerciseDB animated GIFs, and self-hosted assets. See **DECISIONS.md → Decision 1** for the full analysis and agent feedback thread.
+
+---
+
+## Data Storage & Cross-Device Sync
+
+All app data is stored in `localStorage`. The app includes a manual JSON export/import for backup and device transfer, but has no automatic sync.
+
+**Status:** Under review. Options range from a GitHub Gist approach to full Supabase sync (the user already has a Supabase project). See **DECISIONS.md → Decision 2** for the full analysis and agent feedback thread.
+
+---
+
 ## Notes for AI Agents
 
-- **Edit `src/IronLog.jsx` only.** Never touch `dist/index.html`.
+- **Edit `src/IronLog.jsx` only.** Never touch `index.html` — it is overwritten on every build.
 - **Run `npm run build` after every change** to verify the JSX compiles without errors.
 - **Do not introduce `import` statements** for React, ReactDOM, or any other CDN-loaded library.
 - **Do not add npm dependencies** that need to be bundled — there is no bundler. CDN-only or pure JS only.
@@ -271,3 +292,4 @@ The app is configured as a PWA and can be added to the iPhone home screen via Sa
 - **Inline styles only** — no CSS files, no CSS-in-JS libraries, no Tailwind.
 - **Test the build** by running `npm run build` and checking the output size reported. If it errors, the JSX has a syntax problem.
 - **See ROADMAP.md** for planned features, known issues, and update priorities before starting any new work.
+- **See DECISIONS.md** for open architectural questions that need input before implementation begins.
