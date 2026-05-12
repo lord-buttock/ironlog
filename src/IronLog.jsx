@@ -42,23 +42,31 @@ const EXERCISES = {
   sb_ham_curl:        { name: 'Swiss Ball Hamstring Curl',   muscle: 'Legs',    unit: 'bw',   defaultReps: 8,  defaultSets: 3, repMax: 10, cue: 'Small range to start. Swap for glute bridge if cramping occurs.',                                                                   demo: YT('swiss+ball+hamstring+curl+tutorial+how+to') },
   calf_raises:        { name: 'Calf Raises',                 muscle: 'Legs',    unit: 'bw',   defaultReps: 12, defaultSets: 2, repMax: 15, cue: 'Full range, slow descent. Can add weight when easy.',                                                                               demo: YT('calf+raises+proper+form+tutorial') },
   single_leg_bal:     { name: 'Single-Leg Balance',          muscle: 'Balance', unit: 'bw',   defaultReps: null, defaultDuration: 25, defaultSets: 2, repMax: null, cue: '20–30 sec each side. Eyes closed to progress.',                   isTimed: true, perSide: true, demo: YT('single+leg+balance+exercise+tutorial+proprioception') },
+  bb_flat_bench:      { name: 'Barbell Flat Bench Press',    muscle: 'Push',    unit: 'kg',   defaultReps: 6,   defaultSets: 3, repMax: 8,  cue: 'Elbows 45° from body. Bar lowers to mid-chest. Drive up explosively. Use safety pins or spotter.', demo: YT('barbell+bench+press+proper+form+tutorial') },
+  bb_incline_bench:   { name: 'Barbell Incline Bench Press', muscle: 'Push',    unit: 'kg',   defaultReps: 6,   defaultSets: 3, repMax: 8,  cue: 'Low incline only (20–30°). Higher angles approach overhead press — avoid for shoulder bursitis. Elbows at 45°.', demo: YT('barbell+incline+bench+press+form+tutorial') },
+  chin_up:            { name: 'Chin-Up',                     muscle: 'Pull',    unit: 'bw',   defaultReps: 4,   defaultSets: 3, repMax: 8,  cue: 'Underhand grip, shoulder-width or narrower only. No wide grip — aggravates shoulder bursitis. Start with band assistance or negatives. Full hang, chin over bar.', canBW: true, demo: YT('chin+up+form+band+assisted+beginners+underhand') },
+  face_pull:          { name: 'Face Pull',                   muscle: 'Pull',    unit: 'band', defaultReps: 15,  defaultSets: 3, repMax: 20, cue: 'Band at face height. Pull to forehead, elbows high and wide. Finish with external rotation. Essential for shoulder health.', demo: YT('face+pull+band+form+shoulder+health+tutorial') },
+  reverse_fly:        { name: 'Reverse Fly',                 muscle: 'Pull',    unit: 'kg',   defaultReps: 15,  defaultSets: 3, repMax: 15, cue: 'Hinge forward or lie face-down on incline bench. Light weight only. Lead with elbows back and out. Rear delts, not traps.', demo: YT('reverse+fly+rear+delt+dumbbell+form+tutorial') },
+  rdl:                { name: 'Romanian Deadlift',           muscle: 'Hinge',   unit: 'kg',   defaultReps: 8,   defaultSets: 3, repMax: 10, cue: 'Neutral spine throughout — no rounding. Hinge at hips, soft knee bend. Bar stays close to legs. Stop well before hamstring pull. Conservative range.', demo: YT('romanian+deadlift+form+tutorial+neutral+spine+beginners') },
+  reverse_lunge:      { name: 'Reverse Lunge',               muscle: 'Legs',    unit: 'kg',   defaultReps: 8,   defaultSets: 3, repMax: 10, cue: 'Step back, lower rear knee toward floor. Torso upright. Drive through front heel to return. Safer for lower back than forward lunges.', perSide: true, canBW: true, demo: YT('reverse+lunge+proper+form+dumbbell+tutorial') },
+  farmers_walk:       { name: "Farmer's Walk",               muscle: 'Core',    unit: 'kg',   defaultReps: null, defaultDuration: 20, defaultSets: 3, repMax: null, cue: 'Stand tall, brace core hard, do not lean. Walk 5m each way. KB or DB. Builds anti-lateral-flexion core strength and grip.', isTimed: true, demo: YT('farmers+walk+exercise+form+core+grip+tutorial') },
 };
 
 const WORKOUTS = {
   A: {
     title: 'Push — Chest · Shoulders · Triceps',
-    exercises: ['db_bench','p_db_shoulder_press','p_lateral_raise','db_floor_press','p_overhead_ext','p_tricep_pushdown'],
-    finisher: ['Band face pulls — 2 × 12','Wall slides — 2 × 6 slow (pain-free only)'],
+    exercises: ['bb_flat_bench','p_db_shoulder_press','p_lateral_raise','p_close_grip_bench','p_skull_crushers','p_tricep_pushdown'],
+    finisher: ['Wall slides — 2 × 6 slow (pain-free only)','Band pull-aparts — 2 × 12'],
   },
   B: {
     title: 'Pull — Back · Biceps · Hinge',
-    exercises: ['kb_deadlift','db_row_1arm','cs_db_row','p_db_bicep_curl','p_hammer_curl'],
+    exercises: ['kb_deadlift','chin_up','cs_db_row','face_pull','p_db_bicep_curl','p_hammer_curl'],
     finisher: ['Hamstring floss (band, lying) — 45 sec each side',"Child's pose breathing — 60 sec"],
   },
   C: {
     title: 'Legs + Core',
-    exercises: ['goblet_squat','split_squat','hip_thrust','sb_ham_curl','pallof_press','calf_raises','single_leg_bal'],
-    finisher: ['Band external rotation — 2 × 10 each side','Band pull-aparts — 2 × 12'],
+    exercises: ['goblet_squat','rdl','hip_thrust','reverse_lunge','sb_ham_curl','pallof_press','farmers_walk'],
+    finisher: ['Band external rotation — 2 × 10 each side','Single-leg balance — 30 sec each side'],
   },
 };
 
@@ -1261,12 +1269,11 @@ const PRESET_LIBRARY = {
   p_chest_dip:          { name: 'Chest Dip',                  muscle: 'Push',      unit: 'bw',   defaultSets: 3, defaultReps: 8,  repMax: 12, cue: 'Lean slightly forward. Elbows flare to target chest.',          demo: YT('chest+dip+form+tutorial') },
   p_cable_fly:          { name: 'Cable Fly',                  muscle: 'Push',      unit: 'kg',   defaultSets: 3, defaultReps: 12, repMax: 15, cue: 'Arms arc in a hugging motion. Squeeze at the midpoint.',        demo: YT('cable+fly+chest+form+tutorial') },
   // ── Pull: Back ────────────────────────────────────────────────────
-  p_pull_up:            { name: 'Pull-Up',                    muscle: 'Pull',      unit: 'bw',   defaultSets: 3, defaultReps: 5,  repMax: 10, cue: 'Full hang to chin over bar. Engage lats, not just arms.',       demo: YT('pull+up+proper+form+tutorial+beginners') },
+  p_pull_up:            { name: 'Pull-Up',                    muscle: 'Pull',      unit: 'bw',   defaultSets: 3, defaultReps: 4,  repMax: 8,  cue: 'Shoulder-width or narrower grip only — no wide grip (aggravates shoulder bursitis). Overhand. Start band-assisted or negatives only. Full hang, chin over bar.', demo: YT('pull+up+form+narrow+grip+band+assisted+beginners') },
   p_lat_pulldown:       { name: 'Lat Pulldown',               muscle: 'Pull',      unit: 'kg',   defaultSets: 3, defaultReps: 10, repMax: 12, cue: 'Pull bar to upper chest. Lean back slightly, lead with elbows.', demo: YT('lat+pulldown+proper+form+tutorial') },
   p_seated_cable_row:   { name: 'Seated Cable Row',           muscle: 'Pull',      unit: 'kg',   defaultSets: 3, defaultReps: 10, repMax: 12, cue: 'Sit tall. Pull to lower chest. Squeeze shoulder blades together.', demo: YT('seated+cable+row+form+tutorial') },
   p_t_bar_row:          { name: 'T-Bar Row',                  muscle: 'Pull',      unit: 'kg',   defaultSets: 3, defaultReps: 8,  repMax: 10, cue: 'Neutral spine, hinge at hips. Pull to lower chest.',            demo: YT('t+bar+row+form+tutorial') },
   p_straight_arm_pd:    { name: 'Straight-Arm Pulldown',      muscle: 'Pull',      unit: 'kg',   defaultSets: 3, defaultReps: 12, repMax: 15, cue: 'Arms straight. Hinge at shoulder only. Excellent lat isolation.', demo: YT('straight+arm+pulldown+form+tutorial') },
-  p_good_morning:       { name: 'Good Morning',               muscle: 'Hinge',     unit: 'kg',   defaultSets: 3, defaultReps: 10, repMax: 12, cue: 'Soft knee bend. Hinge at hips, keep back flat. Light weight.',   demo: YT('good+morning+exercise+form+tutorial') },
   // ── Legs ──────────────────────────────────────────────────────────
   p_rdl:                { name: 'Romanian Deadlift',          muscle: 'Hinge',     unit: 'kg',   defaultSets: 3, defaultReps: 10, repMax: 10, cue: 'Hinge at hips, soft knee bend. Bar stays close to legs. Feel hamstring stretch.', demo: YT('romanian+deadlift+form+tutorial+beginners') },
   p_bulgarian_squat:    { name: 'Bulgarian Split Squat',      muscle: 'Legs',      unit: 'kg',   defaultSets: 3, defaultReps: 8,  repMax: 8,  cue: 'Rear foot elevated. Front knee tracks over toes. Stay upright.', demo: YT('bulgarian+split+squat+form+tutorial'), perSide: true },
@@ -1274,7 +1281,6 @@ const PRESET_LIBRARY = {
   p_leg_extension:      { name: 'Leg Extension',              muscle: 'Legs',      unit: 'kg',   defaultSets: 3, defaultReps: 12, repMax: 15, cue: 'Extend fully, hold 1 sec, lower controlled. Isolates quads.',    demo: YT('leg+extension+machine+form+tutorial') },
   p_seated_leg_curl:    { name: 'Seated Leg Curl',            muscle: 'Legs',      unit: 'kg',   defaultSets: 3, defaultReps: 12, repMax: 12, cue: 'Curl to full flexion. Control the return. Hamstring isolation.', demo: YT('seated+leg+curl+machine+form+tutorial') },
   p_sumo_squat:         { name: 'Sumo Squat',                 muscle: 'Legs',      unit: 'kg',   defaultSets: 3, defaultReps: 10, repMax: 12, cue: 'Wide stance, toes out. Knees track over toes. Targets inner thigh.', demo: YT('sumo+squat+form+tutorial') },
-  p_nordic_curl:        { name: 'Nordic Curl',                muscle: 'Legs',      unit: 'bw',   defaultSets: 3, defaultReps: 4,  repMax: 8,  cue: 'Anchor feet, lower slowly. Very challenging. Use arms to push back up.', demo: YT('nordic+curl+hamstring+tutorial') },
   p_wall_sit:           { name: 'Wall Sit',                   muscle: 'Legs',      unit: 'bw',   defaultSets: 3, defaultReps: null, defaultDuration: 30, repMax: null, cue: 'Back flat on wall, thighs parallel to floor. Hold.',   demo: YT('wall+sit+exercise+tutorial'), isTimed: true },
   // ── Glutes ────────────────────────────────────────────────────────
   p_cable_kickback:     { name: 'Cable Kickback',             muscle: 'Glutes',    unit: 'kg',   defaultSets: 3, defaultReps: 15, repMax: 15, cue: 'Slight hinge, kick back and up. Squeeze glute at top.',         demo: YT('cable+kickback+glute+form+tutorial'), perSide: true },
@@ -1289,7 +1295,6 @@ const PRESET_LIBRARY = {
   p_bird_dog:           { name: 'Bird Dog',                   muscle: 'Core',      unit: 'bw',   defaultSets: 3, defaultReps: 10, repMax: 12, cue: 'On all fours. Extend opposite arm and leg. Keep hips level.',    demo: YT('bird+dog+exercise+form+tutorial'), perSide: true },
   p_ab_wheel:           { name: 'Ab Wheel Rollout',           muscle: 'Core',      unit: 'bw',   defaultSets: 3, defaultReps: 6,  repMax: 10, cue: 'From knees. Roll out slowly, pull back in. Do not let hips sag.', demo: YT('ab+wheel+rollout+form+tutorial+beginners') },
   p_hanging_knee_raise: { name: 'Hanging Knee Raise',         muscle: 'Core',      unit: 'bw',   defaultSets: 3, defaultReps: 10, repMax: 15, cue: 'Hang from bar. Bring knees to chest, lower slowly.',            demo: YT('hanging+knee+raise+form+tutorial') },
-  p_russian_twist:      { name: 'Russian Twist',              muscle: 'Core',      unit: 'kg',   defaultSets: 3, defaultReps: 20, repMax: 20, cue: 'Lean back slightly, feet up. Rotate side to side with control.',  demo: YT('russian+twist+exercise+form+tutorial') },
   p_cable_crunch:       { name: 'Cable Crunch',               muscle: 'Core',      unit: 'kg',   defaultSets: 3, defaultReps: 15, repMax: 20, cue: 'Kneel, pull rope to floor. Round spine. Abs do the work.',       demo: YT('cable+crunch+abs+form+tutorial') },
 };
 
