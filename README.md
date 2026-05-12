@@ -70,8 +70,9 @@ These are not preferences — they are physical limitations that must be honoure
 | Language | JSX pre-compiled to plain JS | Babel CLI at build time; client-side Babel blocked by GitHub Pages CSP |
 | Charts | Custom SVG (`MiniLineChart` component) | Recharts caused CSP errors on GitHub Pages |
 | Styling | Inline React style objects | Keeps everything in one file; no CSS to manage |
-| Storage | `localStorage` | Per-device persistence, no server required |
-| Backup | JSON export / import | User downloads/uploads a `.json` file for cross-device transfer |
+| Storage | `localStorage` + Supabase | localStorage for offline-first; Supabase for auto-sync and cross-device restore |
+| Backup | JSON export / import + Supabase auto-sync | Manual JSON fallback; automatic cloud push after every session |
+| Sync | Supabase (project `bhlbebdmuodscdgcwkyb`) | Sessions and rides auto-pushed on completion; count-based restore on load |
 | Fonts | Google Fonts CDN | Barlow Condensed, Barlow, JetBrains Mono |
 | Hosting | GitHub Pages | Free, single-file deployment, auto-deploys on push |
 

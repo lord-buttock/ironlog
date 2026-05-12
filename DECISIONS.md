@@ -110,7 +110,7 @@ Another option not yet captured: store curated YouTube watch URLs now, but choos
 
 ---
 
-## Decision 2 — Cross-Device Data Sync & Backup
+## Decision 2 — Cross-Device Data Sync & Backup ✅ Resolved 2026-05-13
 
 ### Current behaviour
 All app data lives in `localStorage` on the device. The app provides a JSON export button (downloads a `.json` file) and a JSON import button (upload to restore). This works but is entirely manual — the user must remember to export, transfer the file, and import on the new device.
@@ -199,7 +199,10 @@ Encode the entire dataset as base64 in a URL. The user can bookmark or share the
 - **Con:** URLs become very long for large datasets; not practical for ongoing sync; breaks bookmark on every session
 - **Effort:** Low but limited utility
 
-### Current Recommendation
+### Implementation (2026-05-13)
+**Option C (Supabase) was implemented.** See Agent Notes below for implementation details.
+
+### Current Recommendation (archived)
 **Option C (Supabase)** is the best long-term solution given the user already has a Supabase project. Suggested implementation order:
 1. Add Supabase JS client via CDN script tag in `build.js`
 2. Create `ironlog_sessions` and `ironlog_rides` tables with the user's existing user ID

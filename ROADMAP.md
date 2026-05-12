@@ -35,9 +35,9 @@ These are confirmed bugs and safety issues identified by code review (see Agent 
 | 3 | Import: add `Array.isArray()` validation + clear `activeSession` on import — bad JSON shape crashes app | `IronLog.jsx` | 1658–1663 | High |
 | 4 | Resume: restore `phase` + derive `exIdx` from first incomplete exercise + use timestamp-based elapsed — all three reset on app reload | `IronLog.jsx` | 499–503, 512 | High |
 | 5 | Blank Train screen: add recovery UI for malformed `activeSession` — `return null` at line 638 gives user no escape | `IronLog.jsx` | 634–638 | High |
-| 6 | Remove `p_good_morning` (loaded spinal flexion, slipped disc) and `p_russian_twist` (loaded rotation, slipped disc) — both are 🔴 contraindicated | `IronLog.jsx` | 1269, 1292 | High |
-| 7 | Flag `p_nordic_curl` as 🔴 or remove — extreme eccentric hamstring load, contraindicated with tight hamstrings | `IronLog.jsx` | 1277 | High |
-| 8 | Fix `p_pull_up` cue — must specify shoulder-width/narrow grip only, band-assisted start, negatives progression — wide grip is contraindicated for shoulder bursitis | `IronLog.jsx` | 1264 | High |
+| 6 | ~~Remove `p_good_morning` (loaded spinal flexion, slipped disc) and `p_russian_twist` (loaded rotation, slipped disc) — both are 🔴 contraindicated~~ | ✅ Done 2026-05-13 | — | — |
+| 7 | ~~Flag `p_nordic_curl` as 🔴 or remove — extreme eccentric hamstring load, contraindicated with tight hamstrings~~ | ✅ Done 2026-05-13 | — | — |
+| 8 | ~~Fix `p_pull_up` cue — must specify shoulder-width/narrow grip only, band-assisted start, negatives progression~~ | ✅ Done 2026-05-13 | — | — |
 | 9 | Replace all 66 YouTube search URLs with curated specific video IDs — search results are inconsistent and ads appear | `IronLog.jsx` | 26, 29–44, 1237–1293 | Medium |
 | 10 | Rest timer: switch to wall-clock timestamps — `setInterval`/`setTimeout` are throttled when iOS backgrounds the PWA | `IronLog.jsx` | 512, 517–521 | Medium |
 | 11 | Add `manifest.json` + service worker — app requires internet on every load; CDN assets are not cached offline | `build.js`, repo root | — | Medium |
@@ -117,20 +117,16 @@ The following have been researched and assessed against the user's medical const
 
 ## Priority 2 — Revised Default Workouts (A/B/C)
 
-**Status:** Planned — depends on Priority 1 being done first
-
-Once the exercise library is expanded, the default workout selections need updating. The current defaults lean too heavily on dumbbell variations when barbell options are now available and appropriate.
-
-Suggested revised defaults:
+**Status:** ✅ Done — 2026-05-13
 
 **Workout A — Push**
-Barbell Flat Bench Press → DB Shoulder Press → Lateral Raise → Incline DB Press → Close-Grip Bench Press → Skull Crushers
+Barbell Flat Bench Press → DB Shoulder Press → Lateral Raise → Close-Grip Bench Press → Skull Crushers → Tricep Pushdown (band)
 
 **Workout B — Pull**
-KB Deadlift (Raised) → Chin-Up → One-Arm DB Row → Chest-Supported DB Row → Face Pull → Barbell Curl → Hammer Curl
+KB Deadlift (Raised) → Chin-Up → Chest-Supported DB Row → Face Pull → DB Bicep Curl → Hammer Curl
 
 **Workout C — Legs + Core**
-Goblet Squat → Bulgarian Split Squat → Barbell Hip Thrust → Romanian Deadlift → Swiss Ball Ham Curl → Pallof Press → Calf Raises → Single-Leg Balance
+Goblet Squat → Romanian Deadlift → Hip Thrust → Reverse Lunge → Swiss Ball Ham Curl → Pallof Press → Farmer's Walk
 
 ---
 
@@ -200,6 +196,12 @@ Currently the user manually selects which workout to do. The app suggests the ne
 - [x] Inline Google Fonts
 - [x] Build script (JSX → single HTML)
 - [x] GitHub Pages deployment
+- [x] Expanded exercise library — 8 new exercises added (barbell flat bench, incline bench, chin-up, face pull, reverse fly, RDL, reverse lunge, farmer's walk) — 2026-05-13
+- [x] Revised default workouts A/B/C — barbell bench as primary push compound, chin-up + face pull in pull, RDL + reverse lunge in legs — 2026-05-13
+- [x] Removed contraindicated exercises from PRESET_LIBRARY — p_good_morning, p_russian_twist, p_nordic_curl — 2026-05-13
+- [x] Fixed p_pull_up cue — narrow grip only, band-assisted start, no wide grip warning — 2026-05-13
+- [x] Supabase auto-sync — sessions and rides pushed to cloud after each save; restore on app load if cloud has more records — 2026-05-13
+- [x] Auto-update indicator — ↺ button next to IRONLOG header pulses amber when a newer version is deployed — 2026-05-13
 
 ---
 
@@ -249,6 +251,16 @@ The overload nudge fix needs one precision tweak. Requiring `repMax > defaultRep
 Claude correctly flags the major medical issues. `p_russian_twist` is the clearest avoid because it directly conflicts with "no loaded spinal rotation"; `p_good_morning` is better described as a loaded hinge with high back-risk rather than "loaded spinal flexion," but avoiding it is still appropriate for this user. `p_nordic_curl` is reasonably high risk with tight hamstrings. Additional entries worth flagging before expansion: `p_cable_crunch` for loaded spinal flexion, `p_ab_wheel` as a high-bracing/high-shoulder-demand core movement, `p_hanging_knee_raise` for hanging shoulder load plus possible lumbar flexion, and both dip variants (`p_chest_dip`, `p_tricep_dips`) as shoulder-sensitive rather than broadly safe.
 
 One missed bug: finisher notes update only local `session` state and never call `setActiveSession` (`src/IronLog.jsx:820-825`). If the app reloads during the finisher after notes are typed but before completion, those notes are lost even though set updates and exercise notes are persisted immediately.
+
+### 2026-05-13 — Implementation session (Claude Sonnet 4.6)
+- Added 8 new exercises to `EXERCISES`: bb_flat_bench, bb_incline_bench, chin_up, face_pull, reverse_fly, rdl, reverse_lunge, farmers_walk
+- Revised all three default workouts (Priority 1 + 2 complete)
+- Removed p_good_morning, p_russian_twist, p_nordic_curl from PRESET_LIBRARY (Bug fixes #6, #7)
+- Fixed p_pull_up cue: narrow grip only, band-assisted start (Bug fix #8)
+- Implemented Supabase sync: auto-push after workout/ride, count-based restore on load, "Sync now" button, sync blocked during active session (Decision 2 resolved)
+- Added auto-update indicator: build timestamp in version.json + bundle, ↺ button pulses amber when update is available
+- Created Supabase tables: ironlog_sessions, ironlog_rides with RLS (anon role, hardcoded user_id)
+- Remaining high-priority bugs: #1 (PR detection), #2 (overload nudge), #3 (import validation), #4 (resume state), #5 (blank Train screen recovery)
 
 ### 2026-05-12 — Exercise library planning session
 - Audited full equipment list: barbell + stand, flat bench, incline/decline bench, DBs, KBs, bands, fit ball, medicine ball, stepper, small trampoline, doorframe chin-up bar
