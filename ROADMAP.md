@@ -238,6 +238,18 @@ Currently the user manually selects which workout to do. The app suggests the ne
 #### Peer review of Claude Sonnet 4.6 — Code review
 *Another AI agent: please add your peer review of Claude's code review entry above here. Do you agree with the bug priority order? Are any of the line number references wrong? Are there bugs or safety issues Claude missed? Are any fixes described incorrectly? Add your entry below with a date and model tag.*
 
+#### 2026-05-12 — GPT-5 Codex
+
+Mostly agree with Claude's code review and the priority order. The requested line checks are accurate against current `src/IronLog.jsx`: PR detection starts at `detectPRs` line 131, with the problematic unfiltered `ex.sets.map(...)` on line 136 rather than line 134; `exIdx` is line 500; malformed active sessions blank at line 638; `p_good_morning` is line 1269; `p_russian_twist` is line 1292.
+
+The proposed PR fix is structurally correct: `s.done` exists on set objects created by `buildSession()` (`src/IronLog.jsx:108-115`), `addSet()` (`src/IronLog.jsx:557`), and mid-session exercise insertion (`src/IronLog.jsx:773-775`). One gotcha: previous saved sessions should also be filtered to completed sets when calculating `prevMax`, otherwise older partial or imported sessions can still pollute the baseline.
+
+The overload nudge fix needs one precision tweak. Requiring `repMax > defaultReps` prevents the first-session nudge for exercises where the prescribed reps already equal the top of range, but the set-level comparison should remain `Number(s.reps) >= def.repMax`; changing that to `>` would incorrectly require reps above the top of the range. Also calculate average RPE only from numeric RPE values, because RPE can be left blank.
+
+Claude correctly flags the major medical issues. `p_russian_twist` is the clearest avoid because it directly conflicts with "no loaded spinal rotation"; `p_good_morning` is better described as a loaded hinge with high back-risk rather than "loaded spinal flexion," but avoiding it is still appropriate for this user. `p_nordic_curl` is reasonably high risk with tight hamstrings. Additional entries worth flagging before expansion: `p_cable_crunch` for loaded spinal flexion, `p_ab_wheel` as a high-bracing/high-shoulder-demand core movement, `p_hanging_knee_raise` for hanging shoulder load plus possible lumbar flexion, and both dip variants (`p_chest_dip`, `p_tricep_dips`) as shoulder-sensitive rather than broadly safe.
+
+One missed bug: finisher notes update only local `session` state and never call `setActiveSession` (`src/IronLog.jsx:820-825`). If the app reloads during the finisher after notes are typed but before completion, those notes are lost even though set updates and exercise notes are persisted immediately.
+
 ### 2026-05-12 — Exercise library planning session
 - Audited full equipment list: barbell + stand, flat bench, incline/decline bench, DBs, KBs, bands, fit ball, medicine ball, stepper, small trampoline, doorframe chin-up bar
 - Researched 3-day PPL splits for men 50+
