@@ -71,6 +71,16 @@ Start with **Option A** (curated YouTube video IDs) as an immediate improvement 
 ### Agent Feedback
 *Add recommendations, concerns, or implementation notes below.*
 
+#### 2026-05-12 — GPT-5 Codex
+
+Recommend **Option A first**, with the data shape prepared for a later in-app media option. In the current source, every built-in `demo` value is produced by the `YT()` search helper (`src/IronLog.jsx:26`) and all 66 demo fields use `demo: YT(...)`; there are no direct `youtube.com/watch`, `youtu.be`, or embed URLs yet (`src/IronLog.jsx:29-44`, `src/IronLog.jsx:1237-1293`). Moving to curated watch URLs is therefore a low-risk data-only pass: the existing "Watch Demo" anchors already open `def.demo` in both workout mode and Manage (`src/IronLog.jsx:676-684`, `src/IronLog.jsx:1463-1468`).
+
+Implementation gotchas specific to this codebase:
+- Curate by exercise ID, not display name. `EXERCISES` and `PRESET_LIBRARY` are merged at runtime with custom exercises (`src/IronLog.jsx:1621`), so keeping a stable `demo` URL on each built-in entry avoids adding a lookup layer.
+- Keep the field as a URL for now rather than introducing `videoId` immediately. That avoids touching render logic and keeps custom exercises harmless because the custom exercise form does not expose a demo field (`src/IronLog.jsx:1339-1348`, `src/IronLog.jsx:1487-1517`).
+- Do not use iframe embeds as the next step without testing GitHub Pages and iOS PWA mode. The build currently emits plain CDN scripts and no explicit CSP (`build.js:61-62`), but embedded YouTube can still be awkward in full-screen iOS PWA flow and may disrupt the workout screen.
+- As part of curation, avoid demo videos that teach contraindicated variants. Pull-up demos should show shoulder-width or narrower grips; hinge videos should reinforce neutral spine and conservative range; DB fly/incline press demos should avoid deep shoulder-stretch ranges.
+
 ---
 
 ## Decision 2 — Cross-Device Data Sync & Backup
@@ -174,6 +184,17 @@ Encode the entire dataset as base64 in a URL. The user can bookmark or share the
 
 ### Agent Feedback
 *Add recommendations, concerns, or implementation notes below.*
+
+#### 2026-05-12 — GPT-5 Codex
+
+Recommend **Option C (Supabase)** as the long-term path, but implement it as offline-first sync rather than replacing localStorage. The current app already centralises persistence through five localStorage keys (`src/IronLog.jsx:1627-1647`) and completion currently appends a finished session locally, then clears `il_active` (`src/IronLog.jsx:1673-1679`). That gives a clean integration point: keep local writes synchronous and add async cloud upserts after local state is safe.
+
+Implementation gotchas specific to this codebase:
+- Validate and normalise stored data before adding cloud restore. `load()` swallows JSON errors but returns any parsed truthy value (`src/IronLog.jsx:68-74`), while startup assumes arrays/objects when calling `nextWorkout()` and rendering screens (`src/IronLog.jsx:84-89`, `src/IronLog.jsx:1627-1639`). A bad cloud payload could currently crash the app the same way corrupted localStorage can.
+- Store each session and ride as its own row, but store `customExercises` and `workoutCustom` as small JSON documents or a single settings row. The code treats custom library and workout builder data as whole-object state (`src/IronLog.jsx:1613-1621`, `src/IronLog.jsx:1646-1647`), so row-per-exercise sync would add unnecessary conflict handling.
+- Use deterministic conflict rules before auto-pull. Sessions and rides use `id: Date.now().toString()` (`src/IronLog.jsx:120`, `src/IronLog.jsx:1147`), which is usually fine for one user but not a perfect cross-device key. If Supabase is added, prefer preserving existing IDs and using `updated_at`/`deleted_at` metadata for later conflict handling.
+- Include `il_active` in backup thinking, even if not in cloud history tables. iOS can purge PWA storage, and the current active-session resume path is local-only (`src/IronLog.jsx:1630-1635`); losing an in-progress workout is less serious than losing history, but it is still user-visible.
+- Add the Supabase client through `build.js`, consistent with the current CDN runtime model (`build.js:61-62`). Avoid npm-only Supabase integration unless the build process is intentionally changed.
 
 ---
 
