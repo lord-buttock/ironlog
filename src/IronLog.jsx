@@ -498,7 +498,7 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
   const [session, setSession] = useState(activeSession || null);
   const [phase, setPhase] = useState(activeSession ? 'workout' : 'energy');
   const [exIdx, setExIdx] = useState(0);
-  const [restSecs, setRestSecs] = useState(90);
+  const [restSecs, setRestSecs] = useState(30);
   const [restActive, setRestActive] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [prs, setPRs] = useState([]);
@@ -520,8 +520,8 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
     return () => clearTimeout(restRef.current);
   }, [restActive, restSecs]);
 
-  function startRest(s = 90) { setRestSecs(s); setRestActive(true); }
-  function stopRest() { setRestActive(false); setRestSecs(90); }
+  function startRest(s = 30) { setRestSecs(s); setRestActive(true); }
+  function stopRest() { setRestActive(false); setRestSecs(30); }
 
   function startSession(energy) {
     const s = buildSession(nextWkt, sessions, allExercises, workoutCustom);
@@ -547,7 +547,7 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
 
   function doneSet(eIdx, sIdx) {
     updateSet(eIdx, sIdx, 'done', true);
-    startRest(90);
+    startRest(30);
   }
 
   function addSet(eIdx) {
@@ -700,7 +700,7 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
         {/* Rest timer shortcuts */}
         <div style={{ ...st.row, justifyContent: 'center', gap: 6, marginBottom: 14 }}>
           <span style={{ ...st.label, fontSize: 9 }}>Rest:</span>
-          {[60, 90, 120].map(t => (
+          {[30, 60, 120].map(t => (
             <button key={t} onClick={() => startRest(t)} style={{ ...st.btnSm(C.dim, C.muted), fontSize: 11, padding: '6px 10px' }}>{t}s</button>
           ))}
         </div>

@@ -1138,7 +1138,7 @@ function ActiveWorkout({
   const [session, setSession] = useState(activeSession || null);
   const [phase, setPhase] = useState(activeSession ? 'workout' : 'energy');
   const [exIdx, setExIdx] = useState(0);
-  const [restSecs, setRestSecs] = useState(90);
+  const [restSecs, setRestSecs] = useState(30);
   const [restActive, setRestActive] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [prs, setPRs] = useState([]);
@@ -1162,13 +1162,13 @@ function ActiveWorkout({
     restRef.current = setTimeout(() => setRestSecs(s => s - 1), 1000);
     return () => clearTimeout(restRef.current);
   }, [restActive, restSecs]);
-  function startRest(s = 90) {
+  function startRest(s = 30) {
     setRestSecs(s);
     setRestActive(true);
   }
   function stopRest() {
     setRestActive(false);
-    setRestSecs(90);
+    setRestSecs(30);
   }
   function startSession(energy) {
     const s = buildSession(nextWkt, sessions, allExercises, workoutCustom);
@@ -1195,7 +1195,7 @@ function ActiveWorkout({
   }
   function doneSet(eIdx, sIdx) {
     updateSet(eIdx, sIdx, 'done', true);
-    startRest(90);
+    startRest(30);
   }
   function addSet(eIdx) {
     setSession(prev => {
@@ -1519,7 +1519,7 @@ function ActiveWorkout({
         ...st.label,
         fontSize: 9
       }
-    }, "Rest:"), [60, 90, 120].map(t => /*#__PURE__*/React.createElement("button", {
+    }, "Rest:"), [30, 60, 120].map(t => /*#__PURE__*/React.createElement("button", {
       key: t,
       onClick: () => startRest(t),
       style: {
