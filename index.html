@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <style>
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -29,7 +30,7 @@
   </div>
   <script>
 const { useState, useEffect, useRef, useCallback } = React;
-const APP_BUILD = 1778662160757;
+const APP_BUILD = 1778663374486;
 
 // ═══════════════════════════════════════════════════════════════════════
 // THEME
@@ -51,6 +52,33 @@ const C = {
   fDisplay: "'Barlow Condensed', sans-serif",
   fMono: "'JetBrains Mono', monospace",
   fBody: "'Barlow', sans-serif"
+};
+const Icon = ({
+  name,
+  size = 18,
+  color = 'currentColor',
+  strokeWidth = 1.8
+}) => {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (ref.current && window.lucide) window.lucide.createIcons({
+      nameAttr: 'data-lucide',
+      rootNode: ref.current
+    });
+  }, [name]);
+  return /*#__PURE__*/React.createElement("span", {
+    ref: ref,
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("i", {
+    "data-lucide": name,
+    width: size,
+    height: size,
+    color: color,
+    strokeWidth: strokeWidth
+  }));
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -704,28 +732,28 @@ function Nav({
   const tabs = [{
     id: 'dashboard',
     label: 'Home',
-    icon: '▣'
+    icon: 'home'
   }, {
     id: 'workout',
     label: 'Train',
-    icon: '◈',
+    icon: 'dumbbell',
     dot: hasActive
   }, {
     id: 'history',
     label: 'Log',
-    icon: '◫'
+    icon: 'clipboard-list'
   }, {
     id: 'progress',
     label: 'Stats',
-    icon: '▲'
+    icon: 'bar-chart-2'
   }, {
     id: 'rides',
     label: 'Rides',
-    icon: '○'
+    icon: 'bike'
   }, {
     id: 'manage',
     label: 'Manage',
-    icon: '⊞'
+    icon: 'grid-2x2'
   }];
   return /*#__PURE__*/React.createElement("nav", {
     style: {
@@ -764,11 +792,10 @@ function Nav({
       background: C.amber,
       borderRadius: 2
     }
+  }), /*#__PURE__*/React.createElement(Icon, {
+    name: t.icon,
+    size: 20
   }), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 16
-    }
-  }, t.icon), /*#__PURE__*/React.createElement("span", {
     style: {
       fontSize: 9,
       fontFamily: C.fMono,
@@ -812,6 +839,11 @@ function Dashboard({
   const weekSessions = sessions.filter(s => new Date(s.date) >= ws);
   const weekRides = rides.filter(r => new Date(r.date) >= ws);
   const recent = [...sessions].reverse().slice(0, 4);
+  const lastSyncTime = driveSync?.lastCloudSync ? new Date(driveSync.lastCloudSync).toLocaleTimeString('en-AU', {
+    hour: '2-digit',
+    minute: '2-digit'
+  }) : 'not yet';
+  const cloudLabel = driveSync?.cloudStatus === 'syncing' ? 'Supabase syncing...' : driveSync?.cloudStatus === 'error' ? 'Supabase sync failed' : `Supabase auto-sync on · Last synced ${lastSyncTime}`;
   return /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '20px 16px 8px'
@@ -855,80 +887,96 @@ function Dashboard({
       marginBottom: 12,
       borderColor: C.border
     }
-  }, activeSession ? /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
-      ...st.label,
-      marginBottom: 10,
-      color: C.amber
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      gap: 12,
+      marginBottom: 18
     }
-  }, "Session in progress") : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
-      ...st.label,
-      marginBottom: 8
+      ...st.label
     }
-  }, "Choose workout"), /*#__PURE__*/React.createElement("div", {
+  }, "Selected workout"), !activeSession && /*#__PURE__*/React.createElement("div", {
     style: {
-      display: 'grid',
-      gridTemplateColumns: '1fr 1fr 1fr',
-      gap: 6,
-      marginBottom: 16
+      display: 'flex',
+      gap: 5
     }
   }, ['A', 'B', 'C'].map(key => {
     const active = selectedWorkout === key;
-    const isSuggested = suggested === key;
     return /*#__PURE__*/React.createElement("button", {
       key: key,
       onClick: () => setSelectedWorkout(key),
       style: {
         background: active ? C.amber : C.dim,
-        border: `1px solid ${active ? C.amber : isSuggested ? C.amber + '55' : C.border}`,
-        borderRadius: 6,
-        padding: '10px 6px',
-        cursor: 'pointer',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 3,
-        position: 'relative'
-      }
-    }, isSuggested && !active && /*#__PURE__*/React.createElement("span", {
-      style: {
-        position: 'absolute',
-        top: -7,
-        left: '50%',
-        transform: 'translateX(-50%)',
-        background: C.amber,
-        color: '#fff',
-        fontSize: 8,
-        fontFamily: C.fMono,
-        padding: '1px 6px',
-        borderRadius: 10,
-        letterSpacing: 0.5,
-        whiteSpace: 'nowrap',
-        textTransform: 'uppercase'
-      }
-    }, "next"), /*#__PURE__*/React.createElement("span", {
-      style: {
+        color: active ? '#fff' : C.muted,
+        border: 'none',
+        borderRadius: 8,
+        padding: '6px 14px',
         fontFamily: C.fDisplay,
-        fontSize: 28,
+        fontSize: 16,
         fontWeight: 700,
-        color: active ? '#fff' : C.text,
-        lineHeight: 1
+        lineHeight: 1,
+        cursor: 'pointer'
       }
-    }, key), /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 9,
-        fontFamily: C.fMono,
-        color: active ? '#ffffffcc' : C.muted,
-        textAlign: 'center',
-        textTransform: 'uppercase',
-        letterSpacing: 0.3,
-        lineHeight: 1.3
-      }
-    }, WORKOUTS[key].title));
+    }, key);
   }))), /*#__PURE__*/React.createElement("div", {
     style: {
-      marginBottom: 14
+      display: 'flex',
+      gap: 14,
+      alignItems: 'flex-start',
+      marginBottom: 18
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 64,
+      fontFamily: C.fDisplay,
+      fontWeight: 700,
+      color: C.amber,
+      lineHeight: 1
+    }
+  }, selectedWorkout), /*#__PURE__*/React.createElement("div", {
+    style: {
+      minWidth: 0,
+      paddingTop: 4
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 22,
+      fontWeight: 700,
+      fontFamily: C.fDisplay,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      lineHeight: 1.1
+    }
+  }, wkt.title), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+      marginTop: 6
+    }
+  }, (selectedWorkout === suggested || activeSession) && /*#__PURE__*/React.createElement("span", {
+    style: {
+      background: C.amberDim,
+      color: C.amber,
+      fontSize: 10,
+      borderRadius: 4,
+      padding: '2px 6px',
+      fontFamily: C.fMono,
+      textTransform: 'uppercase'
+    }
+  }, activeSession ? 'active' : 'next'), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 12,
+      color: C.muted,
+      fontFamily: C.fMono
+    }
+  }, activeSession ? 'Session in progress' : `${allWorkoutExIds.length} exercises`)))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 16
     }
   }, allWorkoutExIds.map(id => {
     const ex = allExercises[id] || EXERCISES[id];
@@ -937,26 +985,42 @@ function Dashboard({
       key: id,
       style: {
         fontSize: 13,
-        color: C.muted,
-        padding: '4px 0',
+        color: C.text,
+        padding: '5px 0',
         borderBottom: `1px solid ${C.dim}`,
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        gap: 10
       }
-    }, /*#__PURE__*/React.createElement("span", null, ex?.name || id), /*#__PURE__*/React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("span", {
       style: {
-        fontFamily: C.fMono,
-        fontSize: 10,
-        color: isExtra ? C.amber : C.muted
+        minWidth: 0
       }
-    }, isExtra ? '+ added' : ex?.muscle));
+    }, ex?.name || id), /*#__PURE__*/React.createElement("span", {
+      style: {
+        border: `1px solid ${C.border}`,
+        borderRadius: 20,
+        padding: '2px 8px',
+        fontSize: 10,
+        color: isExtra ? C.amber : C.muted,
+        fontFamily: C.fMono,
+        whiteSpace: 'nowrap'
+      }
+    }, isExtra ? '+ Added' : ex?.primaryMuscle || ex?.muscle));
   })), /*#__PURE__*/React.createElement("button", {
     style: {
-      ...st.btn()
+      ...st.btn(),
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: 8
     },
     onClick: () => setView('workout')
-  }, activeSession ? '▶ Resume Workout' : `▶ Start Workout ${selectedWorkout}`)), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "play",
+    size: 16
+  }), " ", activeSession ? 'Resume Workout' : `Start Workout ${selectedWorkout}`)), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'grid',
       gridTemplateColumns: '1fr 1fr 1fr',
@@ -965,21 +1029,32 @@ function Dashboard({
     }
   }, [{
     label: 'Total sessions',
-    value: sessions.length
+    value: sessions.length,
+    icon: 'dumbbell'
   }, {
     label: 'Sessions this week',
-    value: weekSessions.length + '/3'
+    value: weekSessions.length + '/3',
+    icon: 'calendar'
   }, {
     label: 'Rides this week',
-    value: weekRides.length
+    value: weekRides.length,
+    icon: 'bike'
   }].map((s, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     style: {
       ...st.card(),
       textAlign: 'center',
-      padding: 12
+      padding: 12,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 6
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: s.icon,
+    size: 22,
+    color: C.amber
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: C.fMono,
       fontSize: 22,
@@ -995,40 +1070,35 @@ function Dashboard({
     }
   }, s.label)))), driveSync && /*#__PURE__*/React.createElement("div", {
     style: {
-      ...st.card(),
-      marginBottom: 16
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
       display: 'flex',
       alignItems: 'center',
       gap: 8,
-      marginBottom: 10
+      padding: '12px 16px',
+      background: C.surface,
+      borderRadius: 10,
+      border: `1px solid ${C.border}`,
+      marginBottom: 16
     }
-  }, /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: driveSync.cloudStatus === 'error' ? 'alert-circle' : 'check-circle',
+    size: 16,
+    color: driveSync.cloudStatus === 'error' ? C.red : C.green
+  }), /*#__PURE__*/React.createElement("span", {
     style: {
-      fontSize: 11,
-      color: driveSync.cloudStatus === 'ok' ? C.green : driveSync.cloudStatus === 'error' ? C.red : C.muted,
-      fontFamily: C.fMono
+      flex: 1,
+      fontSize: 13,
+      color: C.muted,
+      minWidth: 0
     }
-  }, driveSync.cloudStatus === 'ok' && `☁ Synced ${driveSync.lastCloudSync ? new Date(driveSync.lastCloudSync).toLocaleTimeString('en-AU', {
-    hour: '2-digit',
-    minute: '2-digit'
-  }) : ''}`, driveSync.cloudStatus === 'error' && '☁ Sync failed', driveSync.cloudStatus === 'syncing' && '☁ Syncing…', (!driveSync.cloudStatus || driveSync.cloudStatus === 'idle') && '☁ Supabase auto-sync on'), /*#__PURE__*/React.createElement("button", {
+  }, cloudLabel), /*#__PURE__*/React.createElement("button", {
     onClick: onCloudSync,
     style: {
       ...st.btnSm(C.dim, C.muted),
+      padding: '4px 10px',
       fontSize: 11,
-      marginLeft: 'auto'
+      flexShrink: 0
     }
-  }, "Sync now")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: C.muted,
-      marginBottom: 12,
-      lineHeight: 1.5
-    }
-  }, "Workouts sync automatically after each session. Manual backup and restore lives in Manage.")), recent.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }, "Sync now")), recent.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       ...st.label,
       marginBottom: 8
@@ -1534,6 +1604,8 @@ function ActiveWorkout({
     const def = allExercises[exId] || EXERCISES[exId] || {};
     const exData = session.exercises[exIdx];
     if (!exData) return null;
+    const primaryMuscle = def.primaryMuscle || def.muscle;
+    const secondaryMuscle = def.secondaryMuscle;
     const doneSetsCount = exData.sets.filter(s => s.done).length;
     const allExDone = exData.sets.every(s => s.done);
     const sessionExIds = new Set(session.exercises.map(e => e.id));
@@ -1563,7 +1635,32 @@ function ActiveWorkout({
         letterSpacing: 0.5,
         lineHeight: 1.2
       }
-    }, def.name)), /*#__PURE__*/React.createElement("div", {
+    }, def.name), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        gap: 6,
+        marginTop: 4,
+        flexWrap: 'wrap'
+      }
+    }, primaryMuscle && /*#__PURE__*/React.createElement("span", {
+      style: {
+        background: C.amberDim,
+        color: C.amber,
+        fontSize: 10,
+        borderRadius: 20,
+        padding: '2px 8px',
+        fontFamily: C.fMono
+      }
+    }, primaryMuscle), secondaryMuscle && /*#__PURE__*/React.createElement("span", {
+      style: {
+        background: C.dim,
+        color: C.muted,
+        fontSize: 10,
+        borderRadius: 20,
+        padding: '2px 8px',
+        fontFamily: C.fMono
+      }
+    }, secondaryMuscle))), /*#__PURE__*/React.createElement("div", {
       style: {
         textAlign: 'right',
         minWidth: 80
@@ -1600,9 +1697,7 @@ function ActiveWorkout({
         marginBottom: 8,
         gap: 4
       }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: st.pill()
-    }, def.muscle), def.perSide && /*#__PURE__*/React.createElement("span", {
+    }, def.perSide && /*#__PURE__*/React.createElement("span", {
       style: st.pill(C.blue)
     }, "Per side"), def.repMax && /*#__PURE__*/React.createElement("span", {
       style: st.pill(C.purple)
@@ -3204,6 +3299,88 @@ const PRESET_LIBRARY = {
     demo: YT('cable+crunch+abs+form+tutorial')
   }
 };
+const MUSCLE_META = {
+  goblet_squat: ['Legs', 'Glutes'],
+  db_bench: ['Chest', 'Triceps'],
+  db_row_1arm: ['Back', 'Biceps'],
+  step_ups: ['Legs', 'Glutes'],
+  pallof_press: ['Core', null],
+  kb_deadlift: ['Hinge', 'Glutes'],
+  hip_thrust: ['Glutes', 'Legs'],
+  incline_pushups: ['Chest', 'Triceps'],
+  band_row: ['Back', 'Biceps'],
+  suitcase_carry: ['Core', 'Forearms'],
+  split_squat: ['Legs', 'Glutes'],
+  db_floor_press: ['Chest', 'Triceps'],
+  cs_db_row: ['Back', 'Biceps'],
+  sb_ham_curl: ['Legs', 'Core'],
+  calf_raises: ['Legs', null],
+  single_leg_bal: ['Legs', 'Core'],
+  bb_flat_bench: ['Chest', 'Triceps'],
+  bb_incline_bench: ['Chest', 'Shoulders'],
+  chin_up: ['Back', 'Biceps'],
+  face_pull: ['Shoulders', 'Back'],
+  reverse_fly: ['Back', 'Shoulders'],
+  rdl: ['Hinge', 'Glutes'],
+  reverse_lunge: ['Legs', 'Glutes'],
+  farmers_walk: ['Core', 'Forearms'],
+  p_db_bicep_curl: ['Biceps', 'Forearms'],
+  p_barbell_curl: ['Biceps', 'Forearms'],
+  p_hammer_curl: ['Biceps', 'Forearms'],
+  p_concentration_curl: ['Biceps', 'Forearms'],
+  p_preacher_curl: ['Biceps', 'Forearms'],
+  p_tricep_pushdown: ['Triceps', null],
+  p_overhead_ext: ['Triceps', 'Shoulders'],
+  p_skull_crushers: ['Triceps', null],
+  p_tricep_dips: ['Triceps', 'Chest'],
+  p_close_grip_bench: ['Triceps', 'Chest'],
+  p_diamond_pushup: ['Triceps', 'Chest'],
+  p_lateral_raise: ['Shoulders', null],
+  p_front_raise: ['Shoulders', null],
+  p_db_shoulder_press: ['Shoulders', 'Triceps'],
+  p_arnold_press: ['Shoulders', 'Triceps'],
+  p_rear_delt_fly: ['Shoulders', 'Back'],
+  p_band_face_pull: ['Shoulders', 'Back'],
+  p_shrugs: ['Shoulders', 'Back'],
+  p_push_up: ['Chest', 'Triceps'],
+  p_db_fly: ['Chest', 'Shoulders'],
+  p_incline_db_press: ['Chest', 'Shoulders'],
+  p_chest_dip: ['Chest', 'Triceps'],
+  p_cable_fly: ['Chest', 'Shoulders'],
+  p_pull_up: ['Back', 'Biceps'],
+  p_lat_pulldown: ['Back', 'Biceps'],
+  p_seated_cable_row: ['Back', 'Biceps'],
+  p_t_bar_row: ['Back', 'Biceps'],
+  p_straight_arm_pd: ['Back', 'Shoulders'],
+  p_rdl: ['Hinge', 'Glutes'],
+  p_bulgarian_squat: ['Legs', 'Glutes'],
+  p_leg_press: ['Legs', 'Glutes'],
+  p_leg_extension: ['Legs', null],
+  p_seated_leg_curl: ['Legs', 'Glutes'],
+  p_sumo_squat: ['Legs', 'Glutes'],
+  p_wall_sit: ['Legs', null],
+  p_cable_kickback: ['Glutes', 'Legs'],
+  p_hip_abduction: ['Glutes', 'Legs'],
+  p_frog_pumps: ['Glutes', 'Legs'],
+  p_donkey_kick: ['Glutes', 'Legs'],
+  p_clamshell: ['Glutes', 'Legs'],
+  p_plank: ['Core', null],
+  p_side_plank: ['Core', null],
+  p_dead_bug: ['Core', null],
+  p_bird_dog: ['Core', 'Glutes'],
+  p_ab_wheel: ['Core', null],
+  p_hanging_knee_raise: ['Core', null],
+  p_cable_crunch: ['Core', null]
+};
+function applyMuscleMeta(library) {
+  Object.entries(library).forEach(([id, ex]) => {
+    const [primaryMuscle, secondaryMuscle] = MUSCLE_META[id] || [ex.muscle, null];
+    ex.primaryMuscle = primaryMuscle;
+    ex.secondaryMuscle = secondaryMuscle;
+  });
+}
+applyMuscleMeta(EXERCISES);
+applyMuscleMeta(PRESET_LIBRARY);
 
 // ═══════════════════════════════════════════════════════════════════════
 // MANAGE (Exercise Library + Workout Builder)

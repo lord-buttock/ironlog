@@ -12,6 +12,18 @@ const C = {
   fBody: "'Barlow', sans-serif",
 };
 
+const Icon = ({ name, size = 18, color = 'currentColor', strokeWidth = 1.8 }) => {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (ref.current && window.lucide) window.lucide.createIcons({ nameAttr: 'data-lucide', rootNode: ref.current });
+  }, [name]);
+  return (
+    <span ref={ref} style={{ display: 'inline-flex', alignItems: 'center' }}>
+      <i data-lucide={name} width={size} height={size} color={color} strokeWidth={strokeWidth} />
+    </span>
+  );
+};
+
 // ═══════════════════════════════════════════════════════════════════════
 // WORKOUT DATA
 // ═══════════════════════════════════════════════════════════════════════
@@ -297,12 +309,12 @@ function FontLoader() {
 // ═══════════════════════════════════════════════════════════════════════
 function Nav({ view, setView, hasActive }) {
   const tabs = [
-    { id: 'dashboard', label: 'Home',    icon: '▣' },
-    { id: 'workout',   label: 'Train',   icon: '◈', dot: hasActive },
-    { id: 'history',   label: 'Log',     icon: '◫' },
-    { id: 'progress',  label: 'Stats',   icon: '▲' },
-    { id: 'rides',     label: 'Rides',   icon: '○' },
-    { id: 'manage',    label: 'Manage',  icon: '⊞' },
+    { id: 'dashboard', label: 'Home',   icon: 'home' },
+    { id: 'workout',   label: 'Train',  icon: 'dumbbell', dot: hasActive },
+    { id: 'history',   label: 'Log',    icon: 'clipboard-list' },
+    { id: 'progress',  label: 'Stats',  icon: 'bar-chart-2' },
+    { id: 'rides',     label: 'Rides',  icon: 'bike' },
+    { id: 'manage',    label: 'Manage', icon: 'grid-2x2' },
   ];
   return (
     <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: C.surface, borderTop: `1px solid ${C.border}`, display: 'flex', zIndex: 200 }}>
@@ -313,7 +325,7 @@ function Nav({ view, setView, hasActive }) {
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, position: 'relative',
         }}>
           {view === t.id && <span style={{ position: 'absolute', top: 0, left: '25%', right: '25%', height: 2, background: C.amber, borderRadius: 2 }} />}
-          <span style={{ fontSize: 16 }}>{t.icon}</span>
+          <Icon name={t.icon} size={20} />
           <span style={{ fontSize: 9, fontFamily: C.fMono, letterSpacing: 0.8, textTransform: 'uppercase' }}>{t.label}</span>
           {t.dot && <span style={{ position: 'absolute', top: 6, right: '28%', width: 5, height: 5, borderRadius: 3, background: C.amber }} />}
         </button>
@@ -334,6 +346,14 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
   const weekSessions = sessions.filter(s => new Date(s.date) >= ws);
   const weekRides = rides.filter(r => new Date(r.date) >= ws);
   const recent = [...sessions].reverse().slice(0, 4);
+  const lastSyncTime = driveSync?.lastCloudSync
+    ? new Date(driveSync.lastCloudSync).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })
+    : 'not yet';
+  const cloudLabel = driveSync?.cloudStatus === 'syncing'
+    ? 'Supabase syncing...'
+    : driveSync?.cloudStatus === 'error'
+      ? 'Supabase sync failed'
+      : `Supabase auto-sync on · Last synced ${lastSyncTime}`;
 
   return (
     <div style={{ padding: '20px 16px 8px' }}>
@@ -354,74 +374,90 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
         {updateAvailable && <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}`}</style>}
       </div>
 
-      {/* Next workout card */}
+      {/* Selected workout hero */}
       <div style={{ ...st.card(), marginBottom: 12, borderColor: C.border }}>
-
-        {/* Workout selector — hidden if a session is already active */}
-        {activeSession ? (
-          <div style={{ ...st.label, marginBottom: 10, color: C.amber }}>Session in progress</div>
-        ) : (
-          <>
-            <div style={{ ...st.label, marginBottom: 8 }}>Choose workout</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginBottom: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 18 }}>
+          <div style={{ ...st.label }}>Selected workout</div>
+          {!activeSession && (
+            <div style={{ display: 'flex', gap: 5 }}>
               {['A', 'B', 'C'].map(key => {
                 const active = selectedWorkout === key;
-                const isSuggested = suggested === key;
                 return (
                   <button key={key} onClick={() => setSelectedWorkout(key)} style={{
                     background: active ? C.amber : C.dim,
-                    border: `1px solid ${active ? C.amber : isSuggested ? C.amber + '55' : C.border}`,
-                    borderRadius: 6, padding: '10px 6px', cursor: 'pointer',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-                    position: 'relative',
-                  }}>
-                    {isSuggested && !active && (
-                      <span style={{
-                        position: 'absolute', top: -7, left: '50%', transform: 'translateX(-50%)',
-                        background: C.amber, color: '#fff', fontSize: 8, fontFamily: C.fMono,
-                        padding: '1px 6px', borderRadius: 10, letterSpacing: 0.5, whiteSpace: 'nowrap',
-                        textTransform: 'uppercase',
-                      }}>next</span>
-                    )}
-                    <span style={{ fontFamily: C.fDisplay, fontSize: 28, fontWeight: 700, color: active ? '#fff' : C.text, lineHeight: 1 }}>{key}</span>
-                    <span style={{ fontSize: 9, fontFamily: C.fMono, color: active ? '#ffffffcc' : C.muted, textAlign: 'center', textTransform: 'uppercase', letterSpacing: 0.3, lineHeight: 1.3 }}>
-                      {WORKOUTS[key].title}
-                    </span>
-                  </button>
+                    color: active ? '#fff' : C.muted,
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '6px 14px',
+                    fontFamily: C.fDisplay,
+                    fontSize: 16,
+                    fontWeight: 700,
+                    lineHeight: 1,
+                    cursor: 'pointer',
+                  }}>{key}</button>
                 );
               })}
             </div>
-          </>
-        )}
+          )}
+        </div>
 
-        {/* Exercise list for selected workout */}
-        <div style={{ marginBottom: 14 }}>
+        <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 18 }}>
+          <div style={{ fontSize: 64, fontFamily: C.fDisplay, fontWeight: 700, color: C.amber, lineHeight: 1 }}>
+            {selectedWorkout}
+          </div>
+          <div style={{ minWidth: 0, paddingTop: 4 }}>
+            <div style={{ fontSize: 22, fontWeight: 700, fontFamily: C.fDisplay, textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 1.1 }}>
+              {wkt.title}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
+              {(selectedWorkout === suggested || activeSession) && (
+                <span style={{ background: C.amberDim, color: C.amber, fontSize: 10, borderRadius: 4, padding: '2px 6px', fontFamily: C.fMono, textTransform: 'uppercase' }}>
+                  {activeSession ? 'active' : 'next'}
+                </span>
+              )}
+              <span style={{ fontSize: 12, color: C.muted, fontFamily: C.fMono }}>
+                {activeSession ? 'Session in progress' : `${allWorkoutExIds.length} exercises`}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
           {allWorkoutExIds.map(id => {
             const ex = allExercises[id] || EXERCISES[id];
             const isExtra = extraIds.includes(id);
             return (
-              <div key={id} style={{ fontSize: 13, color: C.muted, padding: '4px 0', borderBottom: `1px solid ${C.dim}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>{ex?.name || id}</span>
-                <span style={{ fontFamily: C.fMono, fontSize: 10, color: isExtra ? C.amber : C.muted }}>
-                  {isExtra ? '+ added' : ex?.muscle}
+              <div key={id} style={{ fontSize: 13, color: C.text, padding: '5px 0', borderBottom: `1px solid ${C.dim}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+                <span style={{ minWidth: 0 }}>{ex?.name || id}</span>
+                <span style={{
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 20,
+                  padding: '2px 8px',
+                  fontSize: 10,
+                  color: isExtra ? C.amber : C.muted,
+                  fontFamily: C.fMono,
+                  whiteSpace: 'nowrap',
+                }}>
+                  {isExtra ? '+ Added' : ex?.primaryMuscle || ex?.muscle}
                 </span>
               </div>
             );
           })}
         </div>
-        <button style={{ ...st.btn() }} onClick={() => setView('workout')}>
-          {activeSession ? '▶ Resume Workout' : `▶ Start Workout ${selectedWorkout}`}
+        <button style={{ ...st.btn(), display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }} onClick={() => setView('workout')}>
+          <Icon name="play" size={16} /> {activeSession ? 'Resume Workout' : `Start Workout ${selectedWorkout}`}
         </button>
       </div>
 
       {/* Stats row */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 16 }}>
         {[
-          { label: 'Total sessions', value: sessions.length },
-          { label: 'Sessions this week', value: weekSessions.length + '/3' },
-          { label: 'Rides this week', value: weekRides.length },
+          { label: 'Total sessions', value: sessions.length, icon: 'dumbbell' },
+          { label: 'Sessions this week', value: weekSessions.length + '/3', icon: 'calendar' },
+          { label: 'Rides this week', value: weekRides.length, icon: 'bike' },
         ].map((s, i) => (
-          <div key={i} style={{ ...st.card(), textAlign: 'center', padding: 12 }}>
+          <div key={i} style={{ ...st.card(), textAlign: 'center', padding: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+            <Icon name={s.icon} size={22} color={C.amber} />
             <div style={{ fontFamily: C.fMono, fontSize: 22, color: C.amber, lineHeight: 1 }}>{s.value}</div>
             <div style={{ ...st.label, fontSize: 9, marginTop: 5, lineHeight: 1.4 }}>{s.label}</div>
           </div>
@@ -430,22 +466,17 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
 
       {/* Cloud sync status */}
       {driveSync && (
-        <div style={{ ...st.card(), marginBottom: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <span style={{ fontSize: 11, color: driveSync.cloudStatus === 'ok' ? C.green : driveSync.cloudStatus === 'error' ? C.red : C.muted, fontFamily: C.fMono }}>
-              {driveSync.cloudStatus === 'ok' && `☁ Synced ${driveSync.lastCloudSync ? new Date(driveSync.lastCloudSync).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }) : ''}`}
-              {driveSync.cloudStatus === 'error' && '☁ Sync failed'}
-              {driveSync.cloudStatus === 'syncing' && '☁ Syncing…'}
-              {(!driveSync.cloudStatus || driveSync.cloudStatus === 'idle') && '☁ Supabase auto-sync on'}
-            </span>
-            <button onClick={onCloudSync} style={{ ...st.btnSm(C.dim, C.muted), fontSize: 11, marginLeft: 'auto' }}>
-              Sync now
-            </button>
-          </div>
-
-          <div style={{ fontSize: 12, color: C.muted, marginBottom: 12, lineHeight: 1.5 }}>
-            Workouts sync automatically after each session. Manual backup and restore lives in Manage.
-          </div>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px',
+          background: C.surface, borderRadius: 10, border: `1px solid ${C.border}`, marginBottom: 16,
+        }}>
+          <Icon name={driveSync.cloudStatus === 'error' ? 'alert-circle' : 'check-circle'} size={16} color={driveSync.cloudStatus === 'error' ? C.red : C.green} />
+          <span style={{ flex: 1, fontSize: 13, color: C.muted, minWidth: 0 }}>
+            {cloudLabel}
+          </span>
+          <button onClick={onCloudSync} style={{ ...st.btnSm(C.dim, C.muted), padding: '4px 10px', fontSize: 11, flexShrink: 0 }}>
+            Sync now
+          </button>
         </div>
       )}
 
@@ -712,6 +743,8 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
     const exData = session.exercises[exIdx];
     if (!exData) return null;
 
+    const primaryMuscle = def.primaryMuscle || def.muscle;
+    const secondaryMuscle = def.secondaryMuscle;
     const doneSetsCount = exData.sets.filter(s => s.done).length;
     const allExDone = exData.sets.every(s => s.done);
     const sessionExIds = new Set(session.exercises.map(e => e.id));
@@ -726,6 +759,18 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
               {session.workout} · {exIdx + 1} / {session.exercises.length} · {doneSetsCount}/{exData.sets.length} sets
             </div>
             <div style={{ fontFamily: C.fDisplay, fontSize: 22, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 1.2 }}>{def.name}</div>
+            <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+              {primaryMuscle && (
+                <span style={{ background: C.amberDim, color: C.amber, fontSize: 10, borderRadius: 20, padding: '2px 8px', fontFamily: C.fMono }}>
+                  {primaryMuscle}
+                </span>
+              )}
+              {secondaryMuscle && (
+                <span style={{ background: C.dim, color: C.muted, fontSize: 10, borderRadius: 20, padding: '2px 8px', fontFamily: C.fMono }}>
+                  {secondaryMuscle}
+                </span>
+              )}
+            </div>
           </div>
           <div style={{ textAlign: 'right', minWidth: 80 }}>
             {restActive ? (
@@ -742,7 +787,6 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
 
         {/* Tags + cue */}
         <div style={{ ...st.row, flexWrap: 'wrap', marginBottom: 8, gap: 4 }}>
-          <span style={st.pill()}>{def.muscle}</span>
           {def.perSide && <span style={st.pill(C.blue)}>Per side</span>}
           {def.repMax && <span style={st.pill(C.purple)}>{def.repMax === def.defaultReps ? `${def.defaultReps} reps` : `${def.defaultReps}–${def.repMax} reps`}</span>}
         </div>
@@ -1366,6 +1410,91 @@ const PRESET_LIBRARY = {
   p_hanging_knee_raise: { name: 'Hanging Knee Raise',         muscle: 'Core',      unit: 'bw',   defaultSets: 3, defaultReps: 10, repMax: 15, cue: 'Hang from bar. Bring knees to chest, lower slowly.',            demo: YT('hanging+knee+raise+form+tutorial') },
   p_cable_crunch:       { name: 'Cable Crunch',               muscle: 'Core',      unit: 'kg',   defaultSets: 3, defaultReps: 15, repMax: 20, cue: 'Kneel, pull rope to floor. Round spine. Abs do the work.',       demo: YT('cable+crunch+abs+form+tutorial') },
 };
+
+const MUSCLE_META = {
+  goblet_squat: ['Legs', 'Glutes'],
+  db_bench: ['Chest', 'Triceps'],
+  db_row_1arm: ['Back', 'Biceps'],
+  step_ups: ['Legs', 'Glutes'],
+  pallof_press: ['Core', null],
+  kb_deadlift: ['Hinge', 'Glutes'],
+  hip_thrust: ['Glutes', 'Legs'],
+  incline_pushups: ['Chest', 'Triceps'],
+  band_row: ['Back', 'Biceps'],
+  suitcase_carry: ['Core', 'Forearms'],
+  split_squat: ['Legs', 'Glutes'],
+  db_floor_press: ['Chest', 'Triceps'],
+  cs_db_row: ['Back', 'Biceps'],
+  sb_ham_curl: ['Legs', 'Core'],
+  calf_raises: ['Legs', null],
+  single_leg_bal: ['Legs', 'Core'],
+  bb_flat_bench: ['Chest', 'Triceps'],
+  bb_incline_bench: ['Chest', 'Shoulders'],
+  chin_up: ['Back', 'Biceps'],
+  face_pull: ['Shoulders', 'Back'],
+  reverse_fly: ['Back', 'Shoulders'],
+  rdl: ['Hinge', 'Glutes'],
+  reverse_lunge: ['Legs', 'Glutes'],
+  farmers_walk: ['Core', 'Forearms'],
+  p_db_bicep_curl: ['Biceps', 'Forearms'],
+  p_barbell_curl: ['Biceps', 'Forearms'],
+  p_hammer_curl: ['Biceps', 'Forearms'],
+  p_concentration_curl: ['Biceps', 'Forearms'],
+  p_preacher_curl: ['Biceps', 'Forearms'],
+  p_tricep_pushdown: ['Triceps', null],
+  p_overhead_ext: ['Triceps', 'Shoulders'],
+  p_skull_crushers: ['Triceps', null],
+  p_tricep_dips: ['Triceps', 'Chest'],
+  p_close_grip_bench: ['Triceps', 'Chest'],
+  p_diamond_pushup: ['Triceps', 'Chest'],
+  p_lateral_raise: ['Shoulders', null],
+  p_front_raise: ['Shoulders', null],
+  p_db_shoulder_press: ['Shoulders', 'Triceps'],
+  p_arnold_press: ['Shoulders', 'Triceps'],
+  p_rear_delt_fly: ['Shoulders', 'Back'],
+  p_band_face_pull: ['Shoulders', 'Back'],
+  p_shrugs: ['Shoulders', 'Back'],
+  p_push_up: ['Chest', 'Triceps'],
+  p_db_fly: ['Chest', 'Shoulders'],
+  p_incline_db_press: ['Chest', 'Shoulders'],
+  p_chest_dip: ['Chest', 'Triceps'],
+  p_cable_fly: ['Chest', 'Shoulders'],
+  p_pull_up: ['Back', 'Biceps'],
+  p_lat_pulldown: ['Back', 'Biceps'],
+  p_seated_cable_row: ['Back', 'Biceps'],
+  p_t_bar_row: ['Back', 'Biceps'],
+  p_straight_arm_pd: ['Back', 'Shoulders'],
+  p_rdl: ['Hinge', 'Glutes'],
+  p_bulgarian_squat: ['Legs', 'Glutes'],
+  p_leg_press: ['Legs', 'Glutes'],
+  p_leg_extension: ['Legs', null],
+  p_seated_leg_curl: ['Legs', 'Glutes'],
+  p_sumo_squat: ['Legs', 'Glutes'],
+  p_wall_sit: ['Legs', null],
+  p_cable_kickback: ['Glutes', 'Legs'],
+  p_hip_abduction: ['Glutes', 'Legs'],
+  p_frog_pumps: ['Glutes', 'Legs'],
+  p_donkey_kick: ['Glutes', 'Legs'],
+  p_clamshell: ['Glutes', 'Legs'],
+  p_plank: ['Core', null],
+  p_side_plank: ['Core', null],
+  p_dead_bug: ['Core', null],
+  p_bird_dog: ['Core', 'Glutes'],
+  p_ab_wheel: ['Core', null],
+  p_hanging_knee_raise: ['Core', null],
+  p_cable_crunch: ['Core', null],
+};
+
+function applyMuscleMeta(library) {
+  Object.entries(library).forEach(([id, ex]) => {
+    const [primaryMuscle, secondaryMuscle] = MUSCLE_META[id] || [ex.muscle, null];
+    ex.primaryMuscle = primaryMuscle;
+    ex.secondaryMuscle = secondaryMuscle;
+  });
+}
+
+applyMuscleMeta(EXERCISES);
+applyMuscleMeta(PRESET_LIBRARY);
 
 // ═══════════════════════════════════════════════════════════════════════
 // MANAGE (Exercise Library + Workout Builder)
