@@ -24,26 +24,19 @@ The app is functional and in active daily use. Core features are complete:
 
 ---
 
-## Bug Fixes — Priority Order
+## Bug Fixes
 
-These are confirmed bugs and safety issues identified by code review (see Agent Notes). Fix these before working on new features.
+See **BUGS.md** for the canonical tracker with stable IDs, details, and fix descriptions.
 
-| # | Fix | File | Lines | Priority |
-|---|---|---|---|---|
-| 1 | PR detection: filter to `s.done` sets only — undone pre-filled weights can trigger false PRs | `IronLog.jsx` | 134–136 | High |
-| 2 | Overload nudge: require `repMax > defaultReps` + no sets with `pain >= 3` + avg RPE ≤ 8 — currently fires on first session for many exercises | `IronLog.jsx` | 148–157, 709 | High |
-| 3 | Import: add `Array.isArray()` validation + clear `activeSession` on import — bad JSON shape crashes app | `IronLog.jsx` | 1658–1663 | High |
-| 4 | Resume: restore `phase` + derive `exIdx` from first incomplete exercise + use timestamp-based elapsed — all three reset on app reload | `IronLog.jsx` | 499–503, 512 | High |
-| 5 | Blank Train screen: add recovery UI for malformed `activeSession` — `return null` at line 638 gives user no escape | `IronLog.jsx` | 634–638 | High |
-| 6 | ~~Remove `p_good_morning` (loaded spinal flexion, slipped disc) and `p_russian_twist` (loaded rotation, slipped disc) — both are 🔴 contraindicated~~ | ✅ Done 2026-05-13 | — | — |
-| 7 | ~~Flag `p_nordic_curl` as 🔴 or remove — extreme eccentric hamstring load, contraindicated with tight hamstrings~~ | ✅ Done 2026-05-13 | — | — |
-| 8 | ~~Fix `p_pull_up` cue — must specify shoulder-width/narrow grip only, band-assisted start, negatives progression~~ | ✅ Done 2026-05-13 | — | — |
-| 9 | Replace all 66 YouTube search URLs with curated specific video IDs — search results are inconsistent and ads appear | `IronLog.jsx` | 26, 29–44, 1237–1293 | Medium |
-| 10 | Rest timer: switch to wall-clock timestamps — `setInterval`/`setTimeout` are throttled when iOS backgrounds the PWA | `IronLog.jsx` | 512, 517–521 | Medium |
-| 11 | Add `manifest.json` + service worker — app requires internet on every load; CDN assets are not cached offline | `build.js`, repo root | — | Medium |
-| 12 | Make `EXERCISES` browseable in Library tab — currently only `PRESET_LIBRARY` items appear; base exercises have no accessible form cues or demo links outside an active workout | `IronLog.jsx` | 1313–1317 | Medium |
-| 13 | Flag equipment-incompatible `PRESET_LIBRARY` entries (cable machine, leg press, T-bar, dip bars) — they appear in the mid-session Add Exercise picker | `IronLog.jsx` | 1262–1293 | Low |
-| 14 | Update stale Completed Features list (rest timer now 30/60/120s, not 60/90/120s) | `ROADMAP.md` | — | Low |
+**Open (high priority):** BUG-002 (overload nudge), BUG-003 (import validation), BUG-004 (resume state), BUG-005 (blank Train screen)
+**Open (medium):** BUG-008 (finisher notes), BUG-009 (EXERCISES not browseable)
+**Open (low):** BUG-010 (equipment-incompatible exercises in picker)
+**Fixed:** BUG-001 (false PR detection ✅), BUG-006 (contraindicated exercises ✅), BUG-007 (p_pull_up cue ✅)
+
+Additional non-bug technical items:
+- Replace all 66 YouTube search URLs with curated specific video IDs (`IronLog.jsx` lines 26, 29–44, 1237–1293) — Medium
+- Add `manifest.json` + service worker — app requires internet on every load — Medium
+- Rest timer: switch to wall-clock timestamps — iOS throttles `setInterval` when PWA is backgrounded (`IronLog.jsx` lines 512, 517–521) — Medium
 
 ---
 

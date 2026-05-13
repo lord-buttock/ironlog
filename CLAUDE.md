@@ -1,5 +1,21 @@
 # IronLog — Claude Code Project Handover
 
+## Start here — before touching any code
+
+This project is worked on by multiple AI agents (Claude, Codex) and Phill. Follow these rules every session to avoid conflicts and duplicated work.
+
+1. `git pull --ff-only origin main` then `git status` — do not start code work unless the tree is clean.
+2. Read **CHANGELOG.md** — what has already been done.
+3. Read **BUGS.md** — what is open and what is fixed. Do not re-fix closed bugs.
+4. Read **ROADMAP.md** — what is planned and what is in progress. Check for claimed tasks.
+5. For medium/large tasks, mark your task `in progress — [Claude/Codex]` in ROADMAP.md or BUGS.md and commit that claim before writing code.
+6. Edit only `src/IronLog.jsx`. Run `npm run build` after every change. Commit `src/IronLog.jsx`, `index.html`, and `version.json` together — never one without the others.
+7. If a push is rejected, do not force push. Pull, rebuild from the merged source, then push.
+8. Before pushing: run `git status` and `git log --oneline -3` to confirm what is going up.
+9. After completing work: add a line to **CHANGELOG.md** and update **BUGS.md** / **ROADMAP.md** as appropriate.
+
+---
+
 ## What this is
 A personal fitness tracking web app for Phill (age 51, male, returning to training after ~5 years off).
 Built as a single HTML file deployed to GitHub Pages. No backend, no build server, no framework beyond React.
