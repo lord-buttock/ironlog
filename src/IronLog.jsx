@@ -4,9 +4,9 @@ import { useState, useEffect, useRef, useCallback } from "react";
 // THEME
 // ═══════════════════════════════════════════════════════════════════════
 const C = {
-  bg: '#0a0a0a', surface: '#111', card: '#181818', border: '#252525',
-  amber: '#f59e0b', amberDim: '#78450a', red: '#ef4444', green: '#10b981',
-  blue: '#60a5fa', purple: '#a78bfa', text: '#ebebeb', muted: '#5a5a5a', dim: '#2a2a2a',
+  bg: '#0d0f14', surface: '#141720', card: '#1c2030', border: '#2a2e3e',
+  amber: '#4f9cf9', amberDim: '#1a2d4a', red: '#f07070', green: '#34d399',
+  blue: '#60a5fa', purple: '#a78bfa', text: '#e8eaf0', muted: '#636880', dim: '#1e2235',
   fDisplay: "'Barlow Condensed', sans-serif",
   fMono: "'JetBrains Mono', monospace",
   fBody: "'Barlow', sans-serif",
@@ -234,12 +234,12 @@ function weekStart() {
 const st = {
   screen: { minHeight: '100vh', background: C.bg, color: C.text, fontFamily: C.fBody, paddingBottom: 80 },
   card: bg => ({ background: bg || C.card, border: `1px solid ${C.border}`, borderRadius: 8, padding: 16 }),
-  h1: { fontFamily: C.fDisplay, fontSize: 34, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', margin: 0, lineHeight: 1 },
+  h1: { fontFamily: C.fDisplay, fontSize: 34, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', margin: 0, lineHeight: 1 },
   h2: { fontFamily: C.fDisplay, fontSize: 22, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', margin: 0 },
   label: { fontSize: 10, fontFamily: C.fMono, color: C.muted, textTransform: 'uppercase', letterSpacing: 1.5 },
   mono: (size = 14, color = C.text) => ({ fontFamily: C.fMono, fontSize: size, color }),
   inp: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 4, color: C.text, fontFamily: C.fMono, fontSize: 15, padding: '8px 0', width: '100%', boxSizing: 'border-box', textAlign: 'center', WebkitAppearance: 'none' },
-  btn: (bg = C.amber, color = '#000') => ({ background: bg, color, border: 'none', borderRadius: 5, padding: '12px 20px', fontFamily: C.fDisplay, fontSize: 14, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', cursor: 'pointer', width: '100%' }),
+  btn: (bg = C.amber, color = '#000') => ({ background: bg, color, border: 'none', borderRadius: 10, padding: '12px 20px', fontFamily: C.fDisplay, fontSize: 14, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', cursor: 'pointer', width: '100%' }),
   btnSm: (bg = C.amber, color = '#000') => ({ background: bg, color, border: 'none', borderRadius: 4, padding: '8px 14px', fontFamily: C.fDisplay, fontSize: 13, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', cursor: 'pointer' }),
   ghost: { background: 'transparent', color: C.muted, border: `1px solid ${C.border}`, borderRadius: 5, padding: '10px 20px', fontFamily: C.fDisplay, fontSize: 13, fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase', cursor: 'pointer', width: '100%' },
   pill: (color = C.amber) => ({ background: color + '20', color, border: `1px solid ${color}40`, borderRadius: 20, padding: '2px 9px', fontSize: 10, fontFamily: C.fMono, letterSpacing: 0.8 }),
@@ -1833,7 +1833,7 @@ export default function App() {
 
   if (!ready) return (
     <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ fontFamily: C.fMono, color: C.amber, letterSpacing: 2 }}>LOADING...</div>
+      <div style={{ fontFamily: C.fMono, color: C.amber, letterSpacing: 1 }}>LOADING...</div>
     </div>
   );
 
