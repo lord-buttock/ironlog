@@ -4,9 +4,9 @@ import { useState, useEffect, useRef, useCallback } from "react";
 // THEME
 // ═══════════════════════════════════════════════════════════════════════
 const C = {
-  bg: '#0d0f14', surface: '#141720', card: '#1c2030', border: '#2a2e3e',
-  amber: '#4f9cf9', amberDim: '#1a2d4a', red: '#f07070', green: '#34d399',
-  blue: '#60a5fa', purple: '#a78bfa', text: '#e8eaf0', muted: '#636880', dim: '#1e2235',
+  bg: '#f6f9fc', surface: '#ffffff', card: '#ffffff', border: '#d9e4ef',
+  amber: '#5b9df5', amberDim: '#dcecff', red: '#dc5252', green: '#1f9d8a',
+  blue: '#5b9df5', purple: '#7c6ee6', text: '#17212b', muted: '#6b7788', dim: '#eaf1f8',
   fDisplay: "'Barlow Condensed', sans-serif",
   fMono: "'JetBrains Mono', monospace",
   fBody: "'Barlow', sans-serif",
@@ -239,8 +239,8 @@ const st = {
   label: { fontSize: 10, fontFamily: C.fMono, color: C.muted, textTransform: 'uppercase', letterSpacing: 1.5 },
   mono: (size = 14, color = C.text) => ({ fontFamily: C.fMono, fontSize: size, color }),
   inp: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 4, color: C.text, fontFamily: C.fMono, fontSize: 15, padding: '8px 0', width: '100%', boxSizing: 'border-box', textAlign: 'center', WebkitAppearance: 'none' },
-  btn: (bg = C.amber, color = '#000') => ({ background: bg, color, border: 'none', borderRadius: 10, padding: '12px 20px', fontFamily: C.fDisplay, fontSize: 14, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', cursor: 'pointer', width: '100%' }),
-  btnSm: (bg = C.amber, color = '#000') => ({ background: bg, color, border: 'none', borderRadius: 4, padding: '8px 14px', fontFamily: C.fDisplay, fontSize: 13, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', cursor: 'pointer' }),
+  btn: (bg = C.amber, color = '#fff') => ({ background: bg, color, border: 'none', borderRadius: 10, padding: '12px 20px', fontFamily: C.fDisplay, fontSize: 14, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', cursor: 'pointer', width: '100%' }),
+  btnSm: (bg = C.amber, color = '#fff') => ({ background: bg, color, border: 'none', borderRadius: 4, padding: '8px 14px', fontFamily: C.fDisplay, fontSize: 13, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', cursor: 'pointer' }),
   ghost: { background: 'transparent', color: C.muted, border: `1px solid ${C.border}`, borderRadius: 5, padding: '10px 20px', fontFamily: C.fDisplay, fontSize: 13, fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase', cursor: 'pointer', width: '100%' },
   pill: (color = C.amber) => ({ background: color + '20', color, border: `1px solid ${color}40`, borderRadius: 20, padding: '2px 9px', fontSize: 10, fontFamily: C.fMono, letterSpacing: 0.8 }),
   row: { display: 'flex', alignItems: 'center', gap: 8 },
@@ -378,13 +378,13 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
                     {isSuggested && !active && (
                       <span style={{
                         position: 'absolute', top: -7, left: '50%', transform: 'translateX(-50%)',
-                        background: C.amber, color: '#000', fontSize: 8, fontFamily: C.fMono,
+                        background: C.amber, color: '#fff', fontSize: 8, fontFamily: C.fMono,
                         padding: '1px 6px', borderRadius: 10, letterSpacing: 0.5, whiteSpace: 'nowrap',
                         textTransform: 'uppercase',
                       }}>next</span>
                     )}
-                    <span style={{ fontFamily: C.fDisplay, fontSize: 28, fontWeight: 700, color: active ? '#000' : C.text, lineHeight: 1 }}>{key}</span>
-                    <span style={{ fontSize: 9, fontFamily: C.fMono, color: active ? '#00000099' : C.muted, textAlign: 'center', textTransform: 'uppercase', letterSpacing: 0.3, lineHeight: 1.3 }}>
+                    <span style={{ fontFamily: C.fDisplay, fontSize: 28, fontWeight: 700, color: active ? '#fff' : C.text, lineHeight: 1 }}>{key}</span>
+                    <span style={{ fontSize: 9, fontFamily: C.fMono, color: active ? '#ffffffcc' : C.muted, textAlign: 'center', textTransform: 'uppercase', letterSpacing: 0.3, lineHeight: 1.3 }}>
                       {WORKOUTS[key].title}
                     </span>
                   </button>
@@ -822,7 +822,7 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
                 width: 28, height: 28, borderRadius: 14,
                 background: done ? C.green + '22' : i === exIdx ? C.amber : C.dim,
                 border: `1px solid ${done ? C.green + '44' : i === exIdx ? C.amber : isCustom ? C.amber + '44' : C.border}`,
-                color: done ? C.green : i === exIdx ? '#000' : C.muted,
+                color: done ? C.green : i === exIdx ? '#fff' : C.muted,
                 fontFamily: C.fMono, fontSize: 10, cursor: 'pointer',
               }}>{i + 1}</button>
             );
@@ -1443,7 +1443,7 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', marginBottom: 20, border: `1px solid ${C.border}`, borderRadius: 6, overflow: 'hidden' }}>
         {[['library','Library'],['workouts','Workouts'],['backup','Backup']].map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)} style={{
-            background: tab === id ? C.amber : C.dim, color: tab === id ? '#000' : C.muted,
+            background: tab === id ? C.amber : C.dim, color: tab === id ? '#fff' : C.muted,
             border: 'none', padding: '11px', fontFamily: C.fDisplay, fontSize: 13, fontWeight: 700,
             textTransform: 'uppercase', letterSpacing: 1, cursor: 'pointer',
           }}>{label}</button>
@@ -1463,7 +1463,7 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
             {MUSCLE_FILTERS.map(m => (
               <button key={m} onClick={() => setMuscle(m)} style={{
                 background: muscle === m ? C.amber : C.dim,
-                color: muscle === m ? '#000' : C.muted,
+                color: muscle === m ? '#fff' : C.muted,
                 border: `1px solid ${muscle === m ? C.amber : C.border}`,
                 borderRadius: 20, padding: '5px 12px', fontSize: 11, fontFamily: C.fMono,
                 cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
@@ -1519,7 +1519,7 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
                           const alreadyIn = [...WORKOUTS[k].exercises, ...(workoutCustom[k] || [])].includes(id);
                           return (
                             <button key={k} onClick={() => !alreadyIn && addToWorkout(k, id)} style={{
-                              flex: 1, background: alreadyIn ? C.dim : C.amber, color: alreadyIn ? C.muted : '#000',
+                              flex: 1, background: alreadyIn ? C.dim : C.amber, color: alreadyIn ? C.muted : '#fff',
                               border: 'none', borderRadius: 4, padding: '8px', fontFamily: C.fDisplay,
                               fontSize: 16, fontWeight: 700, cursor: alreadyIn ? 'default' : 'pointer',
                               opacity: alreadyIn ? 0.4 : 1,
@@ -1605,7 +1605,7 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginBottom: 20 }}>
             {['A','B','C'].map(k => (
               <button key={k} onClick={() => { setWktTab(k); setAddingTo(null); setWktSearch(''); }} style={{
-                background: wktTab === k ? C.amber : C.dim, color: wktTab === k ? '#000' : C.muted,
+                background: wktTab === k ? C.amber : C.dim, color: wktTab === k ? '#fff' : C.muted,
                 border: 'none', borderRadius: 5, padding: '8px', fontFamily: C.fDisplay, fontSize: 18, fontWeight: 700, cursor: 'pointer',
               }}>{k}</button>
             ))}

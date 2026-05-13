@@ -29,25 +29,25 @@
   </div>
   <script>
 const { useState, useEffect, useRef, useCallback } = React;
-const APP_BUILD = 1778661490733;
+const APP_BUILD = 1778662160757;
 
 // ═══════════════════════════════════════════════════════════════════════
 // THEME
 // ═══════════════════════════════════════════════════════════════════════
 const C = {
-  bg: '#0d0f14',
-  surface: '#141720',
-  card: '#1c2030',
-  border: '#2a2e3e',
-  amber: '#4f9cf9',
-  amberDim: '#1a2d4a',
-  red: '#f07070',
-  green: '#34d399',
-  blue: '#60a5fa',
-  purple: '#a78bfa',
-  text: '#e8eaf0',
-  muted: '#636880',
-  dim: '#1e2235',
+  bg: '#f6f9fc',
+  surface: '#ffffff',
+  card: '#ffffff',
+  border: '#d9e4ef',
+  amber: '#5b9df5',
+  amberDim: '#dcecff',
+  red: '#dc5252',
+  green: '#1f9d8a',
+  blue: '#5b9df5',
+  purple: '#7c6ee6',
+  text: '#17212b',
+  muted: '#6b7788',
+  dim: '#eaf1f8',
   fDisplay: "'Barlow Condensed', sans-serif",
   fMono: "'JetBrains Mono', monospace",
   fBody: "'Barlow', sans-serif"
@@ -591,7 +591,7 @@ const st = {
     textAlign: 'center',
     WebkitAppearance: 'none'
   },
-  btn: (bg = C.amber, color = '#000') => ({
+  btn: (bg = C.amber, color = '#fff') => ({
     background: bg,
     color,
     border: 'none',
@@ -605,7 +605,7 @@ const st = {
     cursor: 'pointer',
     width: '100%'
   }),
-  btnSm: (bg = C.amber, color = '#000') => ({
+  btnSm: (bg = C.amber, color = '#fff') => ({
     background: bg,
     color,
     border: 'none',
@@ -898,7 +898,7 @@ function Dashboard({
         left: '50%',
         transform: 'translateX(-50%)',
         background: C.amber,
-        color: '#000',
+        color: '#fff',
         fontSize: 8,
         fontFamily: C.fMono,
         padding: '1px 6px',
@@ -912,14 +912,14 @@ function Dashboard({
         fontFamily: C.fDisplay,
         fontSize: 28,
         fontWeight: 700,
-        color: active ? '#000' : C.text,
+        color: active ? '#fff' : C.text,
         lineHeight: 1
       }
     }, key), /*#__PURE__*/React.createElement("span", {
       style: {
         fontSize: 9,
         fontFamily: C.fMono,
-        color: active ? '#00000099' : C.muted,
+        color: active ? '#ffffffcc' : C.muted,
         textAlign: 'center',
         textTransform: 'uppercase',
         letterSpacing: 0.3,
@@ -1764,7 +1764,7 @@ function ActiveWorkout({
           borderRadius: 14,
           background: done ? C.green + '22' : i === exIdx ? C.amber : C.dim,
           border: `1px solid ${done ? C.green + '44' : i === exIdx ? C.amber : isCustom ? C.amber + '44' : C.border}`,
-          color: done ? C.green : i === exIdx ? '#000' : C.muted,
+          color: done ? C.green : i === exIdx ? '#fff' : C.muted,
           fontFamily: C.fMono,
           fontSize: 10,
           cursor: 'pointer'
@@ -3325,7 +3325,7 @@ function Manage({
     onClick: () => setTab(id),
     style: {
       background: tab === id ? C.amber : C.dim,
-      color: tab === id ? '#000' : C.muted,
+      color: tab === id ? '#fff' : C.muted,
       border: 'none',
       padding: '11px',
       fontFamily: C.fDisplay,
@@ -3358,7 +3358,7 @@ function Manage({
     onClick: () => setMuscle(m),
     style: {
       background: muscle === m ? C.amber : C.dim,
-      color: muscle === m ? '#000' : C.muted,
+      color: muscle === m ? '#fff' : C.muted,
       border: `1px solid ${muscle === m ? C.amber : C.border}`,
       borderRadius: 20,
       padding: '5px 12px',
@@ -3486,7 +3486,7 @@ function Manage({
         style: {
           flex: 1,
           background: alreadyIn ? C.dim : C.amber,
-          color: alreadyIn ? C.muted : '#000',
+          color: alreadyIn ? C.muted : '#fff',
           border: 'none',
           borderRadius: 4,
           padding: '8px',
@@ -3704,7 +3704,7 @@ function Manage({
     },
     style: {
       background: wktTab === k ? C.amber : C.dim,
-      color: wktTab === k ? '#000' : C.muted,
+      color: wktTab === k ? '#fff' : C.muted,
       border: 'none',
       borderRadius: 5,
       padding: '8px',
