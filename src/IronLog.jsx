@@ -12,6 +12,88 @@ const C = {
   fBody: "'Barlow', sans-serif",
 };
 
+const EXERCISE_ICONS = {
+  db_bench: <><line x1="6" y1="23" x2="26" y2="23" /><circle cx="12" cy="18" r="2" /><line x1="14" y1="18" x2="21" y2="18" /><line x1="17" y1="17" x2="17" y2="10" /><line x1="22" y1="17" x2="22" y2="10" /><line x1="14" y1="10" x2="25" y2="10" /><line x1="14" y1="23" x2="10" y2="27" /><line x1="20" y1="23" x2="24" y2="27" /></>,
+  db_incline: <><line x1="7" y1="25" x2="22" y2="14" /><circle cx="12" cy="19" r="2" /><line x1="14" y1="18" x2="20" y2="15" /><line x1="18" y1="15" x2="16" y2="8" /><line x1="21" y1="14" x2="24" y2="8" /><line x1="15" y1="8" x2="25" y2="8" /><line x1="19" y1="17" x2="25" y2="24" /></>,
+  bb_flat_bench: <><line x1="5" y1="23" x2="27" y2="23" /><circle cx="12" cy="18" r="2" /><line x1="14" y1="18" x2="21" y2="18" /><line x1="17" y1="17" x2="17" y2="10" /><line x1="22" y1="17" x2="22" y2="10" /><line x1="8" y1="9" x2="28" y2="9" /><line x1="8" y1="7" x2="8" y2="11" /><line x1="28" y1="7" x2="28" y2="11" /></>,
+  bb_incline_bench: <><line x1="6" y1="25" x2="22" y2="14" /><circle cx="12" cy="19" r="2" /><line x1="14" y1="18" x2="20" y2="15" /><line x1="18" y1="15" x2="16" y2="9" /><line x1="21" y1="14" x2="24" y2="9" /><line x1="11" y1="8" x2="29" y2="8" /><line x1="11" y1="6" x2="11" y2="10" /><line x1="29" y1="6" x2="29" y2="10" /></>,
+  db_floor_press: <><line x1="5" y1="25" x2="27" y2="25" /><circle cx="11" cy="20" r="2" /><line x1="13" y1="20" x2="21" y2="20" /><line x1="16" y1="19" x2="16" y2="11" /><line x1="22" y1="19" x2="22" y2="11" /><line x1="14" y1="11" x2="24" y2="11" /><line x1="20" y1="20" x2="25" y2="25" /></>,
+  incline_pushups: <><line x1="21" y1="18" x2="29" y2="18" /><line x1="24" y1="18" x2="24" y2="26" /><circle cx="7" cy="13" r="2" /><line x1="9" y1="14" x2="19" y2="18" /><line x1="19" y1="18" x2="23" y2="18" /><line x1="11" y1="15" x2="7" y2="24" /><line x1="16" y1="17" x2="13" y2="25" /></>,
+  p_push_up: <><line x1="5" y1="25" x2="27" y2="25" /><circle cx="7" cy="17" r="2" /><line x1="9" y1="18" x2="21" y2="21" /><line x1="21" y1="21" x2="25" y2="25" /><line x1="14" y1="19" x2="12" y2="25" /><line x1="19" y1="21" x2="18" y2="25" /></>,
+  p_diamond_pushup: <><line x1="5" y1="25" x2="27" y2="25" /><circle cx="7" cy="17" r="2" /><line x1="9" y1="18" x2="21" y2="21" /><line x1="16" y1="20" x2="15" y2="25" /><path d="M14 24l2-2 2 2-2 2z" /><line x1="21" y1="21" x2="25" y2="25" /></>,
+  p_db_fly: <><line x1="6" y1="23" x2="26" y2="23" /><circle cx="13" cy="18" r="2" /><line x1="15" y1="18" x2="20" y2="18" /><path d="M17 17c-4-4-7-5-10-5" /><path d="M20 17c4-4 7-5 10-5" /><line x1="7" y1="12" x2="5" y2="10" /><line x1="29" y1="12" x2="27" y2="10" /></>,
+  p_incline_db_press: <><line x1="7" y1="25" x2="22" y2="14" /><circle cx="12" cy="19" r="2" /><line x1="14" y1="18" x2="20" y2="15" /><line x1="18" y1="16" x2="20" y2="10" /><line x1="22" y1="14" x2="25" y2="10" /><line x1="19" y1="10" x2="21" y2="8" /><line x1="24" y1="10" x2="26" y2="8" /></>,
+  p_chest_dip: <><line x1="9" y1="10" x2="9" y2="26" /><line x1="23" y1="10" x2="23" y2="26" /><line x1="7" y1="12" x2="13" y2="12" /><line x1="19" y1="12" x2="25" y2="12" /><circle cx="16" cy="9" r="2" /><line x1="16" y1="11" x2="16" y2="18" /><line x1="16" y1="13" x2="11" y2="15" /><line x1="16" y1="13" x2="21" y2="15" /><line x1="16" y1="18" x2="13" y2="25" /><line x1="16" y1="18" x2="20" y2="25" /></>,
+  p_cable_fly: <><line x1="4" y1="4" x2="4" y2="26" /><line x1="28" y1="4" x2="28" y2="26" /><circle cx="16" cy="7" r="2" /><line x1="16" y1="9" x2="16" y2="19" /><path d="M16 12c-5 1-8 3-10 7" /><path d="M16 12c5 1 8 3 10 7" /><line x1="16" y1="19" x2="12" y2="27" /><line x1="16" y1="19" x2="20" y2="27" /></>,
+  p_close_grip_bench: <><line x1="5" y1="23" x2="27" y2="23" /><circle cx="12" cy="18" r="2" /><line x1="14" y1="18" x2="21" y2="18" /><line x1="18" y1="17" x2="18" y2="10" /><line x1="20" y1="17" x2="20" y2="10" /><line x1="10" y1="9" x2="28" y2="9" /><line x1="10" y1="7" x2="10" y2="11" /><line x1="28" y1="7" x2="28" y2="11" /></>,
+  db_shoulder: <><line x1="11" y1="25" x2="21" y2="25" /><circle cx="16" cy="6" r="2.2" /><line x1="16" y1="8" x2="16" y2="17" /><line x1="12" y1="24" x2="20" y2="24" /><line x1="16" y1="11" x2="12" y2="5" /><line x1="16" y1="11" x2="20" y2="5" /><line x1="10" y1="4" x2="14" y2="4" /><line x1="18" y1="4" x2="22" y2="4" /><line x1="16" y1="17" x2="13" y2="24" /><line x1="16" y1="17" x2="19" y2="24" /></>,
+  db_lateral: <><circle cx="16" cy="5" r="2.2" /><line x1="16" y1="7" x2="16" y2="18" /><line x1="16" y1="11" x2="7" y2="11" /><line x1="16" y1="11" x2="25" y2="11" /><line x1="6" y1="10" x2="6" y2="13" /><line x1="26" y1="10" x2="26" y2="13" /><line x1="16" y1="18" x2="12" y2="27" /><line x1="16" y1="18" x2="20" y2="27" /></>,
+  p_lateral_raise: <><circle cx="16" cy="5" r="2.2" /><line x1="16" y1="7" x2="16" y2="18" /><line x1="16" y1="11" x2="7" y2="11" /><line x1="16" y1="11" x2="25" y2="11" /><line x1="6" y1="10" x2="6" y2="13" /><line x1="26" y1="10" x2="26" y2="13" /><line x1="16" y1="18" x2="12" y2="27" /><line x1="16" y1="18" x2="20" y2="27" /></>,
+  p_front_raise: <><circle cx="16" cy="5" r="2.2" /><line x1="16" y1="7" x2="16" y2="18" /><line x1="16" y1="11" x2="16" y2="4" /><line x1="16" y1="11" x2="23" y2="14" /><line x1="15" y1="3" x2="18" y2="3" /><line x1="24" y1="13" x2="24" y2="16" /><line x1="16" y1="18" x2="12" y2="27" /><line x1="16" y1="18" x2="20" y2="27" /></>,
+  p_db_shoulder_press: <><line x1="11" y1="25" x2="21" y2="25" /><circle cx="16" cy="6" r="2.2" /><line x1="16" y1="8" x2="16" y2="17" /><line x1="16" y1="11" x2="12" y2="7" /><line x1="16" y1="11" x2="20" y2="7" /><line x1="12" y1="7" x2="12" y2="3" /><line x1="20" y1="7" x2="20" y2="3" /><line x1="10" y1="3" x2="14" y2="3" /><line x1="18" y1="3" x2="22" y2="3" /></>,
+  p_arnold_press: <><line x1="11" y1="25" x2="21" y2="25" /><circle cx="16" cy="6" r="2.2" /><line x1="16" y1="8" x2="16" y2="17" /><path d="M16 11c-3 0-5-2-5-4" /><path d="M16 11c3 0 5-2 5-4" /><path d="M11 7c0-3 2-4 4-5" /><path d="M21 7c0-3-2-4-4-5" /><line x1="16" y1="17" x2="13" y2="25" /><line x1="16" y1="17" x2="19" y2="25" /></>,
+  p_rear_delt_fly: <><circle cx="12" cy="9" r="2" /><line x1="14" y1="10" x2="21" y2="16" /><line x1="20" y1="16" x2="13" y2="16" /><line x1="20" y1="16" x2="27" y2="16" /><line x1="12" y1="16" x2="10" y2="19" /><line x1="28" y1="16" x2="30" y2="19" /><line x1="21" y1="16" x2="16" y2="25" /><line x1="21" y1="16" x2="24" y2="25" /></>,
+  p_band_face_pull: <><line x1="28" y1="7" x2="28" y2="25" /><circle cx="14" cy="8" r="2.2" /><line x1="14" y1="10" x2="14" y2="20" /><line x1="14" y1="13" x2="20" y2="9" /><line x1="14" y1="13" x2="20" y2="15" /><line x1="20" y1="9" x2="28" y2="10" /><line x1="20" y1="15" x2="28" y2="12" /><line x1="14" y1="20" x2="10" y2="28" /><line x1="14" y1="20" x2="18" y2="28" /></>,
+  p_shrugs: <><circle cx="16" cy="5" r="2.2" /><path d="M12 10c1-2 7-2 8 0" /><line x1="16" y1="8" x2="16" y2="18" /><line x1="16" y1="11" x2="11" y2="18" /><line x1="16" y1="11" x2="21" y2="18" /><line x1="10" y1="18" x2="10" y2="22" /><line x1="22" y1="18" x2="22" y2="22" /><line x1="16" y1="18" x2="12" y2="27" /><line x1="16" y1="18" x2="20" y2="27" /></>,
+  face_pull: <><line x1="28" y1="7" x2="28" y2="25" /><circle cx="14" cy="8" r="2.2" /><line x1="14" y1="10" x2="14" y2="20" /><line x1="14" y1="13" x2="20" y2="9" /><line x1="14" y1="13" x2="20" y2="15" /><line x1="20" y1="9" x2="28" y2="10" /><line x1="20" y1="15" x2="28" y2="12" /><line x1="14" y1="20" x2="10" y2="28" /><line x1="14" y1="20" x2="18" y2="28" /></>,
+  reverse_fly: <><circle cx="12" cy="9" r="2" /><line x1="14" y1="10" x2="21" y2="16" /><line x1="20" y1="16" x2="13" y2="16" /><line x1="20" y1="16" x2="27" y2="16" /><line x1="12" y1="16" x2="10" y2="19" /><line x1="28" y1="16" x2="30" y2="19" /><line x1="21" y1="16" x2="16" y2="25" /><line x1="21" y1="16" x2="24" y2="25" /></>,
+  db_tricep: <><circle cx="16" cy="5" r="2.2" /><line x1="16" y1="7" x2="16" y2="18" /><line x1="16" y1="10" x2="20" y2="5" /><line x1="20" y1="5" x2="18" y2="12" /><line x1="18" y1="12" x2="20" y2="14" /><line x1="16" y1="18" x2="12" y2="27" /><line x1="16" y1="18" x2="20" y2="27" /></>,
+  tricep_pushdown: <><line x1="24" y1="4" x2="24" y2="13" /><circle cx="14" cy="7" r="2.2" /><line x1="14" y1="9" x2="14" y2="20" /><line x1="14" y1="12" x2="20" y2="12" /><line x1="20" y1="12" x2="24" y2="10" /><line x1="19" y1="12" x2="19" y2="21" /><line x1="14" y1="20" x2="10" y2="28" /><line x1="14" y1="20" x2="18" y2="28" /></>,
+  p_tricep_pushdown: <><line x1="24" y1="4" x2="24" y2="13" /><circle cx="14" cy="7" r="2.2" /><line x1="14" y1="9" x2="14" y2="20" /><line x1="14" y1="12" x2="20" y2="12" /><line x1="20" y1="12" x2="24" y2="10" /><line x1="19" y1="12" x2="19" y2="21" /><line x1="14" y1="20" x2="10" y2="28" /><line x1="14" y1="20" x2="18" y2="28" /></>,
+  p_overhead_ext: <><circle cx="16" cy="5" r="2.2" /><line x1="16" y1="7" x2="16" y2="18" /><line x1="16" y1="10" x2="12" y2="4" /><line x1="16" y1="10" x2="20" y2="4" /><line x1="12" y1="4" x2="16" y2="13" /><line x1="20" y1="4" x2="16" y2="13" /><line x1="16" y1="18" x2="12" y2="27" /><line x1="16" y1="18" x2="20" y2="27" /></>,
+  p_skull_crushers: <><line x1="6" y1="23" x2="26" y2="23" /><circle cx="12" cy="18" r="2" /><line x1="14" y1="18" x2="21" y2="18" /><line x1="17" y1="17" x2="15" y2="12" /><line x1="22" y1="17" x2="24" y2="12" /><line x1="14" y1="12" x2="25" y2="12" /><line x1="20" y1="23" x2="24" y2="27" /></>,
+  p_tricep_dips: <><line x1="6" y1="15" x2="19" y2="15" /><line x1="8" y1="15" x2="8" y2="25" /><line x1="19" y1="15" x2="19" y2="25" /><circle cx="20" cy="12" r="2" /><line x1="19" y1="14" x2="16" y2="20" /><line x1="16" y1="20" x2="25" y2="20" /><line x1="17" y1="17" x2="19" y2="15" /><line x1="25" y1="20" x2="28" y2="25" /></>,
+  db_row_1arm: <><line x1="7" y1="18" x2="18" y2="18" /><line x1="10" y1="18" x2="10" y2="25" /><circle cx="14" cy="9" r="2" /><line x1="16" y1="10" x2="23" y2="16" /><line x1="18" y1="14" x2="12" y2="18" /><line x1="23" y1="16" x2="23" y2="23" /><line x1="23" y1="23" x2="25" y2="23" /><line x1="23" y1="16" x2="28" y2="25" /></>,
+  cs_db_row: <><line x1="8" y1="22" x2="24" y2="14" /><circle cx="14" cy="16" r="2" /><line x1="16" y1="16" x2="22" y2="14" /><line x1="18" y1="17" x2="17" y2="24" /><line x1="22" y1="14" x2="22" y2="22" /><line x1="16" y1="24" x2="18" y2="24" /><line x1="21" y1="22" x2="23" y2="22" /></>,
+  band_row: <><line x1="26" y1="8" x2="26" y2="25" /><circle cx="10" cy="11" r="2" /><line x1="10" y1="13" x2="10" y2="22" /><line x1="10" y1="16" x2="18" y2="16" /><line x1="18" y1="16" x2="26" y2="12" /><line x1="18" y1="16" x2="26" y2="20" /><line x1="10" y1="22" x2="6" y2="27" /><line x1="10" y1="22" x2="16" y2="27" /></>,
+  chin_up: <><line x1="7" y1="5" x2="25" y2="5" /><circle cx="16" cy="9" r="2.2" /><line x1="16" y1="11" x2="16" y2="20" /><line x1="16" y1="12" x2="11" y2="5" /><line x1="16" y1="12" x2="21" y2="5" /><line x1="16" y1="20" x2="12" y2="28" /><line x1="16" y1="20" x2="20" y2="28" /></>,
+  p_pull_up: <><line x1="7" y1="5" x2="25" y2="5" /><circle cx="16" cy="11" r="2.2" /><line x1="16" y1="13" x2="16" y2="21" /><line x1="16" y1="14" x2="10" y2="5" /><line x1="16" y1="14" x2="22" y2="5" /><line x1="16" y1="21" x2="12" y2="28" /><line x1="16" y1="21" x2="20" y2="28" /></>,
+  p_lat_pulldown: <><line x1="8" y1="5" x2="24" y2="5" /><circle cx="16" cy="9" r="2.2" /><line x1="16" y1="11" x2="16" y2="21" /><line x1="16" y1="13" x2="11" y2="8" /><line x1="16" y1="13" x2="21" y2="8" /><line x1="11" y1="8" x2="8" y2="5" /><line x1="21" y1="8" x2="24" y2="5" /><line x1="10" y1="25" x2="22" y2="25" /></>,
+  p_seated_cable_row: <><line x1="27" y1="7" x2="27" y2="24" /><circle cx="10" cy="12" r="2" /><line x1="10" y1="14" x2="13" y2="22" /><line x1="13" y1="17" x2="21" y2="17" /><line x1="21" y1="17" x2="27" y2="14" /><line x1="13" y1="22" x2="8" y2="26" /><line x1="13" y1="22" x2="20" y2="26" /></>,
+  p_t_bar_row: <><circle cx="12" cy="9" r="2" /><line x1="14" y1="10" x2="22" y2="16" /><line x1="22" y1="16" x2="16" y2="24" /><line x1="22" y1="16" x2="26" y2="24" /><line x1="18" y1="13" x2="23" y2="18" /><line x1="12" y1="24" x2="30" y2="17" /><line x1="29" y1="15" x2="31" y2="19" /></>,
+  p_straight_arm_pd: <><line x1="25" y1="4" x2="25" y2="15" /><circle cx="14" cy="7" r="2.2" /><line x1="14" y1="9" x2="14" y2="20" /><line x1="14" y1="12" x2="22" y2="8" /><line x1="22" y1="8" x2="25" y2="6" /><line x1="14" y1="15" x2="22" y2="21" /><line x1="14" y1="20" x2="10" y2="28" /><line x1="14" y1="20" x2="18" y2="28" /></>,
+  db_curl: <><circle cx="16" cy="5" r="2.2" /><line x1="16" y1="7" x2="16" y2="18" /><line x1="16" y1="11" x2="11" y2="16" /><line x1="11" y1="16" x2="13" y2="10" /><line x1="13" y1="10" x2="15" y2="10" /><line x1="16" y1="11" x2="21" y2="18" /><line x1="16" y1="18" x2="12" y2="27" /><line x1="16" y1="18" x2="20" y2="27" /></>,
+  db_hammer: <><circle cx="16" cy="5" r="2.2" /><line x1="16" y1="7" x2="16" y2="18" /><line x1="16" y1="11" x2="11" y2="17" /><line x1="11" y1="17" x2="13" y2="12" /><line x1="13" y1="11" x2="13" y2="14" /><line x1="16" y1="11" x2="21" y2="18" /><line x1="16" y1="18" x2="12" y2="27" /><line x1="16" y1="18" x2="20" y2="27" /></>,
+  p_db_bicep_curl: <><circle cx="16" cy="5" r="2.2" /><line x1="16" y1="7" x2="16" y2="18" /><line x1="16" y1="11" x2="11" y2="16" /><line x1="11" y1="16" x2="13" y2="10" /><line x1="13" y1="10" x2="15" y2="10" /><line x1="16" y1="11" x2="21" y2="18" /><line x1="16" y1="18" x2="12" y2="27" /><line x1="16" y1="18" x2="20" y2="27" /></>,
+  p_barbell_curl: <><circle cx="16" cy="5" r="2.2" /><line x1="16" y1="7" x2="16" y2="18" /><line x1="16" y1="11" x2="12" y2="17" /><line x1="16" y1="11" x2="20" y2="17" /><line x1="10" y1="15" x2="22" y2="15" /><line x1="10" y1="13" x2="10" y2="17" /><line x1="22" y1="13" x2="22" y2="17" /><line x1="16" y1="18" x2="12" y2="27" /><line x1="16" y1="18" x2="20" y2="27" /></>,
+  p_hammer_curl: <><circle cx="16" cy="5" r="2.2" /><line x1="16" y1="7" x2="16" y2="18" /><line x1="16" y1="11" x2="11" y2="17" /><line x1="11" y1="17" x2="13" y2="12" /><line x1="13" y1="11" x2="13" y2="14" /><line x1="16" y1="11" x2="21" y2="18" /><line x1="16" y1="18" x2="12" y2="27" /><line x1="16" y1="18" x2="20" y2="27" /></>,
+  p_concentration_curl: <><line x1="9" y1="24" x2="23" y2="24" /><circle cx="14" cy="8" r="2" /><line x1="14" y1="10" x2="18" y2="18" /><line x1="18" y1="18" x2="13" y2="22" /><line x1="13" y1="22" x2="15" y2="16" /><line x1="15" y1="16" x2="17" y2="16" /><line x1="18" y1="18" x2="24" y2="24" /></>,
+  p_preacher_curl: <><line x1="8" y1="24" x2="24" y2="16" /><line x1="10" y1="25" x2="23" y2="25" /><circle cx="12" cy="9" r="2" /><line x1="12" y1="11" x2="16" y2="18" /><line x1="16" y1="18" x2="21" y2="16" /><line x1="21" y1="16" x2="18" y2="12" /><line x1="18" y1="12" x2="20" y2="11" /></>,
+  kb_deadlift: <><rect x="13" y="21" width="6" height="5" rx="2" /><path d="M14 21c0-3 4-3 4 0" /><circle cx="16" cy="7" r="2.2" /><line x1="16" y1="9" x2="21" y2="16" /><line x1="21" y1="16" x2="17" y2="21" /><line x1="21" y1="16" x2="25" y2="25" /><line x1="17" y1="21" x2="10" y2="25" /><line x1="8" y1="27" x2="22" y2="27" /></>,
+  rdl: <><circle cx="12" cy="8" r="2.2" /><line x1="14" y1="9" x2="22" y2="16" /><line x1="18" y1="13" x2="14" y2="21" /><line x1="22" y1="16" x2="17" y2="26" /><line x1="22" y1="16" x2="26" y2="26" /><line x1="14" y1="21" x2="16" y2="21" /><line x1="24" y1="19" x2="26" y2="19" /></>,
+  p_rdl: <><circle cx="12" cy="8" r="2.2" /><line x1="14" y1="9" x2="22" y2="16" /><line x1="18" y1="13" x2="14" y2="21" /><line x1="22" y1="16" x2="17" y2="26" /><line x1="22" y1="16" x2="26" y2="26" /><line x1="14" y1="21" x2="16" y2="21" /><line x1="24" y1="19" x2="26" y2="19" /></>,
+  goblet_squat: <><circle cx="16" cy="5" r="2.2" /><line x1="16" y1="7" x2="16" y2="15" /><circle cx="16" cy="13" r="2" /><line x1="16" y1="10" x2="12" y2="13" /><line x1="16" y1="10" x2="20" y2="13" /><line x1="16" y1="15" x2="10" y2="23" /><line x1="16" y1="15" x2="22" y2="23" /><line x1="10" y1="23" x2="7" y2="27" /><line x1="22" y1="23" x2="25" y2="27" /></>,
+  reverse_lunge: <><circle cx="15" cy="5" r="2.2" /><line x1="15" y1="7" x2="15" y2="17" /><line x1="15" y1="11" x2="10" y2="15" /><line x1="15" y1="11" x2="20" y2="15" /><line x1="15" y1="17" x2="10" y2="25" /><line x1="15" y1="17" x2="23" y2="25" /><line x1="23" y1="25" x2="28" y2="25" /><line x1="10" y1="25" x2="7" y2="28" /></>,
+  split_squat: <><circle cx="15" cy="5" r="2.2" /><line x1="15" y1="7" x2="15" y2="17" /><line x1="15" y1="17" x2="9" y2="25" /><line x1="15" y1="17" x2="22" y2="25" /><line x1="8" y1="25" x2="13" y2="25" /><line x1="21" y1="25" x2="27" y2="25" /><line x1="15" y1="11" x2="10" y2="15" /><line x1="15" y1="11" x2="20" y2="15" /></>,
+  step_ups: <><line x1="17" y1="22" x2="29" y2="22" /><line x1="19" y1="22" x2="19" y2="27" /><circle cx="12" cy="6" r="2.2" /><line x1="12" y1="8" x2="14" y2="17" /><line x1="14" y1="17" x2="20" y2="22" /><line x1="14" y1="17" x2="10" y2="27" /><line x1="12" y1="11" x2="8" y2="15" /><line x1="12" y1="11" x2="17" y2="14" /></>,
+  sb_ham_curl: <><circle cx="23" cy="23" r="5" /><circle cx="8" cy="17" r="2" /><line x1="10" y1="17" x2="18" y2="18" /><line x1="18" y1="18" x2="23" y2="21" /><line x1="13" y1="18" x2="17" y2="13" /><line x1="18" y1="18" x2="20" y2="14" /><line x1="4" y1="25" x2="28" y2="25" /></>,
+  calf_raises: <><circle cx="16" cy="5" r="2.2" /><line x1="16" y1="7" x2="16" y2="18" /><line x1="16" y1="11" x2="12" y2="16" /><line x1="16" y1="11" x2="20" y2="16" /><line x1="16" y1="18" x2="13" y2="27" /><line x1="16" y1="18" x2="20" y2="27" /><line x1="12" y1="27" x2="16" y2="25" /><line x1="19" y1="27" x2="23" y2="25" /></>,
+  single_leg_bal: <><circle cx="16" cy="5" r="2.2" /><line x1="16" y1="7" x2="16" y2="18" /><line x1="16" y1="11" x2="10" y2="13" /><line x1="16" y1="11" x2="22" y2="13" /><line x1="16" y1="18" x2="15" y2="28" /><line x1="16" y1="18" x2="23" y2="22" /><line x1="13" y1="28" x2="18" y2="28" /></>,
+  p_bulgarian_squat: <><line x1="22" y1="20" x2="30" y2="20" /><circle cx="14" cy="5" r="2.2" /><line x1="14" y1="7" x2="14" y2="17" /><line x1="14" y1="17" x2="8" y2="26" /><line x1="14" y1="17" x2="24" y2="20" /><line x1="8" y1="26" x2="14" y2="26" /><line x1="14" y1="11" x2="10" y2="15" /><line x1="14" y1="11" x2="19" y2="15" /></>,
+  p_leg_press: <><line x1="8" y1="24" x2="18" y2="16" /><circle cx="10" cy="17" r="2" /><line x1="12" y1="17" x2="18" y2="20" /><line x1="18" y1="20" x2="25" y2="12" /><line x1="24" y1="5" x2="29" y2="16" /><line x1="18" y1="20" x2="22" y2="25" /><line x1="22" y1="25" x2="28" y2="25" /></>,
+  p_leg_extension: <><line x1="7" y1="22" x2="19" y2="22" /><line x1="19" y1="22" x2="19" y2="27" /><circle cx="12" cy="12" r="2" /><line x1="12" y1="14" x2="16" y2="21" /><line x1="16" y1="21" x2="27" y2="18" /><line x1="27" y1="18" x2="29" y2="20" /><line x1="16" y1="21" x2="11" y2="24" /></>,
+  p_seated_leg_curl: <><line x1="7" y1="20" x2="19" y2="20" /><line x1="19" y1="20" x2="19" y2="27" /><circle cx="12" cy="11" r="2" /><line x1="12" y1="13" x2="16" y2="20" /><line x1="16" y1="20" x2="24" y2="25" /><line x1="24" y1="25" x2="21" y2="28" /><line x1="16" y1="20" x2="10" y2="24" /></>,
+  p_sumo_squat: <><circle cx="16" cy="5" r="2.2" /><line x1="16" y1="7" x2="16" y2="15" /><line x1="16" y1="10" x2="12" y2="14" /><line x1="16" y1="10" x2="20" y2="14" /><line x1="16" y1="15" x2="9" y2="24" /><line x1="16" y1="15" x2="23" y2="24" /><line x1="9" y1="24" x2="5" y2="26" /><line x1="23" y1="24" x2="27" y2="26" /><circle cx="16" cy="18" r="2" /></>,
+  p_wall_sit: <><line x1="24" y1="5" x2="24" y2="28" /><circle cx="18" cy="8" r="2" /><line x1="18" y1="10" x2="20" y2="18" /><line x1="20" y1="18" x2="12" y2="18" /><line x1="12" y1="18" x2="12" y2="26" /><line x1="20" y1="18" x2="24" y2="18" /><line x1="12" y1="26" x2="18" y2="26" /></>,
+  hip_thrust: <><line x1="4" y1="18" x2="13" y2="18" /><line x1="7" y1="18" x2="7" y2="26" /><circle cx="12" cy="14" r="2" /><line x1="14" y1="15" x2="22" y2="18" /><line x1="22" y1="18" x2="28" y2="26" /><line x1="20" y1="18" x2="14" y2="26" /><line x1="18" y1="15" x2="21" y2="15" /></>,
+  p_cable_kickback: <><line x1="25" y1="6" x2="25" y2="27" /><circle cx="12" cy="12" r="2" /><line x1="14" y1="13" x2="20" y2="18" /><line x1="20" y1="18" x2="14" y2="24" /><line x1="20" y1="18" x2="28" y2="12" /><line x1="14" y1="16" x2="9" y2="22" /><line x1="28" y1="12" x2="25" y2="14" /></>,
+  p_hip_abduction: <><circle cx="16" cy="8" r="2" /><line x1="16" y1="10" x2="16" y2="19" /><line x1="16" y1="14" x2="11" y2="17" /><line x1="16" y1="14" x2="21" y2="17" /><line x1="16" y1="19" x2="9" y2="25" /><line x1="16" y1="19" x2="23" y2="25" /><path d="M10 23c4 3 8 3 12 0" /></>,
+  p_frog_pumps: <><circle cx="10" cy="17" r="2" /><line x1="12" y1="17" x2="20" y2="17" /><line x1="20" y1="17" x2="15" y2="24" /><line x1="20" y1="17" x2="25" y2="24" /><line x1="15" y1="24" x2="20" y2="27" /><line x1="25" y1="24" x2="20" y2="27" /><line x1="4" y1="27" x2="28" y2="27" /></>,
+  p_donkey_kick: <><circle cx="10" cy="12" r="2" /><line x1="12" y1="13" x2="19" y2="18" /><line x1="19" y1="18" x2="13" y2="24" /><line x1="19" y1="18" x2="25" y2="12" /><line x1="25" y1="12" x2="25" y2="7" /><line x1="12" y1="16" x2="8" y2="24" /></>,
+  p_clamshell: <><circle cx="10" cy="17" r="2" /><line x1="12" y1="17" x2="20" y2="20" /><line x1="20" y1="20" x2="26" y2="25" /><line x1="20" y1="20" x2="26" y2="15" /><path d="M18 21c3-2 5-4 8-6" /><line x1="5" y1="26" x2="28" y2="26" /></>,
+  pallof_press: <><line x1="27" y1="8" x2="27" y2="25" /><circle cx="14" cy="7" r="2.2" /><line x1="14" y1="9" x2="14" y2="20" /><line x1="14" y1="13" x2="23" y2="13" /><line x1="23" y1="13" x2="27" y2="13" /><line x1="14" y1="20" x2="10" y2="28" /><line x1="14" y1="20" x2="18" y2="28" /></>,
+  farmers_walk: <><circle cx="16" cy="5" r="2.2" /><line x1="16" y1="7" x2="16" y2="18" /><line x1="16" y1="11" x2="10" y2="18" /><line x1="16" y1="11" x2="22" y2="18" /><rect x="7" y="18" width="4" height="5" rx="1" /><rect x="21" y="18" width="4" height="5" rx="1" /><line x1="16" y1="18" x2="12" y2="27" /><line x1="16" y1="18" x2="22" y2="26" /></>,
+  suitcase_carry: <><circle cx="16" cy="5" r="2.2" /><line x1="16" y1="7" x2="16" y2="18" /><line x1="16" y1="11" x2="10" y2="18" /><line x1="16" y1="11" x2="21" y2="14" /><rect x="7" y="18" width="4" height="5" rx="1" /><line x1="16" y1="18" x2="12" y2="27" /><line x1="16" y1="18" x2="21" y2="26" /></>,
+  p_plank: <><line x1="5" y1="25" x2="27" y2="25" /><circle cx="8" cy="18" r="2" /><line x1="10" y1="19" x2="23" y2="22" /><line x1="10" y1="20" x2="8" y2="25" /><line x1="17" y1="21" x2="16" y2="25" /><line x1="23" y1="22" x2="27" y2="25" /></>,
+  p_side_plank: <><line x1="6" y1="26" x2="27" y2="26" /><circle cx="9" cy="17" r="2" /><line x1="11" y1="18" x2="24" y2="21" /><line x1="13" y1="19" x2="10" y2="26" /><line x1="24" y1="21" x2="28" y2="26" /><line x1="16" y1="16" x2="20" y2="10" /></>,
+  p_dead_bug: <><circle cx="16" cy="17" r="2" /><line x1="16" y1="19" x2="16" y2="24" /><line x1="16" y1="19" x2="9" y2="13" /><line x1="16" y1="19" x2="24" y2="13" /><line x1="16" y1="24" x2="10" y2="28" /><line x1="16" y1="24" x2="23" y2="28" /><line x1="6" y1="29" x2="28" y2="29" /></>,
+  p_bird_dog: <><circle cx="10" cy="12" r="2" /><line x1="12" y1="13" x2="19" y2="18" /><line x1="12" y1="13" x2="5" y2="9" /><line x1="19" y1="18" x2="27" y2="14" /><line x1="19" y1="18" x2="13" y2="25" /><line x1="12" y1="16" x2="8" y2="24" /></>,
+  p_ab_wheel: <><circle cx="10" cy="12" r="2" /><line x1="12" y1="13" x2="20" y2="19" /><line x1="20" y1="19" x2="26" y2="19" /><circle cx="27" cy="20" r="2" /><line x1="20" y1="19" x2="14" y2="26" /><line x1="14" y1="26" x2="9" y2="26" /></>,
+  p_hanging_knee_raise: <><line x1="7" y1="5" x2="25" y2="5" /><circle cx="16" cy="9" r="2.2" /><line x1="16" y1="11" x2="16" y2="19" /><line x1="16" y1="12" x2="11" y2="5" /><line x1="16" y1="12" x2="21" y2="5" /><line x1="16" y1="19" x2="12" y2="23" /><line x1="16" y1="19" x2="21" y2="23" /><line x1="12" y1="23" x2="20" y2="23" /></>,
+  p_cable_crunch: <><line x1="23" y1="4" x2="23" y2="13" /><circle cx="15" cy="10" r="2" /><path d="M15 12c1 5 4 8 8 9" /><line x1="15" y1="14" x2="21" y2="13" /><line x1="21" y1="13" x2="23" y2="9" /><line x1="21" y1="21" x2="16" y2="27" /><line x1="21" y1="21" x2="26" y2="27" /></>,
+  _fallback: <><circle cx="16" cy="4" r="2.2" /><line x1="16" y1="6.2" x2="16" y2="17" /><line x1="16" y1="10" x2="10" y2="14" /><line x1="10" y1="14" x2="8" y2="13" /><line x1="8" y1="12" x2="8" y2="15" /><line x1="16" y1="17" x2="12" y2="25" /><line x1="16" y1="17" x2="20" y2="25" /></>,
+};
+
 const Icon = ({ name, size = 18, color = 'currentColor', strokeWidth = 1.8 }) => {
   const ref = useRef(null);
   useEffect(() => {
@@ -21,6 +103,23 @@ const Icon = ({ name, size = 18, color = 'currentColor', strokeWidth = 1.8 }) =>
     <span ref={ref} style={{ display: 'inline-flex', alignItems: 'center' }}>
       <i data-lucide={name} width={size} height={size} color={color} strokeWidth={strokeWidth} />
     </span>
+  );
+};
+
+const ExerciseIcon = ({ id, size = 36 }) => {
+  const paths = EXERCISE_ICONS[id] || EXERCISE_ICONS._fallback;
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: '50%',
+      background: C.amberDim, display: 'flex',
+      alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+    }}>
+      <svg viewBox="0 0 32 32" width={size * 0.62} height={size * 0.62}
+        stroke={C.amber} strokeWidth="1.6" fill="none"
+        strokeLinecap="round" strokeLinejoin="round">
+        {paths}
+      </svg>
+    </div>
   );
 };
 
@@ -427,13 +526,14 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
             const ex = allExercises[id] || EXERCISES[id];
             const isExtra = extraIds.includes(id);
             return (
-              <div key={id} style={{ fontSize: 13, color: C.text, padding: '5px 0', borderBottom: `1px solid ${C.dim}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
-                <span style={{ minWidth: 0 }}>{ex?.name || id}</span>
+              <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: `1px solid ${C.border}` }}>
+                <ExerciseIcon id={id} size={36} />
+                <span style={{ flex: 1, minWidth: 0, fontSize: 15, color: C.text }}>{ex?.name || id}</span>
                 <span style={{
                   border: `1px solid ${C.border}`,
                   borderRadius: 20,
-                  padding: '2px 8px',
-                  fontSize: 10,
+                  padding: '2px 9px',
+                  fontSize: 11,
                   color: isExtra ? C.amber : C.muted,
                   fontFamily: C.fMono,
                   whiteSpace: 'nowrap',
@@ -754,22 +854,27 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
       <div style={{ padding: 16 }}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-          <div>
+          <div style={{ minWidth: 0 }}>
             <div style={{ ...st.label, marginBottom: 3 }}>
               {session.workout} · {exIdx + 1} / {session.exercises.length} · {doneSetsCount}/{exData.sets.length} sets
             </div>
-            <div style={{ fontFamily: C.fDisplay, fontSize: 22, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 1.2 }}>{def.name}</div>
-            <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
-              {primaryMuscle && (
-                <span style={{ background: C.amberDim, color: C.amber, fontSize: 10, borderRadius: 20, padding: '2px 8px', fontFamily: C.fMono }}>
-                  {primaryMuscle}
-                </span>
-              )}
-              {secondaryMuscle && (
-                <span style={{ background: C.dim, color: C.muted, fontSize: 10, borderRadius: 20, padding: '2px 8px', fontFamily: C.fMono }}>
-                  {secondaryMuscle}
-                </span>
-              )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+              <ExerciseIcon id={exId} size={44} />
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontFamily: C.fDisplay, fontSize: 22, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 1.2, color: C.text }}>{def.name}</div>
+                <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+                  {primaryMuscle && (
+                    <span style={{ background: C.amberDim, color: C.amber, fontSize: 10, borderRadius: 20, padding: '2px 8px', fontFamily: C.fMono }}>
+                      {primaryMuscle}
+                    </span>
+                  )}
+                  {secondaryMuscle && (
+                    <span style={{ background: C.dim, color: C.muted, fontSize: 10, borderRadius: 20, padding: '2px 8px', fontFamily: C.fMono }}>
+                      {secondaryMuscle}
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
           <div style={{ textAlign: 'right', minWidth: 80 }}>

@@ -4,6 +4,10 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-05-14
+
+- [Codex] Added exercise-specific SVG stick-figure icons for all 71 built-in exercises and rendered them on Dashboard workout rows and the active workout header.
+
 ## 2026-05-13
 
 - [Codex] Applied Phase 2 visual redesign — restructured Dashboard hero/sync row, added Lucide icons, and attached primary/secondary muscle metadata to built-in exercises.

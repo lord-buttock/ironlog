@@ -30,7 +30,7 @@
   </div>
   <script>
 const { useState, useEffect, useRef, useCallback } = React;
-const APP_BUILD = 1778663374486;
+const APP_BUILD = 1778760640880;
 
 // ═══════════════════════════════════════════════════════════════════════
 // THEME
@@ -52,6 +52,2951 @@ const C = {
   fDisplay: "'Barlow Condensed', sans-serif",
   fMono: "'JetBrains Mono', monospace",
   fBody: "'Barlow', sans-serif"
+};
+const EXERCISE_ICONS = {
+  db_bench: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "6",
+    y1: "23",
+    x2: "26",
+    y2: "23"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "12",
+    cy: "18",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "18",
+    x2: "21",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "17",
+    y1: "17",
+    x2: "17",
+    y2: "10"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "22",
+    y1: "17",
+    x2: "22",
+    y2: "10"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "10",
+    x2: "25",
+    y2: "10"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "23",
+    x2: "10",
+    y2: "27"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "20",
+    y1: "23",
+    x2: "24",
+    y2: "27"
+  })),
+  db_incline: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "7",
+    y1: "25",
+    x2: "22",
+    y2: "14"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "12",
+    cy: "19",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "18",
+    x2: "20",
+    y2: "15"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "18",
+    y1: "15",
+    x2: "16",
+    y2: "8"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "21",
+    y1: "14",
+    x2: "24",
+    y2: "8"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "15",
+    y1: "8",
+    x2: "25",
+    y2: "8"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "19",
+    y1: "17",
+    x2: "25",
+    y2: "24"
+  })),
+  bb_flat_bench: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "5",
+    y1: "23",
+    x2: "27",
+    y2: "23"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "12",
+    cy: "18",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "18",
+    x2: "21",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "17",
+    y1: "17",
+    x2: "17",
+    y2: "10"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "22",
+    y1: "17",
+    x2: "22",
+    y2: "10"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "8",
+    y1: "9",
+    x2: "28",
+    y2: "9"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "8",
+    y1: "7",
+    x2: "8",
+    y2: "11"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "28",
+    y1: "7",
+    x2: "28",
+    y2: "11"
+  })),
+  bb_incline_bench: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "6",
+    y1: "25",
+    x2: "22",
+    y2: "14"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "12",
+    cy: "19",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "18",
+    x2: "20",
+    y2: "15"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "18",
+    y1: "15",
+    x2: "16",
+    y2: "9"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "21",
+    y1: "14",
+    x2: "24",
+    y2: "9"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "11",
+    y1: "8",
+    x2: "29",
+    y2: "8"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "11",
+    y1: "6",
+    x2: "11",
+    y2: "10"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "29",
+    y1: "6",
+    x2: "29",
+    y2: "10"
+  })),
+  db_floor_press: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "5",
+    y1: "25",
+    x2: "27",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "11",
+    cy: "20",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "13",
+    y1: "20",
+    x2: "21",
+    y2: "20"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "19",
+    x2: "16",
+    y2: "11"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "22",
+    y1: "19",
+    x2: "22",
+    y2: "11"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "11",
+    x2: "24",
+    y2: "11"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "20",
+    y1: "20",
+    x2: "25",
+    y2: "25"
+  })),
+  incline_pushups: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "21",
+    y1: "18",
+    x2: "29",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "24",
+    y1: "18",
+    x2: "24",
+    y2: "26"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "7",
+    cy: "13",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "9",
+    y1: "14",
+    x2: "19",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "19",
+    y1: "18",
+    x2: "23",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "11",
+    y1: "15",
+    x2: "7",
+    y2: "24"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "17",
+    x2: "13",
+    y2: "25"
+  })),
+  p_push_up: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "5",
+    y1: "25",
+    x2: "27",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "7",
+    cy: "17",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "9",
+    y1: "18",
+    x2: "21",
+    y2: "21"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "21",
+    y1: "21",
+    x2: "25",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "19",
+    x2: "12",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "19",
+    y1: "21",
+    x2: "18",
+    y2: "25"
+  })),
+  p_diamond_pushup: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "5",
+    y1: "25",
+    x2: "27",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "7",
+    cy: "17",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "9",
+    y1: "18",
+    x2: "21",
+    y2: "21"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "20",
+    x2: "15",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M14 24l2-2 2 2-2 2z"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "21",
+    y1: "21",
+    x2: "25",
+    y2: "25"
+  })),
+  p_db_fly: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "6",
+    y1: "23",
+    x2: "26",
+    y2: "23"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "13",
+    cy: "18",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "15",
+    y1: "18",
+    x2: "20",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M17 17c-4-4-7-5-10-5"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M20 17c4-4 7-5 10-5"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "7",
+    y1: "12",
+    x2: "5",
+    y2: "10"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "29",
+    y1: "12",
+    x2: "27",
+    y2: "10"
+  })),
+  p_incline_db_press: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "7",
+    y1: "25",
+    x2: "22",
+    y2: "14"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "12",
+    cy: "19",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "18",
+    x2: "20",
+    y2: "15"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "18",
+    y1: "16",
+    x2: "20",
+    y2: "10"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "22",
+    y1: "14",
+    x2: "25",
+    y2: "10"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "19",
+    y1: "10",
+    x2: "21",
+    y2: "8"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "24",
+    y1: "10",
+    x2: "26",
+    y2: "8"
+  })),
+  p_chest_dip: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "9",
+    y1: "10",
+    x2: "9",
+    y2: "26"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "23",
+    y1: "10",
+    x2: "23",
+    y2: "26"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "7",
+    y1: "12",
+    x2: "13",
+    y2: "12"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "19",
+    y1: "12",
+    x2: "25",
+    y2: "12"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "16",
+    cy: "9",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "16",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "13",
+    x2: "11",
+    y2: "15"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "13",
+    x2: "21",
+    y2: "15"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "18",
+    x2: "13",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "18",
+    x2: "20",
+    y2: "25"
+  })),
+  p_cable_fly: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "4",
+    y1: "4",
+    x2: "4",
+    y2: "26"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "28",
+    y1: "4",
+    x2: "28",
+    y2: "26"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "16",
+    cy: "7",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "9",
+    x2: "16",
+    y2: "19"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M16 12c-5 1-8 3-10 7"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M16 12c5 1 8 3 10 7"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "19",
+    x2: "12",
+    y2: "27"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "19",
+    x2: "20",
+    y2: "27"
+  })),
+  p_close_grip_bench: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "5",
+    y1: "23",
+    x2: "27",
+    y2: "23"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "12",
+    cy: "18",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "18",
+    x2: "21",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "18",
+    y1: "17",
+    x2: "18",
+    y2: "10"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "20",
+    y1: "17",
+    x2: "20",
+    y2: "10"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "10",
+    y1: "9",
+    x2: "28",
+    y2: "9"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "10",
+    y1: "7",
+    x2: "10",
+    y2: "11"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "28",
+    y1: "7",
+    x2: "28",
+    y2: "11"
+  })),
+  db_shoulder: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "11",
+    y1: "25",
+    x2: "21",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "16",
+    cy: "6",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "8",
+    x2: "16",
+    y2: "17"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "12",
+    y1: "24",
+    x2: "20",
+    y2: "24"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "12",
+    y2: "5"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "20",
+    y2: "5"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "10",
+    y1: "4",
+    x2: "14",
+    y2: "4"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "18",
+    y1: "4",
+    x2: "22",
+    y2: "4"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "17",
+    x2: "13",
+    y2: "24"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "17",
+    x2: "19",
+    y2: "24"
+  })),
+  db_lateral: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "16",
+    cy: "5",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "7",
+    x2: "16",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "7",
+    y2: "11"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "25",
+    y2: "11"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "6",
+    y1: "10",
+    x2: "6",
+    y2: "13"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "26",
+    y1: "10",
+    x2: "26",
+    y2: "13"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "18",
+    x2: "12",
+    y2: "27"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "18",
+    x2: "20",
+    y2: "27"
+  })),
+  p_lateral_raise: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "16",
+    cy: "5",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "7",
+    x2: "16",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "7",
+    y2: "11"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "25",
+    y2: "11"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "6",
+    y1: "10",
+    x2: "6",
+    y2: "13"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "26",
+    y1: "10",
+    x2: "26",
+    y2: "13"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "18",
+    x2: "12",
+    y2: "27"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "18",
+    x2: "20",
+    y2: "27"
+  })),
+  p_front_raise: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "16",
+    cy: "5",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "7",
+    x2: "16",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "16",
+    y2: "4"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "23",
+    y2: "14"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "15",
+    y1: "3",
+    x2: "18",
+    y2: "3"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "24",
+    y1: "13",
+    x2: "24",
+    y2: "16"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "18",
+    x2: "12",
+    y2: "27"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "18",
+    x2: "20",
+    y2: "27"
+  })),
+  p_db_shoulder_press: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "11",
+    y1: "25",
+    x2: "21",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "16",
+    cy: "6",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "8",
+    x2: "16",
+    y2: "17"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "12",
+    y2: "7"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "20",
+    y2: "7"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "12",
+    y1: "7",
+    x2: "12",
+    y2: "3"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "20",
+    y1: "7",
+    x2: "20",
+    y2: "3"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "10",
+    y1: "3",
+    x2: "14",
+    y2: "3"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "18",
+    y1: "3",
+    x2: "22",
+    y2: "3"
+  })),
+  p_arnold_press: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "11",
+    y1: "25",
+    x2: "21",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "16",
+    cy: "6",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "8",
+    x2: "16",
+    y2: "17"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M16 11c-3 0-5-2-5-4"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M16 11c3 0 5-2 5-4"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M11 7c0-3 2-4 4-5"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M21 7c0-3-2-4-4-5"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "17",
+    x2: "13",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "17",
+    x2: "19",
+    y2: "25"
+  })),
+  p_rear_delt_fly: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "12",
+    cy: "9",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "10",
+    x2: "21",
+    y2: "16"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "20",
+    y1: "16",
+    x2: "13",
+    y2: "16"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "20",
+    y1: "16",
+    x2: "27",
+    y2: "16"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "12",
+    y1: "16",
+    x2: "10",
+    y2: "19"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "28",
+    y1: "16",
+    x2: "30",
+    y2: "19"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "21",
+    y1: "16",
+    x2: "16",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "21",
+    y1: "16",
+    x2: "24",
+    y2: "25"
+  })),
+  p_band_face_pull: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "28",
+    y1: "7",
+    x2: "28",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "14",
+    cy: "8",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "10",
+    x2: "14",
+    y2: "20"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "13",
+    x2: "20",
+    y2: "9"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "13",
+    x2: "20",
+    y2: "15"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "20",
+    y1: "9",
+    x2: "28",
+    y2: "10"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "20",
+    y1: "15",
+    x2: "28",
+    y2: "12"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "20",
+    x2: "10",
+    y2: "28"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "20",
+    x2: "18",
+    y2: "28"
+  })),
+  p_shrugs: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "16",
+    cy: "5",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M12 10c1-2 7-2 8 0"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "8",
+    x2: "16",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "11",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "21",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "10",
+    y1: "18",
+    x2: "10",
+    y2: "22"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "22",
+    y1: "18",
+    x2: "22",
+    y2: "22"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "18",
+    x2: "12",
+    y2: "27"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "18",
+    x2: "20",
+    y2: "27"
+  })),
+  face_pull: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "28",
+    y1: "7",
+    x2: "28",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "14",
+    cy: "8",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "10",
+    x2: "14",
+    y2: "20"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "13",
+    x2: "20",
+    y2: "9"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "13",
+    x2: "20",
+    y2: "15"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "20",
+    y1: "9",
+    x2: "28",
+    y2: "10"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "20",
+    y1: "15",
+    x2: "28",
+    y2: "12"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "20",
+    x2: "10",
+    y2: "28"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "20",
+    x2: "18",
+    y2: "28"
+  })),
+  reverse_fly: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "12",
+    cy: "9",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "10",
+    x2: "21",
+    y2: "16"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "20",
+    y1: "16",
+    x2: "13",
+    y2: "16"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "20",
+    y1: "16",
+    x2: "27",
+    y2: "16"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "12",
+    y1: "16",
+    x2: "10",
+    y2: "19"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "28",
+    y1: "16",
+    x2: "30",
+    y2: "19"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "21",
+    y1: "16",
+    x2: "16",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "21",
+    y1: "16",
+    x2: "24",
+    y2: "25"
+  })),
+  db_tricep: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "16",
+    cy: "5",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "7",
+    x2: "16",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "10",
+    x2: "20",
+    y2: "5"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "20",
+    y1: "5",
+    x2: "18",
+    y2: "12"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "18",
+    y1: "12",
+    x2: "20",
+    y2: "14"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "18",
+    x2: "12",
+    y2: "27"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "18",
+    x2: "20",
+    y2: "27"
+  })),
+  tricep_pushdown: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "24",
+    y1: "4",
+    x2: "24",
+    y2: "13"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "14",
+    cy: "7",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "9",
+    x2: "14",
+    y2: "20"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "12",
+    x2: "20",
+    y2: "12"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "20",
+    y1: "12",
+    x2: "24",
+    y2: "10"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "19",
+    y1: "12",
+    x2: "19",
+    y2: "21"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "20",
+    x2: "10",
+    y2: "28"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "20",
+    x2: "18",
+    y2: "28"
+  })),
+  p_tricep_pushdown: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "24",
+    y1: "4",
+    x2: "24",
+    y2: "13"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "14",
+    cy: "7",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "9",
+    x2: "14",
+    y2: "20"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "12",
+    x2: "20",
+    y2: "12"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "20",
+    y1: "12",
+    x2: "24",
+    y2: "10"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "19",
+    y1: "12",
+    x2: "19",
+    y2: "21"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "20",
+    x2: "10",
+    y2: "28"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "20",
+    x2: "18",
+    y2: "28"
+  })),
+  p_overhead_ext: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "16",
+    cy: "5",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "7",
+    x2: "16",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "10",
+    x2: "12",
+    y2: "4"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "10",
+    x2: "20",
+    y2: "4"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "12",
+    y1: "4",
+    x2: "16",
+    y2: "13"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "20",
+    y1: "4",
+    x2: "16",
+    y2: "13"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "18",
+    x2: "12",
+    y2: "27"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "18",
+    x2: "20",
+    y2: "27"
+  })),
+  p_skull_crushers: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "6",
+    y1: "23",
+    x2: "26",
+    y2: "23"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "12",
+    cy: "18",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "18",
+    x2: "21",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "17",
+    y1: "17",
+    x2: "15",
+    y2: "12"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "22",
+    y1: "17",
+    x2: "24",
+    y2: "12"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "12",
+    x2: "25",
+    y2: "12"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "20",
+    y1: "23",
+    x2: "24",
+    y2: "27"
+  })),
+  p_tricep_dips: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "6",
+    y1: "15",
+    x2: "19",
+    y2: "15"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "8",
+    y1: "15",
+    x2: "8",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "19",
+    y1: "15",
+    x2: "19",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "20",
+    cy: "12",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "19",
+    y1: "14",
+    x2: "16",
+    y2: "20"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "20",
+    x2: "25",
+    y2: "20"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "17",
+    y1: "17",
+    x2: "19",
+    y2: "15"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "25",
+    y1: "20",
+    x2: "28",
+    y2: "25"
+  })),
+  db_row_1arm: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "7",
+    y1: "18",
+    x2: "18",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "10",
+    y1: "18",
+    x2: "10",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "14",
+    cy: "9",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "10",
+    x2: "23",
+    y2: "16"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "18",
+    y1: "14",
+    x2: "12",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "23",
+    y1: "16",
+    x2: "23",
+    y2: "23"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "23",
+    y1: "23",
+    x2: "25",
+    y2: "23"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "23",
+    y1: "16",
+    x2: "28",
+    y2: "25"
+  })),
+  cs_db_row: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "8",
+    y1: "22",
+    x2: "24",
+    y2: "14"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "14",
+    cy: "16",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "16",
+    x2: "22",
+    y2: "14"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "18",
+    y1: "17",
+    x2: "17",
+    y2: "24"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "22",
+    y1: "14",
+    x2: "22",
+    y2: "22"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "24",
+    x2: "18",
+    y2: "24"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "21",
+    y1: "22",
+    x2: "23",
+    y2: "22"
+  })),
+  band_row: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "26",
+    y1: "8",
+    x2: "26",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "10",
+    cy: "11",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "10",
+    y1: "13",
+    x2: "10",
+    y2: "22"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "10",
+    y1: "16",
+    x2: "18",
+    y2: "16"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "18",
+    y1: "16",
+    x2: "26",
+    y2: "12"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "18",
+    y1: "16",
+    x2: "26",
+    y2: "20"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "10",
+    y1: "22",
+    x2: "6",
+    y2: "27"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "10",
+    y1: "22",
+    x2: "16",
+    y2: "27"
+  })),
+  chin_up: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "7",
+    y1: "5",
+    x2: "25",
+    y2: "5"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "16",
+    cy: "9",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "16",
+    y2: "20"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "12",
+    x2: "11",
+    y2: "5"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "12",
+    x2: "21",
+    y2: "5"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "20",
+    x2: "12",
+    y2: "28"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "20",
+    x2: "20",
+    y2: "28"
+  })),
+  p_pull_up: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "7",
+    y1: "5",
+    x2: "25",
+    y2: "5"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "16",
+    cy: "11",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "13",
+    x2: "16",
+    y2: "21"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "14",
+    x2: "10",
+    y2: "5"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "14",
+    x2: "22",
+    y2: "5"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "21",
+    x2: "12",
+    y2: "28"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "21",
+    x2: "20",
+    y2: "28"
+  })),
+  p_lat_pulldown: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "8",
+    y1: "5",
+    x2: "24",
+    y2: "5"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "16",
+    cy: "9",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "16",
+    y2: "21"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "13",
+    x2: "11",
+    y2: "8"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "13",
+    x2: "21",
+    y2: "8"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "11",
+    y1: "8",
+    x2: "8",
+    y2: "5"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "21",
+    y1: "8",
+    x2: "24",
+    y2: "5"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "10",
+    y1: "25",
+    x2: "22",
+    y2: "25"
+  })),
+  p_seated_cable_row: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "27",
+    y1: "7",
+    x2: "27",
+    y2: "24"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "10",
+    cy: "12",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "10",
+    y1: "14",
+    x2: "13",
+    y2: "22"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "13",
+    y1: "17",
+    x2: "21",
+    y2: "17"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "21",
+    y1: "17",
+    x2: "27",
+    y2: "14"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "13",
+    y1: "22",
+    x2: "8",
+    y2: "26"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "13",
+    y1: "22",
+    x2: "20",
+    y2: "26"
+  })),
+  p_t_bar_row: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "12",
+    cy: "9",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "10",
+    x2: "22",
+    y2: "16"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "22",
+    y1: "16",
+    x2: "16",
+    y2: "24"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "22",
+    y1: "16",
+    x2: "26",
+    y2: "24"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "18",
+    y1: "13",
+    x2: "23",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "12",
+    y1: "24",
+    x2: "30",
+    y2: "17"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "29",
+    y1: "15",
+    x2: "31",
+    y2: "19"
+  })),
+  p_straight_arm_pd: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "25",
+    y1: "4",
+    x2: "25",
+    y2: "15"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "14",
+    cy: "7",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "9",
+    x2: "14",
+    y2: "20"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "12",
+    x2: "22",
+    y2: "8"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "22",
+    y1: "8",
+    x2: "25",
+    y2: "6"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "15",
+    x2: "22",
+    y2: "21"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "20",
+    x2: "10",
+    y2: "28"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "20",
+    x2: "18",
+    y2: "28"
+  })),
+  db_curl: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "16",
+    cy: "5",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "7",
+    x2: "16",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "11",
+    y2: "16"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "11",
+    y1: "16",
+    x2: "13",
+    y2: "10"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "13",
+    y1: "10",
+    x2: "15",
+    y2: "10"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "21",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "18",
+    x2: "12",
+    y2: "27"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "18",
+    x2: "20",
+    y2: "27"
+  })),
+  db_hammer: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "16",
+    cy: "5",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "7",
+    x2: "16",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "11",
+    y2: "17"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "11",
+    y1: "17",
+    x2: "13",
+    y2: "12"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "13",
+    y1: "11",
+    x2: "13",
+    y2: "14"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "21",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "18",
+    x2: "12",
+    y2: "27"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "18",
+    x2: "20",
+    y2: "27"
+  })),
+  p_db_bicep_curl: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "16",
+    cy: "5",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "7",
+    x2: "16",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "11",
+    y2: "16"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "11",
+    y1: "16",
+    x2: "13",
+    y2: "10"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "13",
+    y1: "10",
+    x2: "15",
+    y2: "10"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "21",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "18",
+    x2: "12",
+    y2: "27"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "18",
+    x2: "20",
+    y2: "27"
+  })),
+  p_barbell_curl: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "16",
+    cy: "5",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "7",
+    x2: "16",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "12",
+    y2: "17"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "20",
+    y2: "17"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "10",
+    y1: "15",
+    x2: "22",
+    y2: "15"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "10",
+    y1: "13",
+    x2: "10",
+    y2: "17"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "22",
+    y1: "13",
+    x2: "22",
+    y2: "17"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "18",
+    x2: "12",
+    y2: "27"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "18",
+    x2: "20",
+    y2: "27"
+  })),
+  p_hammer_curl: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "16",
+    cy: "5",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "7",
+    x2: "16",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "11",
+    y2: "17"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "11",
+    y1: "17",
+    x2: "13",
+    y2: "12"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "13",
+    y1: "11",
+    x2: "13",
+    y2: "14"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "21",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "18",
+    x2: "12",
+    y2: "27"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "18",
+    x2: "20",
+    y2: "27"
+  })),
+  p_concentration_curl: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "9",
+    y1: "24",
+    x2: "23",
+    y2: "24"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "14",
+    cy: "8",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "10",
+    x2: "18",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "18",
+    y1: "18",
+    x2: "13",
+    y2: "22"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "13",
+    y1: "22",
+    x2: "15",
+    y2: "16"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "15",
+    y1: "16",
+    x2: "17",
+    y2: "16"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "18",
+    y1: "18",
+    x2: "24",
+    y2: "24"
+  })),
+  p_preacher_curl: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "8",
+    y1: "24",
+    x2: "24",
+    y2: "16"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "10",
+    y1: "25",
+    x2: "23",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "12",
+    cy: "9",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "12",
+    y1: "11",
+    x2: "16",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "18",
+    x2: "21",
+    y2: "16"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "21",
+    y1: "16",
+    x2: "18",
+    y2: "12"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "18",
+    y1: "12",
+    x2: "20",
+    y2: "11"
+  })),
+  kb_deadlift: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
+    x: "13",
+    y: "21",
+    width: "6",
+    height: "5",
+    rx: "2"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M14 21c0-3 4-3 4 0"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "16",
+    cy: "7",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "9",
+    x2: "21",
+    y2: "16"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "21",
+    y1: "16",
+    x2: "17",
+    y2: "21"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "21",
+    y1: "16",
+    x2: "25",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "17",
+    y1: "21",
+    x2: "10",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "8",
+    y1: "27",
+    x2: "22",
+    y2: "27"
+  })),
+  rdl: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "12",
+    cy: "8",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "9",
+    x2: "22",
+    y2: "16"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "18",
+    y1: "13",
+    x2: "14",
+    y2: "21"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "22",
+    y1: "16",
+    x2: "17",
+    y2: "26"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "22",
+    y1: "16",
+    x2: "26",
+    y2: "26"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "21",
+    x2: "16",
+    y2: "21"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "24",
+    y1: "19",
+    x2: "26",
+    y2: "19"
+  })),
+  p_rdl: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "12",
+    cy: "8",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "9",
+    x2: "22",
+    y2: "16"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "18",
+    y1: "13",
+    x2: "14",
+    y2: "21"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "22",
+    y1: "16",
+    x2: "17",
+    y2: "26"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "22",
+    y1: "16",
+    x2: "26",
+    y2: "26"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "21",
+    x2: "16",
+    y2: "21"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "24",
+    y1: "19",
+    x2: "26",
+    y2: "19"
+  })),
+  goblet_squat: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "16",
+    cy: "5",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "7",
+    x2: "16",
+    y2: "15"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "16",
+    cy: "13",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "10",
+    x2: "12",
+    y2: "13"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "10",
+    x2: "20",
+    y2: "13"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "15",
+    x2: "10",
+    y2: "23"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "15",
+    x2: "22",
+    y2: "23"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "10",
+    y1: "23",
+    x2: "7",
+    y2: "27"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "22",
+    y1: "23",
+    x2: "25",
+    y2: "27"
+  })),
+  reverse_lunge: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "15",
+    cy: "5",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "15",
+    y1: "7",
+    x2: "15",
+    y2: "17"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "15",
+    y1: "11",
+    x2: "10",
+    y2: "15"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "15",
+    y1: "11",
+    x2: "20",
+    y2: "15"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "15",
+    y1: "17",
+    x2: "10",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "15",
+    y1: "17",
+    x2: "23",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "23",
+    y1: "25",
+    x2: "28",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "10",
+    y1: "25",
+    x2: "7",
+    y2: "28"
+  })),
+  split_squat: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "15",
+    cy: "5",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "15",
+    y1: "7",
+    x2: "15",
+    y2: "17"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "15",
+    y1: "17",
+    x2: "9",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "15",
+    y1: "17",
+    x2: "22",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "8",
+    y1: "25",
+    x2: "13",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "21",
+    y1: "25",
+    x2: "27",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "15",
+    y1: "11",
+    x2: "10",
+    y2: "15"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "15",
+    y1: "11",
+    x2: "20",
+    y2: "15"
+  })),
+  step_ups: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "17",
+    y1: "22",
+    x2: "29",
+    y2: "22"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "19",
+    y1: "22",
+    x2: "19",
+    y2: "27"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "12",
+    cy: "6",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "12",
+    y1: "8",
+    x2: "14",
+    y2: "17"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "17",
+    x2: "20",
+    y2: "22"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "17",
+    x2: "10",
+    y2: "27"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "12",
+    y1: "11",
+    x2: "8",
+    y2: "15"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "12",
+    y1: "11",
+    x2: "17",
+    y2: "14"
+  })),
+  sb_ham_curl: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "23",
+    cy: "23",
+    r: "5"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "8",
+    cy: "17",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "10",
+    y1: "17",
+    x2: "18",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "18",
+    y1: "18",
+    x2: "23",
+    y2: "21"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "13",
+    y1: "18",
+    x2: "17",
+    y2: "13"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "18",
+    y1: "18",
+    x2: "20",
+    y2: "14"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "4",
+    y1: "25",
+    x2: "28",
+    y2: "25"
+  })),
+  calf_raises: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "16",
+    cy: "5",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "7",
+    x2: "16",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "12",
+    y2: "16"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "20",
+    y2: "16"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "18",
+    x2: "13",
+    y2: "27"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "18",
+    x2: "20",
+    y2: "27"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "12",
+    y1: "27",
+    x2: "16",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "19",
+    y1: "27",
+    x2: "23",
+    y2: "25"
+  })),
+  single_leg_bal: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "16",
+    cy: "5",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "7",
+    x2: "16",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "10",
+    y2: "13"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "22",
+    y2: "13"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "18",
+    x2: "15",
+    y2: "28"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "18",
+    x2: "23",
+    y2: "22"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "13",
+    y1: "28",
+    x2: "18",
+    y2: "28"
+  })),
+  p_bulgarian_squat: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "22",
+    y1: "20",
+    x2: "30",
+    y2: "20"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "14",
+    cy: "5",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "7",
+    x2: "14",
+    y2: "17"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "17",
+    x2: "8",
+    y2: "26"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "17",
+    x2: "24",
+    y2: "20"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "8",
+    y1: "26",
+    x2: "14",
+    y2: "26"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "11",
+    x2: "10",
+    y2: "15"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "11",
+    x2: "19",
+    y2: "15"
+  })),
+  p_leg_press: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "8",
+    y1: "24",
+    x2: "18",
+    y2: "16"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "10",
+    cy: "17",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "12",
+    y1: "17",
+    x2: "18",
+    y2: "20"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "18",
+    y1: "20",
+    x2: "25",
+    y2: "12"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "24",
+    y1: "5",
+    x2: "29",
+    y2: "16"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "18",
+    y1: "20",
+    x2: "22",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "22",
+    y1: "25",
+    x2: "28",
+    y2: "25"
+  })),
+  p_leg_extension: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "7",
+    y1: "22",
+    x2: "19",
+    y2: "22"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "19",
+    y1: "22",
+    x2: "19",
+    y2: "27"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "12",
+    cy: "12",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "12",
+    y1: "14",
+    x2: "16",
+    y2: "21"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "21",
+    x2: "27",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "27",
+    y1: "18",
+    x2: "29",
+    y2: "20"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "21",
+    x2: "11",
+    y2: "24"
+  })),
+  p_seated_leg_curl: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "7",
+    y1: "20",
+    x2: "19",
+    y2: "20"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "19",
+    y1: "20",
+    x2: "19",
+    y2: "27"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "12",
+    cy: "11",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "12",
+    y1: "13",
+    x2: "16",
+    y2: "20"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "20",
+    x2: "24",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "24",
+    y1: "25",
+    x2: "21",
+    y2: "28"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "20",
+    x2: "10",
+    y2: "24"
+  })),
+  p_sumo_squat: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "16",
+    cy: "5",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "7",
+    x2: "16",
+    y2: "15"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "10",
+    x2: "12",
+    y2: "14"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "10",
+    x2: "20",
+    y2: "14"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "15",
+    x2: "9",
+    y2: "24"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "15",
+    x2: "23",
+    y2: "24"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "9",
+    y1: "24",
+    x2: "5",
+    y2: "26"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "23",
+    y1: "24",
+    x2: "27",
+    y2: "26"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "16",
+    cy: "18",
+    r: "2"
+  })),
+  p_wall_sit: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "24",
+    y1: "5",
+    x2: "24",
+    y2: "28"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "18",
+    cy: "8",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "18",
+    y1: "10",
+    x2: "20",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "20",
+    y1: "18",
+    x2: "12",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "12",
+    y1: "18",
+    x2: "12",
+    y2: "26"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "20",
+    y1: "18",
+    x2: "24",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "12",
+    y1: "26",
+    x2: "18",
+    y2: "26"
+  })),
+  hip_thrust: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "4",
+    y1: "18",
+    x2: "13",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "7",
+    y1: "18",
+    x2: "7",
+    y2: "26"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "12",
+    cy: "14",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "15",
+    x2: "22",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "22",
+    y1: "18",
+    x2: "28",
+    y2: "26"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "20",
+    y1: "18",
+    x2: "14",
+    y2: "26"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "18",
+    y1: "15",
+    x2: "21",
+    y2: "15"
+  })),
+  p_cable_kickback: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "25",
+    y1: "6",
+    x2: "25",
+    y2: "27"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "12",
+    cy: "12",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "13",
+    x2: "20",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "20",
+    y1: "18",
+    x2: "14",
+    y2: "24"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "20",
+    y1: "18",
+    x2: "28",
+    y2: "12"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "16",
+    x2: "9",
+    y2: "22"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "28",
+    y1: "12",
+    x2: "25",
+    y2: "14"
+  })),
+  p_hip_abduction: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "16",
+    cy: "8",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "10",
+    x2: "16",
+    y2: "19"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "14",
+    x2: "11",
+    y2: "17"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "14",
+    x2: "21",
+    y2: "17"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "19",
+    x2: "9",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "19",
+    x2: "23",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M10 23c4 3 8 3 12 0"
+  })),
+  p_frog_pumps: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "10",
+    cy: "17",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "12",
+    y1: "17",
+    x2: "20",
+    y2: "17"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "20",
+    y1: "17",
+    x2: "15",
+    y2: "24"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "20",
+    y1: "17",
+    x2: "25",
+    y2: "24"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "15",
+    y1: "24",
+    x2: "20",
+    y2: "27"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "25",
+    y1: "24",
+    x2: "20",
+    y2: "27"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "4",
+    y1: "27",
+    x2: "28",
+    y2: "27"
+  })),
+  p_donkey_kick: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "10",
+    cy: "12",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "12",
+    y1: "13",
+    x2: "19",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "19",
+    y1: "18",
+    x2: "13",
+    y2: "24"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "19",
+    y1: "18",
+    x2: "25",
+    y2: "12"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "25",
+    y1: "12",
+    x2: "25",
+    y2: "7"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "12",
+    y1: "16",
+    x2: "8",
+    y2: "24"
+  })),
+  p_clamshell: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "10",
+    cy: "17",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "12",
+    y1: "17",
+    x2: "20",
+    y2: "20"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "20",
+    y1: "20",
+    x2: "26",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "20",
+    y1: "20",
+    x2: "26",
+    y2: "15"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M18 21c3-2 5-4 8-6"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "5",
+    y1: "26",
+    x2: "28",
+    y2: "26"
+  })),
+  pallof_press: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "27",
+    y1: "8",
+    x2: "27",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "14",
+    cy: "7",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "9",
+    x2: "14",
+    y2: "20"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "13",
+    x2: "23",
+    y2: "13"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "23",
+    y1: "13",
+    x2: "27",
+    y2: "13"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "20",
+    x2: "10",
+    y2: "28"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "20",
+    x2: "18",
+    y2: "28"
+  })),
+  farmers_walk: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "16",
+    cy: "5",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "7",
+    x2: "16",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "10",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "22",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "7",
+    y: "18",
+    width: "4",
+    height: "5",
+    rx: "1"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "21",
+    y: "18",
+    width: "4",
+    height: "5",
+    rx: "1"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "18",
+    x2: "12",
+    y2: "27"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "18",
+    x2: "22",
+    y2: "26"
+  })),
+  suitcase_carry: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "16",
+    cy: "5",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "7",
+    x2: "16",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "10",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "21",
+    y2: "14"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "7",
+    y: "18",
+    width: "4",
+    height: "5",
+    rx: "1"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "18",
+    x2: "12",
+    y2: "27"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "18",
+    x2: "21",
+    y2: "26"
+  })),
+  p_plank: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "5",
+    y1: "25",
+    x2: "27",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "8",
+    cy: "18",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "10",
+    y1: "19",
+    x2: "23",
+    y2: "22"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "10",
+    y1: "20",
+    x2: "8",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "17",
+    y1: "21",
+    x2: "16",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "23",
+    y1: "22",
+    x2: "27",
+    y2: "25"
+  })),
+  p_side_plank: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "6",
+    y1: "26",
+    x2: "27",
+    y2: "26"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "9",
+    cy: "17",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "11",
+    y1: "18",
+    x2: "24",
+    y2: "21"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "13",
+    y1: "19",
+    x2: "10",
+    y2: "26"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "24",
+    y1: "21",
+    x2: "28",
+    y2: "26"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "16",
+    x2: "20",
+    y2: "10"
+  })),
+  p_dead_bug: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "16",
+    cy: "17",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "19",
+    x2: "16",
+    y2: "24"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "19",
+    x2: "9",
+    y2: "13"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "19",
+    x2: "24",
+    y2: "13"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "24",
+    x2: "10",
+    y2: "28"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "24",
+    x2: "23",
+    y2: "28"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "6",
+    y1: "29",
+    x2: "28",
+    y2: "29"
+  })),
+  p_bird_dog: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "10",
+    cy: "12",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "12",
+    y1: "13",
+    x2: "19",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "12",
+    y1: "13",
+    x2: "5",
+    y2: "9"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "19",
+    y1: "18",
+    x2: "27",
+    y2: "14"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "19",
+    y1: "18",
+    x2: "13",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "12",
+    y1: "16",
+    x2: "8",
+    y2: "24"
+  })),
+  p_ab_wheel: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "10",
+    cy: "12",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "12",
+    y1: "13",
+    x2: "20",
+    y2: "19"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "20",
+    y1: "19",
+    x2: "26",
+    y2: "19"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "27",
+    cy: "20",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "20",
+    y1: "19",
+    x2: "14",
+    y2: "26"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "14",
+    y1: "26",
+    x2: "9",
+    y2: "26"
+  })),
+  p_hanging_knee_raise: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "7",
+    y1: "5",
+    x2: "25",
+    y2: "5"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "16",
+    cy: "9",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "11",
+    x2: "16",
+    y2: "19"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "12",
+    x2: "11",
+    y2: "5"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "12",
+    x2: "21",
+    y2: "5"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "19",
+    x2: "12",
+    y2: "23"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "19",
+    x2: "21",
+    y2: "23"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "12",
+    y1: "23",
+    x2: "20",
+    y2: "23"
+  })),
+  p_cable_crunch: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("line", {
+    x1: "23",
+    y1: "4",
+    x2: "23",
+    y2: "13"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "15",
+    cy: "10",
+    r: "2"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M15 12c1 5 4 8 8 9"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "15",
+    y1: "14",
+    x2: "21",
+    y2: "13"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "21",
+    y1: "13",
+    x2: "23",
+    y2: "9"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "21",
+    y1: "21",
+    x2: "16",
+    y2: "27"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "21",
+    y1: "21",
+    x2: "26",
+    y2: "27"
+  })),
+  _fallback: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "16",
+    cy: "4",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "6.2",
+    x2: "16",
+    y2: "17"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "10",
+    x2: "10",
+    y2: "14"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "10",
+    y1: "14",
+    x2: "8",
+    y2: "13"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "8",
+    y1: "12",
+    x2: "8",
+    y2: "15"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "17",
+    x2: "12",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "16",
+    y1: "17",
+    x2: "20",
+    y2: "25"
+  }))
 };
 const Icon = ({
   name,
@@ -79,6 +3024,33 @@ const Icon = ({
     color: color,
     strokeWidth: strokeWidth
   }));
+};
+const ExerciseIcon = ({
+  id,
+  size = 36
+}) => {
+  const paths = EXERCISE_ICONS[id] || EXERCISE_ICONS._fallback;
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: size,
+      height: size,
+      borderRadius: '50%',
+      background: C.amberDim,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    viewBox: "0 0 32 32",
+    width: size * 0.62,
+    height: size * 0.62,
+    stroke: C.amber,
+    strokeWidth: "1.6",
+    fill: "none",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, paths));
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -984,25 +3956,28 @@ function Dashboard({
     return /*#__PURE__*/React.createElement("div", {
       key: id,
       style: {
-        fontSize: 13,
-        color: C.text,
-        padding: '5px 0',
-        borderBottom: `1px solid ${C.dim}`,
         display: 'flex',
-        justifyContent: 'space-between',
         alignItems: 'center',
-        gap: 10
+        gap: 10,
+        padding: '9px 0',
+        borderBottom: `1px solid ${C.border}`
       }
-    }, /*#__PURE__*/React.createElement("span", {
+    }, /*#__PURE__*/React.createElement(ExerciseIcon, {
+      id: id,
+      size: 36
+    }), /*#__PURE__*/React.createElement("span", {
       style: {
-        minWidth: 0
+        flex: 1,
+        minWidth: 0,
+        fontSize: 15,
+        color: C.text
       }
     }, ex?.name || id), /*#__PURE__*/React.createElement("span", {
       style: {
         border: `1px solid ${C.border}`,
         borderRadius: 20,
-        padding: '2px 8px',
-        fontSize: 10,
+        padding: '2px 9px',
+        fontSize: 11,
         color: isExtra ? C.amber : C.muted,
         fontFamily: C.fMono,
         whiteSpace: 'nowrap'
@@ -1621,19 +4596,38 @@ function ActiveWorkout({
         alignItems: 'flex-start',
         marginBottom: 6
       }
-    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        minWidth: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         ...st.label,
         marginBottom: 3
       }
     }, session.workout, " \xB7 ", exIdx + 1, " / ", session.exercises.length, " \xB7 ", doneSetsCount, "/", exData.sets.length, " sets"), /*#__PURE__*/React.createElement("div", {
       style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        marginBottom: 8
+      }
+    }, /*#__PURE__*/React.createElement(ExerciseIcon, {
+      id: exId,
+      size: 44
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        minWidth: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
         fontFamily: C.fDisplay,
         fontSize: 22,
         fontWeight: 700,
         textTransform: 'uppercase',
         letterSpacing: 0.5,
-        lineHeight: 1.2
+        lineHeight: 1.2,
+        color: C.text
       }
     }, def.name), /*#__PURE__*/React.createElement("div", {
       style: {
@@ -1660,7 +4654,7 @@ function ActiveWorkout({
         padding: '2px 8px',
         fontFamily: C.fMono
       }
-    }, secondaryMuscle))), /*#__PURE__*/React.createElement("div", {
+    }, secondaryMuscle))))), /*#__PURE__*/React.createElement("div", {
       style: {
         textAlign: 'right',
         minWidth: 80
