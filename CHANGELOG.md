@@ -6,6 +6,7 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ## 2026-05-14
 
+- [Codex] Added IMAGE-PROCESS.md documenting the tested exercise icon PNG cleanup workflow and failed conversion attempts.
 - [Codex] Prototyped richer two-tone mini-illustration icons for the seven visible Workout C exercises.
 - [Codex] Added exercise-specific SVG stick-figure icons for all 71 built-in exercises and rendered them on Dashboard workout rows and the active workout header.
 
