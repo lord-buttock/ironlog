@@ -30,7 +30,7 @@
   </div>
   <script>
 const { useState, useEffect, useRef, useCallback } = React;
-const APP_BUILD = 1778850101188;
+const APP_BUILD = 1778879950811;
 
 function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 // ═══════════════════════════════════════════════════════════════════════
@@ -6976,82 +6976,114 @@ const PRESET_LIBRARY = {
   }
 };
 const MUSCLE_META = {
-  goblet_squat: ['Legs', 'Glutes'],
-  db_bench: ['Chest', 'Triceps'],
-  db_row_1arm: ['Back', 'Biceps'],
-  step_ups: ['Legs', 'Glutes'],
-  pallof_press: ['Core', null],
-  kb_deadlift: ['Hinge', 'Glutes'],
-  hip_thrust: ['Glutes', 'Legs'],
-  incline_pushups: ['Chest', 'Triceps'],
-  band_row: ['Back', 'Biceps'],
-  suitcase_carry: ['Core', 'Forearms'],
-  split_squat: ['Legs', 'Glutes'],
-  db_floor_press: ['Chest', 'Triceps'],
-  cs_db_row: ['Back', 'Biceps'],
-  sb_ham_curl: ['Legs', 'Core'],
-  calf_raises: ['Legs', null],
-  single_leg_bal: ['Legs', 'Core'],
+  // ── Workout C — Legs / Core ─────────────────────────────────────────
+  goblet_squat: ['Quads', 'Glutes'],
+  hip_thrust: ['Glutes', 'Hamstrings'],
+  rdl: ['Hamstrings', 'Glutes'],
+  reverse_lunge: ['Quads', 'Glutes'],
+  sb_ham_curl: ['Hamstrings', 'Glutes'],
+  pallof_press: ['Obliques', null],
+  farmers_walk: ['Forearms', 'Upper Traps'],
+  // ExRx: grip/forearms is the limiting target; core is a stabiliser
+  // ── Workout A — Push ────────────────────────────────────────────────
   bb_flat_bench: ['Chest', 'Triceps'],
-  bb_incline_bench: ['Chest', 'Shoulders'],
-  chin_up: ['Back', 'Biceps'],
-  face_pull: ['Shoulders', 'Back'],
-  reverse_fly: ['Back', 'Shoulders'],
-  rdl: ['Hinge', 'Glutes'],
-  reverse_lunge: ['Legs', 'Glutes'],
-  farmers_walk: ['Core', 'Forearms'],
+  db_bench: ['Chest', 'Triceps'],
+  db_floor_press: ['Chest', 'Triceps'],
+  bb_incline_bench: ['Chest', 'Front Delts'],
+  db_shoulder: ['Front Delts', 'Triceps'],
+  // shoulder press — ExRx: anterior deltoid is primary mover in overhead press
+  // ── Workout B — Pull / Hinge ────────────────────────────────────────
+  kb_deadlift: ['Glutes', 'Hamstrings'],
+  chin_up: ['Lats', 'Biceps'],
+  cs_db_row: ['Lats', 'Biceps'],
+  face_pull: ['Rear Delts', 'Mid Traps'],
+  reverse_fly: ['Rear Delts', 'Mid Traps'],
+  db_row_1arm: ['Lats', 'Biceps'],
+  band_row: ['Lats', 'Biceps'],
+  // ── Accessory / Warmup exercises ────────────────────────────────────
+  step_ups: ['Quads', 'Glutes'],
+  incline_pushups: ['Chest', 'Triceps'],
+  suitcase_carry: ['Obliques', 'Forearms'],
+  split_squat: ['Quads', 'Glutes'],
+  calf_raises: ['Calves', null],
+  single_leg_bal: [null, null],
+  // balance drill — no primary muscle highlight
+  // ── Tricep pushdown (band, Workout A) ───────────────────────────────
+  tricep_pushdown: ['Triceps', null],
+  // ── Lateral raise (Workout A) ───────────────────────────────────────
+  lateral_raise: ['Side Delts', null],
+  db_lateral: ['Side Delts', null],
+  db_tricep: ['Triceps', null],
+  db_curl: ['Biceps', 'Forearms'],
+  db_hammer: ['Forearms', 'Biceps'],
+  // ExRx: brachioradialis (forearms) is the target; biceps is synergist
+  // ── Preset library — Arms ───────────────────────────────────────────
   p_db_bicep_curl: ['Biceps', 'Forearms'],
   p_barbell_curl: ['Biceps', 'Forearms'],
-  p_hammer_curl: ['Biceps', 'Forearms'],
-  p_concentration_curl: ['Biceps', 'Forearms'],
+  p_hammer_curl: ['Forearms', 'Biceps'],
+  // ExRx: brachioradialis (forearms) is the target; biceps is synergist
+  p_concentration_curl: ['Biceps', null],
   p_preacher_curl: ['Biceps', 'Forearms'],
+  // ExRx: brachioradialis listed as synergist
+  // ── Preset library — Triceps ────────────────────────────────────────
   p_tricep_pushdown: ['Triceps', null],
-  p_overhead_ext: ['Triceps', 'Shoulders'],
+  p_overhead_ext: ['Triceps', null],
   p_skull_crushers: ['Triceps', null],
   p_tricep_dips: ['Triceps', 'Chest'],
   p_close_grip_bench: ['Triceps', 'Chest'],
   p_diamond_pushup: ['Triceps', 'Chest'],
-  p_lateral_raise: ['Shoulders', null],
-  p_front_raise: ['Shoulders', null],
-  p_db_shoulder_press: ['Shoulders', 'Triceps'],
-  p_arnold_press: ['Shoulders', 'Triceps'],
-  p_rear_delt_fly: ['Shoulders', 'Back'],
-  p_band_face_pull: ['Shoulders', 'Back'],
-  p_shrugs: ['Shoulders', 'Back'],
+  // ── Preset library — Shoulders ──────────────────────────────────────
+  p_lateral_raise: ['Side Delts', null],
+  p_front_raise: ['Front Delts', null],
+  p_db_shoulder_press: ['Front Delts', 'Triceps'],
+  // ExRx: anterior deltoid is primary in overhead pressing
+  p_arnold_press: ['Front Delts', 'Side Delts'],
+  // ExRx: anterior deltoid is primary in Arnold press
+  p_rear_delt_fly: ['Rear Delts', 'Mid Traps'],
+  p_band_face_pull: ['Rear Delts', 'Mid Traps'],
+  p_shrugs: ['Upper Traps', null],
+  p_band_ext_rot: ['Rear Delts', null],
+  // ── Preset library — Chest ──────────────────────────────────────────
   p_push_up: ['Chest', 'Triceps'],
-  p_db_fly: ['Chest', 'Shoulders'],
-  p_incline_db_press: ['Chest', 'Shoulders'],
+  p_db_fly: ['Chest', 'Front Delts'],
+  p_incline_db_press: ['Chest', 'Front Delts'],
   p_chest_dip: ['Chest', 'Triceps'],
-  p_cable_fly: ['Chest', 'Shoulders'],
-  p_pull_up: ['Back', 'Biceps'],
-  p_lat_pulldown: ['Back', 'Biceps'],
-  p_seated_cable_row: ['Back', 'Biceps'],
-  p_t_bar_row: ['Back', 'Biceps'],
-  p_straight_arm_pd: ['Back', 'Shoulders'],
-  p_rdl: ['Hinge', 'Glutes'],
-  p_bulgarian_squat: ['Legs', 'Glutes'],
-  p_leg_press: ['Legs', 'Glutes'],
-  p_leg_extension: ['Legs', null],
-  p_seated_leg_curl: ['Legs', 'Glutes'],
-  p_sumo_squat: ['Legs', 'Glutes'],
-  p_wall_sit: ['Legs', null],
-  p_cable_kickback: ['Glutes', 'Legs'],
-  p_hip_abduction: ['Glutes', 'Legs'],
-  p_frog_pumps: ['Glutes', 'Legs'],
-  p_donkey_kick: ['Glutes', 'Legs'],
-  p_clamshell: ['Glutes', 'Legs'],
-  p_plank: ['Core', null],
-  p_side_plank: ['Core', null],
-  p_dead_bug: ['Core', null],
-  p_bird_dog: ['Core', 'Glutes'],
-  p_ab_wheel: ['Core', null],
-  p_hanging_knee_raise: ['Core', null],
-  p_cable_crunch: ['Core', null],
-  p_band_ext_rot: ['Shoulders', null]
+  p_cable_fly: ['Chest', 'Front Delts'],
+  // ── Preset library — Back ───────────────────────────────────────────
+  p_pull_up: ['Lats', 'Biceps'],
+  p_lat_pulldown: ['Lats', 'Biceps'],
+  p_seated_cable_row: ['Lats', 'Biceps'],
+  p_t_bar_row: ['Lats', 'Mid Traps'],
+  p_straight_arm_pd: ['Lats', null],
+  p_rdl: ['Hamstrings', 'Glutes'],
+  // ── Preset library — Legs ───────────────────────────────────────────
+  p_bulgarian_squat: ['Quads', 'Glutes'],
+  p_leg_press: ['Quads', 'Glutes'],
+  p_leg_extension: ['Quads', null],
+  p_seated_leg_curl: ['Hamstrings', null],
+  p_sumo_squat: ['Quads', 'Glutes'],
+  p_wall_sit: ['Quads', null],
+  p_cable_kickback: ['Glutes', null],
+  p_hip_abduction: ['Glutes', null],
+  p_frog_pumps: ['Glutes', null],
+  p_donkey_kick: ['Glutes', null],
+  p_clamshell: ['Glutes', null],
+  // ── Preset library — Core ───────────────────────────────────────────
+  p_plank: ['Abs', 'Obliques'],
+  p_side_plank: ['Obliques', 'Abs'],
+  p_dead_bug: ['Abs', null],
+  p_bird_dog: ['Spinal Erectors', 'Glutes'],
+  // ExRx: erector spinae is the target; abs are stabilisers
+  p_ab_wheel: ['Abs', null],
+  p_hanging_knee_raise: ['Abs', null],
+  // NOTE: ExRx targets Iliopsoas (hip flexors) — no hip flexors in muscle map; Abs used as closest available
+  p_cable_crunch: ['Abs', null]
 };
 function applyMuscleMeta(library) {
   Object.entries(library).forEach(([id, ex]) => {
-    const [primaryMuscle, secondaryMuscle] = MUSCLE_META[id] || [ex.muscle, null];
+    const [primaryMuscle, secondaryMuscle] = MUSCLE_META[id] || [null, null];
+    ex.primary = primaryMuscle ? [primaryMuscle] : [];
+    ex.secondary = secondaryMuscle ? [secondaryMuscle] : [];
     ex.primaryMuscle = primaryMuscle;
     ex.secondaryMuscle = secondaryMuscle;
   });
