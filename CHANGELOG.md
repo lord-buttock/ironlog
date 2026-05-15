@@ -6,6 +6,8 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ## 2026-05-15
 
+- [Codex] Replaced chin-up PNG icon with a reference-style wall-mounted pull-up bar illustration.
+- [Codex] Added build-version cache busting to PNG exercise icon URLs so updated icons load on deployed devices.
 - [Codex] Added transparent PNG exercise icons for Workouts A and B using the approved RDL-style art direction.
 - [Codex] Regenerated Workout C PNG icons to match the approved RDL-style art direction.
 - [Codex] Added transparent PNG exercise icons for the current Workout C lineup and updated ExerciseIcon to prefer PNG assets with SVG fallback.

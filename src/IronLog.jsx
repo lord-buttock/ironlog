@@ -211,7 +211,7 @@ const ExerciseIcon = ({ id, size = 36 }) => {
     }}>
       {hasPng ? (
         <img
-          src={`assets/icons/${id}.png`}
+          src={`assets/icons/${id}.png?v=${APP_BUILD}`}
           width={size * 0.78}
           height={size * 0.78}
           alt=""
@@ -1392,9 +1392,21 @@ function MiniLineChart({ data, dataKey, color, height = 160, domain }) {
 
   const rawMin = domain ? domain[0] : Math.min(...vals);
   const rawMax = domain ? domain[1] : Math.max(...vals);
-  const pad    = rawMax === rawMin ? 1 : (rawMax - rawMin) * 0.1;
-  const yMin   = rawMin - pad;
-  const yMax   = rawMax + pad;
+
+  // Choose a step size that gives "nice" round tick values (0.5 / 1 / 2.5 / 5 / 10 / 25 …)
+  const niceStep = (() => {
+    if (domain) return null; // fixed-domain charts (e.g. RPE) keep their own scale
+    const range = rawMax === rawMin ? 1 : rawMax - rawMin;
+    const candidates = [0.5, 1, 2, 2.5, 5, 10, 20, 25, 50, 100, 250, 500];
+    return candidates.find(c => c >= range / 5) || 500;
+  })();
+
+  const yMin = niceStep
+    ? Math.floor(rawMin / niceStep) * niceStep
+    : rawMin - (rawMax === rawMin ? 1 : (rawMax - rawMin) * 0.1);
+  const yMax = niceStep
+    ? Math.max(Math.ceil(rawMax / niceStep) * niceStep, yMin + niceStep)
+    : rawMax + (rawMax === rawMin ? 1 : (rawMax - rawMin) * 0.1);
 
   // We use a fixed render width for coordinate maths; CSS scales it.
   const W = 320;
@@ -1405,12 +1417,19 @@ function MiniLineChart({ data, dataKey, color, height = 160, domain }) {
   const xOf = i  => PAD.left + (i / (data.length - 1)) * innerW;
   const yOf = v  => PAD.top  + innerH - ((v - yMin) / (yMax - yMin)) * innerH;
 
-  // Y-axis ticks
-  const tickCount = 4;
-  const yTicks = Array.from({ length: tickCount + 1 }, (_, i) => {
-    const v = yMin + (i / tickCount) * (yMax - yMin);
-    return { v: Math.round(v * 10) / 10, y: yOf(v) };
-  });
+  // Y-axis ticks at each step interval (or 5 evenly-spaced for fixed-domain)
+  const yTicks = niceStep
+    ? (() => {
+        const ticks = [];
+        for (let v = yMin; v <= yMax + niceStep * 0.01; v = Math.round((v + niceStep) * 1e9) / 1e9) {
+          ticks.push({ v, y: yOf(v) });
+        }
+        return ticks;
+      })()
+    : Array.from({ length: 5 }, (_, i) => {
+        const v = yMin + (i / 4) * (yMax - yMin);
+        return { v: Math.round(v * 10) / 10, y: yOf(v) };
+      });
 
   // Build polyline points (skip nulls)
   const segments = [];
