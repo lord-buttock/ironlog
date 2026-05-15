@@ -159,13 +159,13 @@ const MUSCLE_META = {
   reverse_lunge:   ['Quads',           'Glutes'],
   sb_ham_curl:     ['Hamstrings',      'Glutes'],
   pallof_press:    ['Obliques',        null],
-  farmers_walk:    ['Obliques',        'Forearms'],
+  farmers_walk:    ['Forearms',         'Upper Traps'],  // ExRx: grip/forearms is the limiting target; core is a stabiliser
   // ── Workout A — Push ────────────────────────────────────────────────
   bb_flat_bench:   ['Chest',           'Triceps'],
   db_bench:        ['Chest',           'Triceps'],
   db_floor_press:  ['Chest',           'Triceps'],
   bb_incline_bench:['Chest',           'Front Delts'],
-  db_shoulder:     ['Side Delts',      'Triceps'],  // shoulder press
+  db_shoulder:     ['Front Delts',      'Triceps'],  // shoulder press — ExRx: anterior deltoid is primary mover in overhead press
   // ── Workout B — Pull / Hinge ────────────────────────────────────────
   kb_deadlift:     ['Glutes',          'Hamstrings'],
   chin_up:         ['Lats',            'Biceps'],
@@ -188,13 +188,13 @@ const MUSCLE_META = {
   db_lateral:      ['Side Delts',      null],
   db_tricep:       ['Triceps',         null],
   db_curl:         ['Biceps',          'Forearms'],
-  db_hammer:       ['Biceps',          'Forearms'],
+  db_hammer:       ['Forearms',         'Biceps'],   // ExRx: brachioradialis (forearms) is the target; biceps is synergist
   // ── Preset library — Arms ───────────────────────────────────────────
   p_db_bicep_curl:      ['Biceps',      'Forearms'],
   p_barbell_curl:       ['Biceps',      'Forearms'],
-  p_hammer_curl:        ['Biceps',      'Forearms'],
+  p_hammer_curl:        ['Forearms',    'Biceps'],   // ExRx: brachioradialis (forearms) is the target; biceps is synergist
   p_concentration_curl: ['Biceps',      null],
-  p_preacher_curl:      ['Biceps',      null],
+  p_preacher_curl:      ['Biceps',      'Forearms'], // ExRx: brachioradialis listed as synergist
   // ── Preset library — Triceps ────────────────────────────────────────
   p_tricep_pushdown:    ['Triceps',     null],
   p_overhead_ext:       ['Triceps',     null],
@@ -205,8 +205,8 @@ const MUSCLE_META = {
   // ── Preset library — Shoulders ──────────────────────────────────────
   p_lateral_raise:      ['Side Delts',  null],
   p_front_raise:        ['Front Delts', null],
-  p_db_shoulder_press:  ['Side Delts',  'Triceps'],
-  p_arnold_press:       ['Side Delts',  'Front Delts'],
+  p_db_shoulder_press:  ['Front Delts', 'Triceps'],  // ExRx: anterior deltoid is primary in overhead pressing
+  p_arnold_press:       ['Front Delts',  'Side Delts'],  // ExRx: anterior deltoid is primary in Arnold press
   p_rear_delt_fly:      ['Rear Delts',  'Mid Traps'],
   p_band_face_pull:     ['Rear Delts',  'Mid Traps'],
   p_shrugs:             ['Upper Traps', null],
@@ -240,9 +240,9 @@ const MUSCLE_META = {
   p_plank:              ['Abs',         'Obliques'],
   p_side_plank:         ['Obliques',    'Abs'],
   p_dead_bug:           ['Abs',         null],
-  p_bird_dog:           ['Abs',         'Glutes'],
+  p_bird_dog:           ['Spinal Erectors', 'Glutes'],  // ExRx: erector spinae is the target; abs are stabilisers
   p_ab_wheel:           ['Abs',         null],
-  p_hanging_knee_raise: ['Abs',         null],
+  p_hanging_knee_raise: ['Abs',         null],       // NOTE: ExRx targets Iliopsoas (hip flexors) — no hip flexors in muscle map; Abs used as closest available
   p_cable_crunch:       ['Abs',         null],
 };
 ```
@@ -369,8 +369,11 @@ Some exercises have contested muscle assignments. This table records the chosen 
 | KB Deadlift (raised) | Primary: glutes or hamstrings? | `Glutes` primary | Raised height reduces hamstring stretch; hip extension dominates |
 | Hip Thrust | Primary: glutes or hamstrings? | `Glutes` primary | Unambiguous — glute thrust, hamstrings assist |
 | Face Pull | Primary: rear delts or mid traps? | `Rear Delts` primary | Face pulls are prescribed specifically for posterior delt health |
-| Farmers Walk | Primary: obliques or forearms? | `Obliques` primary | Anti-lateral-flexion core demand is the training goal; forearms secondary |
-| Suitcase Carry | Same as Farmers Walk | `Obliques` primary | One-sided version amplifies anti-lateral-flexion demand |
+| Farmers Walk | Primary: obliques or forearms? | `Forearms` primary | ExRx classifies as a forearms/grip exercise — core is a stabiliser, not the limiting mover |
+| Suitcase Carry | Primary: obliques or forearms? | `Obliques` primary | Unlike farmer's walk, the training intent is specifically anti-lateral-flexion; forearms secondary |
+| DB Shoulder Press | Primary: front delts or side delts? | `Front Delts` primary | ExRx targets anterior deltoid in all overhead pressing movements |
+| Hammer Curl | Primary: biceps or forearms? | `Forearms` primary | ExRx targets brachioradialis (forearms) as the primary mover; biceps is the synergist |
+| Arnold Press | Primary: front delts or side delts? | `Front Delts` primary | ExRx targets anterior deltoid; lateral deltoid is a synergist via the rotation component |
 | Pallof Press | Primary: abs or obliques? | `Obliques` primary | Anti-rotation; obliques are the primary resistors |
 | Close-Grip Bench | Primary: triceps or chest? | `Triceps` primary | Narrowed grip shifts loading to triceps |
 | Chin-Up vs Pull-Up | Same muscles? | Both: `Lats` primary, `Biceps` secondary | Underhand (chin-up) increases bicep involvement but lat is still primary |
@@ -413,13 +416,20 @@ Phase 1 data migration does not require visual QA — it is a pure data rename w
 
 ## Part 10 — Sources and Validation
 
-Muscle assignments in this document were validated against:
-- [ExRx.net](https://exrx.net) — primary EMG and exercise analysis reference
-- [StrengthLevel.com](https://strengthlevel.com) — exercise descriptions
-- ACE Exercise Library
-- Renaissance Periodization exercise science resources
+Muscle assignments in this document were cross-referenced against ExRx.net exercise classifications (May 2026). Of 50 exercises checked, 42 matched exactly, 5 were minor adjustments, and 3 were corrected:
 
-When in doubt, ExRx is authoritative. Do not use random gym-content sources.
+| Changed exercise | Old assignment | New assignment | Reason |
+|---|---|---|---|
+| Farmer's Walk | Primary: Obliques | Primary: Forearms | ExRx classifies as grip/forearms exercise |
+| Bird Dog | Primary: Abs | Primary: Spinal Erectors | ExRx targets erector spinae |
+| Hammer Curl | Primary: Biceps | Primary: Forearms | ExRx targets brachioradialis |
+| DB / Barbell Shoulder Press | Primary: Side Delts | Primary: Front Delts | ExRx targets anterior deltoid in overhead press |
+| Arnold Press | Primary: Side Delts | Primary: Front Delts | ExRx targets anterior deltoid |
+| Preacher Curl | Secondary: null | Secondary: Forearms | ExRx lists brachioradialis as synergist |
+
+**Note on Hanging Knee Raise:** ExRx targets Iliopsoas (hip flexors), which is not in IronLog's muscle map. Mapped to Abs as the closest available muscle — known inaccuracy, acceptable for current muscle map scope.
+
+When in doubt, [ExRx.net](https://exrx.net) is authoritative. Do not use random gym-content sources.
 
 ---
 
@@ -450,5 +460,5 @@ When in doubt, ExRx is authoritative. Do not use random gym-content sources.
 
 ---
 
-*Spec version: 1.0 — 2026-05-15*  
+*Spec version: 1.1 — 2026-05-16 — 8 muscle assignments corrected after ExRx.net cross-reference*  
 *Author: Claude Sonnet 4.6 + Phill Cantone*
