@@ -128,11 +128,14 @@ const ExerciseIcon = ({ id, size = 36 }) => {
 // WORKOUT DATA
 // ═══════════════════════════════════════════════════════════════════════
 const WARMUP = [
-  '2 min · Easy stepper or gentle trampoline bounce',
-  '1 min · Bodyweight squats (slow, comfortable depth)',
-  '1 min · Hip hinge drill (hands on hips, small range)',
-  '1 min · Band pull-aparts (easy tension)',
-  '1 min · Glute bridge (bodyweight)',
+  '2 min · Easy stepper or gentle trampoline bounce — get the blood moving',
+  '1 min · Cat-cow — 10 slow reps, unloaded, pain-free range · Gentle spinal mobility',
+  '1 min · Prone cobra — lie face down, hands beside chest, lift chest gently · 6 × 5 sec holds · Back extension and disc health',
+  '30 sec each side · Lying hamstring stretch — on back, loop band or towel around foot, gentle straight-leg pull',
+  '1 min · Doorframe chest & shoulder opener — arms at 90° on frame, lean body gently forward · Chest and anterior shoulder',
+  '30 sec each side · Pendulum swings — lean on bench, arm hangs loose, small gentle circles · Shoulder mobility, important for bursitis',
+  '1 min · Band pull-aparts — 15 reps, light tension · Scapular retraction and upper back activation',
+  '1 min · Glute bridge — 10–12 reps bodyweight · Full hip extension at top',
 ];
 
 const YT = q => `https://www.youtube.com/results?search_query=${q}`;
@@ -167,17 +170,43 @@ const EXERCISES = {
 const WORKOUTS = {
   A: {
     title: 'Push — Chest · Shoulders · Triceps',
-    exercises: ['bb_flat_bench','p_db_shoulder_press','p_lateral_raise','p_close_grip_bench','p_skull_crushers','p_tricep_pushdown'],
+    exercises: [
+      'bb_flat_bench',      // Chest / Triceps
+      'p_db_fly',           // Chest / Shoulders — isolation, fills chest gap
+      'p_db_shoulder_press',// Shoulders / Triceps
+      'p_lateral_raise',    // Shoulders — lateral head
+      'p_rear_delt_fly',    // Shoulders / Back — balances pushing, shoulder health
+      'p_close_grip_bench', // Triceps / Chest
+      'p_tricep_pushdown',  // Triceps — band, door anchor
+    ],
     finisher: ['Wall slides — 2 × 6 slow (pain-free only)','Band pull-aparts — 2 × 12'],
   },
   B: {
     title: 'Pull — Back · Biceps · Hinge',
-    exercises: ['kb_deadlift','chin_up','cs_db_row','face_pull','p_db_bicep_curl','p_hammer_curl'],
+    exercises: [
+      'kb_deadlift',        // Hinge / Glutes — raised height
+      'chin_up',            // Back / Biceps — narrow underhand grip only
+      'cs_db_row',          // Back / Biceps — chest supported
+      'reverse_fly',        // Back / Shoulders — rear delt, posterior chain
+      'face_pull',          // Shoulders / Back — band, door anchor, shoulder health
+      'p_straight_arm_pd',  // Back / Shoulders — lat isolation, door anchor high hook
+      'p_db_bicep_curl',    // Biceps / Forearms
+    ],
     finisher: ['Hamstring floss (band, lying) — 45 sec each side',"Child's pose breathing — 60 sec"],
   },
   C: {
     title: 'Legs + Core',
-    exercises: ['goblet_squat','rdl','hip_thrust','reverse_lunge','sb_ham_curl','pallof_press','farmers_walk'],
+    exercises: [
+      'goblet_squat',       // Legs / Glutes
+      'rdl',                // Hinge / Glutes
+      'hip_thrust',         // Glutes / Legs
+      'reverse_lunge',      // Legs / Glutes
+      'sb_ham_curl',        // Legs / Core — hamstring isolation
+      'p_cable_kickback',   // Glutes / Legs — ankle strap, door anchor low hook
+      'calf_raises',        // Legs — previously untrained
+      'pallof_press',       // Core — anti-rotation, band
+      'farmers_walk',       // Core / Forearms
+    ],
     finisher: ['Band external rotation — 2 × 10 each side','Single-leg balance — 30 sec each side'],
   },
 };

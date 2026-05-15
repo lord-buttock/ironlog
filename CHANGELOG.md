@@ -4,6 +4,10 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-05-15
+
+- [Codex] Updated warmup with mobility/stretch work and revised Workout A/B/C exercise lineups.
+
 ## 2026-05-14
 
 - [Codex] Added IMAGE-PROCESS.md documenting the tested exercise icon PNG cleanup workflow and failed conversion attempts.
