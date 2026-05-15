@@ -42,8 +42,8 @@ const suffix = `\nReactDOM.createRoot(document.getElementById('root')).render(Re
 const appJs  = (prefix + compiled + suffix).replace(/<\/script>/g, '<\\/script>');
 
 // ── 4. App icon (base64 PNG, embedded) ────────────────────────────────
-// To update the icon: replace this string with a new base64-encoded 180×180 PNG
-const ICON_B64 = 'iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAADd0lEQVR42u3dP27UQBTA4bG1dVylGIkyLZfgPDkAUmokDsB5uERaynRUuxcwBX+0EkvWXpt43vP3lYgMsfPT8LzssF2ttaxkLHC7bo1FDqWUcjweF0c8DMOSdYp1dr/OeLZOtyhoOzGNGW/duXsxEyju1XZoIdNC1Fd3617MZNqtezGTKepezGSKuhczmaLuxUymqHv3hEx6uzOZdulezGSK2shB6pEDUgRt3CDF2GGHxsgBrepqrcYN0lh6YuUPJzKs08I6Rg7M0CBoEDQIGkGDoEHQIGgQNIIGQYOgQdAgaAQNUTmxQipOrFgn1TpGDszQIGgQNAgaQYOgQdAgaBA0ggZBg6BB0CBoBA1RObFCKk6sWCfVOkYOzNAgaBA0CBpBg6BB0CBoEDSCBkGDoEHQIGh25dDqN/b9Szfr998/Oqfgnjd4YuXbp9Oir394ulPmju95cydWSukWffXv78HJjjnrrHPPW7iupmbouX/l/a81jBlx77mHQlIRNIIGQcMb2Ox16K8f//6155exvH/noS6a55fx4s/zw+ed7NCXLv785hAr5lt+zmmCnnKRoo4f81ZRm6HxUAiCBkHDPIesF/bzHWRrvASYd537Rzt0CN6gtN/7ZORA0ND0DD0MwyqLTVvn6K7vzNS+1uiwwRMrZDOlC5+xAoJG0AH5Lw32e5/S/sPKw9OdU99XH8DyPfMYORA0CBoEDY0HPeXgpIOyMUz5Ob31QdlNdujXLlLMeaLe4tT3Zi/bXbpYb/uMG3Urr2mboTFDg6BB0BA46DUeLLwxad/3fIMTK9ecVvse2rqultc5pbmurtY6tvhusqWfyOQzVuavc8s9b+26mn37qNHBPfdQiIdCtwBBg6BB0CBoBA2CBkGDoEHQCBoEDYIGQcMVXa3VG49Jo7nPWLGOdYwcIGgEDYIGQYOgQdAIGgQNggZBI2gQNAgaBA2CZo+cWCEVJ1ask2odIwdmaBA0CBoEjaBB0CBoEDQIGkGDoEHQIGgQNIKGqLpaaymlOLVCip6dWLFOqnWMHKScoTu3gujjhh2atDs0pAva2EHocePSDi1qwsZs5GAXM7RdmpC782s7tKgJF/O1kUPUhIp5ygwtasLEPPWhUNSEiLmUX/+d7oyFvCuPJkOes0PbrQkR85wd+l9/gB2bzSNeGrS4aSricz8A8r6heTRwhEEAAAAASUVORK5CYII=';
+// To update the icon: replace assets/app-icon.png with a 180×180 opaque PNG.
+const ICON_B64 = fs.readFileSync(path.join(__dirname, 'assets', 'app-icon.png')).toString('base64');
 
 // ── 5. Assemble HTML ─────────────────────────────────────────────────
 const html = `<!DOCTYPE html>
