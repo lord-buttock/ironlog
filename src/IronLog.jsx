@@ -91,6 +91,7 @@ const EXERCISE_ICONS = {
   p_ab_wheel: <><circle cx="10" cy="12" r="2" /><line x1="12" y1="13" x2="20" y2="19" /><line x1="20" y1="19" x2="26" y2="19" /><circle cx="27" cy="20" r="2" /><line x1="20" y1="19" x2="14" y2="26" /><line x1="14" y1="26" x2="9" y2="26" /></>,
   p_hanging_knee_raise: <><line x1="7" y1="5" x2="25" y2="5" /><circle cx="16" cy="9" r="2.2" /><line x1="16" y1="11" x2="16" y2="19" /><line x1="16" y1="12" x2="11" y2="5" /><line x1="16" y1="12" x2="21" y2="5" /><line x1="16" y1="19" x2="12" y2="23" /><line x1="16" y1="19" x2="21" y2="23" /><line x1="12" y1="23" x2="20" y2="23" /></>,
   p_cable_crunch: <><line x1="23" y1="4" x2="23" y2="13" /><circle cx="15" cy="10" r="2" /><path d="M15 12c1 5 4 8 8 9" /><line x1="15" y1="14" x2="21" y2="13" /><line x1="21" y1="13" x2="23" y2="9" /><line x1="21" y1="21" x2="16" y2="27" /><line x1="21" y1="21" x2="26" y2="27" /></>,
+  p_band_ext_rot: <><circle cx="13" cy="5" r="2.2" /><line x1="13" y1="7" x2="13" y2="16" /><line x1="13" y1="11" x2="8" y2="14" /><line x1="13" y1="16" x2="10" y2="25" /><line x1="13" y1="16" x2="18" y2="24" /><line x1="13" y1="11" x2="13" y2="18" /><line x1="13" y1="18" x2="22" y2="18" /><path d="M22 18 Q26 14 24 10" strokeDasharray="2 1.5" /><line x1="24" y1="10" x2="27" y2="9" /></>,
   _fallback: <><circle cx="16" cy="4" r="2.2" /><line x1="16" y1="6.2" x2="16" y2="17" /><line x1="16" y1="10" x2="10" y2="14" /><line x1="10" y1="14" x2="8" y2="13" /><line x1="8" y1="12" x2="8" y2="15" /><line x1="16" y1="17" x2="12" y2="25" /><line x1="16" y1="17" x2="20" y2="25" /></>,
 };
 
@@ -107,19 +108,31 @@ const Icon = ({ name, size = 18, color = 'currentColor', strokeWidth = 1.8 }) =>
 };
 
 const ExerciseIcon = ({ id, size = 36 }) => {
+  const [missingPng, setMissingPng] = useState(false);
+  useEffect(() => setMissingPng(false), [id]);
   const paths = EXERCISE_ICONS[id] || EXERCISE_ICONS._fallback;
   return (
     <div style={{
       width: size, height: size, borderRadius: '50%',
       background: '#f1f7ff',
       border: '1px solid #d9e8fb',
-      display: 'flex',
+      display: 'flex', overflow: 'hidden',
       alignItems: 'center', justifyContent: 'center', flexShrink: 0,
     }}>
-      <svg viewBox="0 0 32 32" width={size * 0.8} height={size * 0.8}
-        fill="none" strokeLinecap="round" strokeLinejoin="round">
-        {paths}
-      </svg>
+      {!missingPng ? (
+        <img
+          src={`assets/icons/${id}.png`}
+          width={size * 0.78}
+          height={size * 0.78}
+          onError={() => setMissingPng(true)}
+          alt=""
+        />
+      ) : (
+        <svg viewBox="0 0 32 32" width={size * 0.8} height={size * 0.8}
+          fill="none" strokeLinecap="round" strokeLinejoin="round">
+          {paths}
+        </svg>
+      )}
     </div>
   );
 };
@@ -176,6 +189,7 @@ const WORKOUTS = {
       'p_db_shoulder_press',// Shoulders / Triceps
       'p_lateral_raise',    // Shoulders — lateral head
       'p_rear_delt_fly',    // Shoulders / Back — balances pushing, shoulder health
+      'p_band_ext_rot',     // Shoulders — rotator cuff, critical for bursitis
       'p_close_grip_bench', // Triceps / Chest
       'p_tricep_pushdown',  // Triceps — band, door anchor
     ],
@@ -198,12 +212,15 @@ const WORKOUTS = {
     title: 'Legs + Core',
     exercises: [
       'goblet_squat',       // Legs / Glutes
+      'p_sumo_squat',       // Legs / Glutes — inner thigh, previously untrained
       'rdl',                // Hinge / Glutes
       'hip_thrust',         // Glutes / Legs
       'reverse_lunge',      // Legs / Glutes
       'sb_ham_curl',        // Legs / Core — hamstring isolation
       'p_cable_kickback',   // Glutes / Legs — ankle strap, door anchor low hook
       'calf_raises',        // Legs — previously untrained
+      'p_dead_bug',         // Core — deep abs, spine neutral, safe for lower back
+      'p_plank',            // Core — isometric abs, full body stability
       'pallof_press',       // Core — anti-rotation, band
       'farmers_walk',       // Core / Forearms
     ],
@@ -1544,6 +1561,8 @@ const PRESET_LIBRARY = {
   p_ab_wheel:           { name: 'Ab Wheel Rollout',           muscle: 'Core',      unit: 'bw',   defaultSets: 3, defaultReps: 6,  repMax: 10, cue: 'From knees. Roll out slowly, pull back in. Do not let hips sag.', demo: YT('ab+wheel+rollout+form+tutorial+beginners') },
   p_hanging_knee_raise: { name: 'Hanging Knee Raise',         muscle: 'Core',      unit: 'bw',   defaultSets: 3, defaultReps: 10, repMax: 15, cue: 'Hang from bar. Bring knees to chest, lower slowly.',            demo: YT('hanging+knee+raise+form+tutorial') },
   p_cable_crunch:       { name: 'Cable Crunch',               muscle: 'Core',      unit: 'kg',   defaultSets: 3, defaultReps: 15, repMax: 20, cue: 'Kneel, pull rope to floor. Round spine. Abs do the work.',       demo: YT('cable+crunch+abs+form+tutorial') },
+  // ── Shoulder health ───────────────────────────────────────────────────
+  p_band_ext_rot:       { name: 'Band External Rotation',     muscle: 'Shoulders', unit: 'band', defaultSets: 3, defaultReps: 12, repMax: 15, cue: 'Elbow tucked at 90° at your side. Rotate forearm outward against band resistance. Slow and controlled both ways. Critical for rotator cuff health — do not skip.', demo: YT('band+external+rotation+rotator+cuff+exercise+form'), perSide: true },
 };
 
 const MUSCLE_META = {
@@ -1618,6 +1637,7 @@ const MUSCLE_META = {
   p_ab_wheel: ['Core', null],
   p_hanging_knee_raise: ['Core', null],
   p_cable_crunch: ['Core', null],
+  p_band_ext_rot: ['Shoulders', null],
 };
 
 function applyMuscleMeta(library) {

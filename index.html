@@ -30,7 +30,7 @@
   </div>
   <script>
 const { useState, useEffect, useRef, useCallback } = React;
-const APP_BUILD = 1778812843545;
+const APP_BUILD = 1778825137811;
 
 // ═══════════════════════════════════════════════════════════════════════
 // THEME
@@ -2933,6 +2933,49 @@ const EXERCISE_ICONS = {
     x2: "26",
     y2: "27"
   })),
+  p_band_ext_rot: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "13",
+    cy: "5",
+    r: "2.2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "13",
+    y1: "7",
+    x2: "13",
+    y2: "16"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "13",
+    y1: "11",
+    x2: "8",
+    y2: "14"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "13",
+    y1: "16",
+    x2: "10",
+    y2: "25"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "13",
+    y1: "16",
+    x2: "18",
+    y2: "24"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "13",
+    y1: "11",
+    x2: "13",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "13",
+    y1: "18",
+    x2: "22",
+    y2: "18"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M22 18 Q26 14 24 10",
+    strokeDasharray: "2 1.5"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "24",
+    y1: "10",
+    x2: "27",
+    y2: "9"
+  })),
   _fallback: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
     cx: "16",
     cy: "4",
@@ -3000,6 +3043,8 @@ const ExerciseIcon = ({
   id,
   size = 36
 }) => {
+  const [missingPng, setMissingPng] = useState(false);
+  useEffect(() => setMissingPng(false), [id]);
   const paths = EXERCISE_ICONS[id] || EXERCISE_ICONS._fallback;
   return /*#__PURE__*/React.createElement("div", {
     style: {
@@ -3009,11 +3054,18 @@ const ExerciseIcon = ({
       background: '#f1f7ff',
       border: '1px solid #d9e8fb',
       display: 'flex',
+      overflow: 'hidden',
       alignItems: 'center',
       justifyContent: 'center',
       flexShrink: 0
     }
-  }, /*#__PURE__*/React.createElement("svg", {
+  }, !missingPng ? /*#__PURE__*/React.createElement("img", {
+    src: `assets/icons/${id}.png`,
+    width: size * 0.78,
+    height: size * 0.78,
+    onError: () => setMissingPng(true),
+    alt: ""
+  }) : /*#__PURE__*/React.createElement("svg", {
     viewBox: "0 0 32 32",
     width: size * 0.8,
     height: size * 0.8,
@@ -3301,6 +3353,8 @@ const WORKOUTS = {
     // Shoulders — lateral head
     'p_rear_delt_fly',
     // Shoulders / Back — balances pushing, shoulder health
+    'p_band_ext_rot',
+    // Shoulders — rotator cuff, critical for bursitis
     'p_close_grip_bench',
     // Triceps / Chest
     'p_tricep_pushdown' // Triceps — band, door anchor
@@ -3329,6 +3383,8 @@ const WORKOUTS = {
     title: 'Legs + Core',
     exercises: ['goblet_squat',
     // Legs / Glutes
+    'p_sumo_squat',
+    // Legs / Glutes — inner thigh, previously untrained
     'rdl',
     // Hinge / Glutes
     'hip_thrust',
@@ -3341,6 +3397,10 @@ const WORKOUTS = {
     // Glutes / Legs — ankle strap, door anchor low hook
     'calf_raises',
     // Legs — previously untrained
+    'p_dead_bug',
+    // Core — deep abs, spine neutral, safe for lower back
+    'p_plank',
+    // Core — isometric abs, full body stability
     'pallof_press',
     // Core — anti-rotation, band
     'farmers_walk' // Core / Forearms
@@ -6304,6 +6364,18 @@ const PRESET_LIBRARY = {
     repMax: 20,
     cue: 'Kneel, pull rope to floor. Round spine. Abs do the work.',
     demo: YT('cable+crunch+abs+form+tutorial')
+  },
+  // ── Shoulder health ───────────────────────────────────────────────────
+  p_band_ext_rot: {
+    name: 'Band External Rotation',
+    muscle: 'Shoulders',
+    unit: 'band',
+    defaultSets: 3,
+    defaultReps: 12,
+    repMax: 15,
+    cue: 'Elbow tucked at 90° at your side. Rotate forearm outward against band resistance. Slow and controlled both ways. Critical for rotator cuff health — do not skip.',
+    demo: YT('band+external+rotation+rotator+cuff+exercise+form'),
+    perSide: true
   }
 };
 const MUSCLE_META = {
@@ -6377,7 +6449,8 @@ const MUSCLE_META = {
   p_bird_dog: ['Core', 'Glutes'],
   p_ab_wheel: ['Core', null],
   p_hanging_knee_raise: ['Core', null],
-  p_cable_crunch: ['Core', null]
+  p_cable_crunch: ['Core', null],
+  p_band_ext_rot: ['Shoulders', null]
 };
 function applyMuscleMeta(library) {
   Object.entries(library).forEach(([id, ex]) => {
