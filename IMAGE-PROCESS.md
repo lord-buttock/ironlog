@@ -284,25 +284,92 @@ pixelHeight: 108
 hasAlpha: yes
 ```
 
+## Icon Art Direction — Approved Style Standard
+
+**Established 2026-05-15 after Workout C first-pass review.**
+
+### Approved style anchor
+
+The **RDL (Romanian Deadlift) icon** is the approved style reference for all future icons.
+
+What defines this style:
+- **Shaped head with hair and profile** — not a blank oval or circle. The head reads as a real person.
+- **Subtle pale-blue body shading** — filled body regions, not just outlines. Torso, limbs, and clothing areas have a light blue fill that gives the figure volume.
+- **Realistic human anatomy and pose** — proportions suggest a real body. The pose is recognisably the exercise, not a generic standing figure.
+- **Clear equipment** — weights, bands, or surfaces are unambiguous at small sizes.
+- **Polished illustration feel** — consistent stroke weight, clean anti-aliasing, professional finish.
+
+### Rejected style (do not use)
+
+The first **goblet squat icon** represents the style to avoid:
+- Blank oval head — no profile, hair, or facial detail
+- No body shading — pure line art with no fill
+- Generic pictogram quality — could be from any icon set
+- Reads as a symbol, not an illustration
+
+### Quality gate — reject and regenerate if any of the following apply
+
+| Check | Pass | Fail |
+|---|---|---|
+| Head | Shaped with profile/hair | Blank oval or circle |
+| Body | Has pale-blue shading/fill | Line art only, no fill |
+| Pose | Clearly shows the exercise | Generic standing figure |
+| Equipment | Visible and identifiable | Missing or ambiguous |
+| Overall | Polished illustration | Pictogram / symbol |
+
+### Generation prompt — approved version
+
+Use this prompt for all icon generation going forward:
+
+```text
+Professional fitness app exercise illustration, [EXERCISE DESCRIPTION],
+blue line art with subtle pale-blue body shading, transparent background,
+detailed human figure with shaped head and hair and facial profile,
+no blank oval face, realistic exercise pose with correct body proportions,
+clear equipment visible, clean vector illustration style,
+consistent stroke weight, no text, no border, no background, 108x108 PNG
+```
+
+Replace `[EXERCISE DESCRIPTION]` with the specific movement description for each exercise.
+
+### Workflow for remaining icons
+
+1. Generate using the approved prompt above
+2. Visually check against the quality gate before running Pillow cleanup
+3. If the icon fails the quality gate — regenerate, do not clean and ship a substandard icon
+4. Run Pillow cleanup script (see above)
+5. Verify with `sips` (108×108, hasAlpha: yes)
+6. Save to `assets/icons/<exercise_id>.png`
+
+### Regeneration required
+
+The following Workout C icons were generated before this style standard was established and should be regenerated to match the RDL style anchor:
+
+- `goblet_squat.png` — confirmed substandard (blank oval head, no body shading)
+- All other Workout C icons should be reviewed against the quality gate and regenerated if they do not match
+
+---
+
 ## Current Recommendation
 
-For the first seven Workout C icons:
+For all remaining icons (Workouts A and B, plus any Workout C regenerations):
 
-1. Generate the AI PNGs using the shared prompt and exercise-specific descriptions.
-2. Run the Pillow cleanup script on each generated image.
-3. Save cleaned outputs to:
+1. Use the approved generation prompt with the RDL icon as the visual reference.
+2. Apply the quality gate check before Pillow cleanup — regenerate failures immediately.
+3. Run the Pillow cleanup script on each approved generated image.
+4. Save cleaned outputs to:
 
 ```text
 assets/icons/<exercise_id>.png
 ```
 
-4. Verify every output with:
+5. Verify every output with:
 
 ```bash
 sips -g pixelWidth -g pixelHeight -g hasAlpha assets/icons/<exercise_id>.png
 ```
 
-5. Confirm:
+6. Confirm:
 
 ```text
 pixelWidth: 108
