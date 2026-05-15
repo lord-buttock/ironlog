@@ -107,9 +107,14 @@ const Icon = ({ name, size = 18, color = 'currentColor', strokeWidth = 1.8 }) =>
   );
 };
 
+const PNG_EXERCISE_ICON_IDS = new Set([
+  'goblet_squat', 'p_sumo_squat', 'rdl', 'hip_thrust', 'reverse_lunge',
+  'sb_ham_curl', 'p_cable_kickback', 'calf_raises', 'p_dead_bug',
+  'p_plank', 'pallof_press', 'farmers_walk',
+]);
+
 const ExerciseIcon = ({ id, size = 36 }) => {
-  const [missingPng, setMissingPng] = useState(false);
-  useEffect(() => setMissingPng(false), [id]);
+  const hasPng = PNG_EXERCISE_ICON_IDS.has(id);
   const paths = EXERCISE_ICONS[id] || EXERCISE_ICONS._fallback;
   return (
     <div style={{
@@ -119,17 +124,17 @@ const ExerciseIcon = ({ id, size = 36 }) => {
       display: 'flex', overflow: 'hidden',
       alignItems: 'center', justifyContent: 'center', flexShrink: 0,
     }}>
-      {!missingPng ? (
+      {hasPng ? (
         <img
           src={`assets/icons/${id}.png`}
           width={size * 0.78}
           height={size * 0.78}
-          onError={() => setMissingPng(true)}
           alt=""
         />
       ) : (
         <svg viewBox="0 0 32 32" width={size * 0.8} height={size * 0.8}
-          fill="none" strokeLinecap="round" strokeLinejoin="round">
+          fill="none" stroke={C.amber} strokeWidth="1.6"
+          strokeLinecap="round" strokeLinejoin="round">
           {paths}
         </svg>
       )}

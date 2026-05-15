@@ -6,6 +6,7 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ## 2026-05-15
 
+- [Codex] Added transparent PNG exercise icons for the current Workout C lineup and updated ExerciseIcon to prefer PNG assets with SVG fallback.
 - [Codex] Updated warmup with mobility/stretch work and revised Workout A/B/C exercise lineups.
 
 ## 2026-05-14
