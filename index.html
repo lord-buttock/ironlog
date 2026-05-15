@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>IronLog</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -30,7 +30,7 @@
   </div>
   <script>
 const { useState, useEffect, useRef, useCallback } = React;
-const APP_BUILD = 1778843804236;
+const APP_BUILD = 1778846849175;
 
 // ═══════════════════════════════════════════════════════════════════════
 // THEME
@@ -3020,10 +3020,14 @@ const Icon = ({
 }) => {
   const ref = useRef(null);
   useEffect(() => {
-    if (ref.current && window.lucide) window.lucide.createIcons({
-      nameAttr: 'data-lucide',
-      rootNode: ref.current
-    });
+    if (ref.current && window.lucide) {
+      try {
+        window.lucide.createIcons({
+          nameAttr: 'data-lucide',
+          rootNode: ref.current
+        });
+      } catch (e) {}
+    }
   }, [name]);
   return /*#__PURE__*/React.createElement("span", {
     ref: ref,
@@ -3531,10 +3535,11 @@ function getLastLogged(sessions, exId) {
   }
   return null;
 }
-function buildSession(workoutKey, prevSessions, allExercises = EXERCISES, workoutCustom = {}) {
+function buildSession(workoutKey, prevSessions, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}) {
   const wkt = WORKOUTS[workoutKey];
   const extraIds = workoutCustom[workoutKey] || [];
-  const exerciseIds = [...wkt.exercises, ...extraIds];
+  const hiddenIds = new Set(workoutHidden[workoutKey] || []);
+  const exerciseIds = [...wkt.exercises, ...extraIds].filter(id => !hiddenIds.has(id));
   const exercises = exerciseIds.map(exId => {
     const def = allExercises[exId] || EXERCISES[exId];
     if (!def) return null;
@@ -3615,7 +3620,7 @@ const st = {
     background: C.bg,
     color: C.text,
     fontFamily: C.fBody,
-    paddingBottom: 80
+    paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))'
   },
   card: bg => ({
     background: bg || C.card,
@@ -3781,7 +3786,7 @@ function Nav({
     icon: 'home'
   }, {
     id: 'workout',
-    label: 'Train',
+    label: 'Workout',
     icon: 'dumbbell',
     dot: hasActive
   }, {
@@ -3810,7 +3815,10 @@ function Nav({
       background: C.surface,
       borderTop: `1px solid ${C.border}`,
       display: 'flex',
-      zIndex: 200
+      zIndex: 200,
+      paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+      paddingLeft: 'env(safe-area-inset-left, 0px)',
+      paddingRight: 'env(safe-area-inset-right, 0px)'
     }
   }, tabs.map(t => /*#__PURE__*/React.createElement("button", {
     key: t.id,
@@ -3873,14 +3881,18 @@ function Dashboard({
   setSelectedWorkout,
   allExercises = EXERCISES,
   workoutCustom = {},
+  workoutHidden = {},
   driveSync,
   onCloudSync,
   updateAvailable
 }) {
+  const [showWarmup, setShowWarmup] = useState(false);
+  const [showCooldown, setShowCooldown] = useState(false);
   const suggested = nextWorkout(sessions);
   const wkt = WORKOUTS[selectedWorkout];
   const extraIds = workoutCustom[selectedWorkout] || [];
-  const allWorkoutExIds = [...wkt.exercises, ...extraIds];
+  const hiddenIds = new Set((workoutHidden || {})[selectedWorkout] || []);
+  const allWorkoutExIds = [...wkt.exercises, ...extraIds].filter(id => !hiddenIds.has(id));
   const ws = weekStart();
   const weekSessions = sessions.filter(s => new Date(s.date) >= ws);
   const weekRides = rides.filter(r => new Date(r.date) >= ws);
@@ -4057,7 +4069,111 @@ function Dashboard({
         whiteSpace: 'nowrap'
       }
     }, isExtra ? '+ Added' : ex?.primaryMuscle || ex?.muscle));
-  })), /*#__PURE__*/React.createElement("button", {
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderTop: '1px solid ' + C.border,
+      marginBottom: 10,
+      paddingTop: 10
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setShowWarmup(v => !v),
+    style: {
+      background: 'none',
+      border: 'none',
+      cursor: 'pointer',
+      padding: 0,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+      width: '100%'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      ...st.label,
+      fontSize: 10,
+      color: C.muted
+    }
+  }, "Warm-Up Routine"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: C.muted,
+      fontSize: 11,
+      marginLeft: 'auto'
+    }
+  }, showWarmup ? '▲' : '▼')), showWarmup && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 8,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 6
+    }
+  }, WARMUP.map((item, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      display: 'flex',
+      gap: 10,
+      fontSize: 12,
+      color: C.muted,
+      lineHeight: 1.4
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: C.amber,
+      fontFamily: C.fMono,
+      minWidth: 16
+    }
+  }, i + 1), /*#__PURE__*/React.createElement("span", null, item))))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderTop: '1px solid ' + C.border,
+      marginBottom: 14,
+      paddingTop: 10
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setShowCooldown(v => !v),
+    style: {
+      background: 'none',
+      border: 'none',
+      cursor: 'pointer',
+      padding: 0,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+      width: '100%'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      ...st.label,
+      fontSize: 10,
+      color: C.muted
+    }
+  }, "Cool-Down / Finisher"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: C.muted,
+      fontSize: 11,
+      marginLeft: 'auto'
+    }
+  }, showCooldown ? '▲' : '▼')), showCooldown && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 8,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 6
+    }
+  }, wkt.finisher.map((item, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      display: 'flex',
+      gap: 10,
+      fontSize: 12,
+      color: C.muted,
+      lineHeight: 1.4
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: C.green,
+      fontFamily: C.fMono,
+      minWidth: 16
+    }
+  }, i + 1), /*#__PURE__*/React.createElement("span", null, item))))), /*#__PURE__*/React.createElement("button", {
     style: {
       ...st.btn(),
       display: 'flex',
@@ -4407,7 +4523,8 @@ function ActiveWorkout({
   setView,
   selectedWorkout,
   allExercises = EXERCISES,
-  workoutCustom = {}
+  workoutCustom = {},
+  workoutHidden = {}
 }) {
   const nextWkt = selectedWorkout;
   const [session, setSession] = useState(activeSession || null);
@@ -4419,6 +4536,7 @@ function ActiveWorkout({
   const [prs, setPRs] = useState([]);
   const [nudges, setNudges] = useState([]);
   const [showAddEx, setShowAddEx] = useState(false);
+  const [confirmCancel, setConfirmCancel] = useState(false);
   const elapsedRef = useRef(null);
   const restRef = useRef(null);
   useEffect(() => {
@@ -4446,11 +4564,16 @@ function ActiveWorkout({
     setRestSecs(30);
   }
   function startSession(energy) {
-    const s = buildSession(nextWkt, sessions, allExercises, workoutCustom);
+    const s = buildSession(nextWkt, sessions, allExercises, workoutCustom, workoutHidden);
     s.energy = energy;
     setSession(s);
     setActiveSession(s);
     setPhase('warmup');
+  }
+  function cancelSession() {
+    setActiveSession(null);
+    setConfirmCancel(false);
+    setView('dashboard');
   }
   function updateSet(eIdx, sIdx, field, val) {
     setSession(prev => {
@@ -4525,6 +4648,23 @@ function ActiveWorkout({
         padding: 16
       }
     }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        justifyContent: 'flex-end',
+        marginBottom: 8
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => setView('dashboard'),
+      style: {
+        background: 'none',
+        border: 'none',
+        color: C.muted,
+        cursor: 'pointer',
+        fontSize: 13,
+        fontFamily: C.fMono,
+        padding: 0
+      }
+    }, "back to Home")), /*#__PURE__*/React.createElement("div", {
       style: {
         ...st.label,
         marginBottom: 4
@@ -4644,7 +4784,60 @@ function ActiveWorkout({
         ...st.btn()
       },
       onClick: () => setPhase('workout')
-    }, "Begin Workout \u203A"));
+    }, "Begin Workout \u203A"), /*#__PURE__*/React.createElement("button", {
+      style: {
+        ...st.ghost,
+        marginTop: 8
+      },
+      onClick: () => setConfirmCancel(true)
+    }, "Cancel Session"), confirmCancel && /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0,0,0,0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 300
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        ...st.card(),
+        margin: 24,
+        padding: 24,
+        maxWidth: 320
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: C.fDisplay,
+        fontSize: 18,
+        textTransform: 'uppercase',
+        marginBottom: 8
+      }
+    }, "Cancel Session?"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: C.muted,
+        marginBottom: 20
+      }
+    }, "Progress will not be saved."), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        gap: 8
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      style: {
+        ...st.btn(C.red),
+        flex: 1
+      },
+      onClick: cancelSession
+    }, "Yes, Cancel"), /*#__PURE__*/React.createElement("button", {
+      style: {
+        ...st.ghost,
+        flex: 1
+      },
+      onClick: () => setConfirmCancel(false)
+    }, "Keep Going")))));
   }
 
   // ── Workout ──────────────────────────────────────────────────────────
@@ -4758,7 +4951,21 @@ function ActiveWorkout({
         fontSize: 18,
         color: C.muted
       }
-    }, fmtTimer(elapsed)))), /*#__PURE__*/React.createElement("div", {
+    }, fmtTimer(elapsed)), /*#__PURE__*/React.createElement("button", {
+      onClick: () => setConfirmCancel(true),
+      style: {
+        background: 'none',
+        border: 'none',
+        color: C.muted,
+        cursor: 'pointer',
+        fontSize: 10,
+        fontFamily: C.fMono,
+        marginTop: 6,
+        padding: 0,
+        textDecoration: 'underline',
+        display: 'block'
+      }
+    }, "Cancel"))), /*#__PURE__*/React.createElement("div", {
       style: {
         ...st.row,
         flexWrap: 'wrap',
@@ -5015,7 +5222,54 @@ function ActiveWorkout({
       }
     }, ex.name), /*#__PURE__*/React.createElement("span", {
       style: st.pill(ex.isCustom ? C.amber : C.muted)
-    }, ex.muscle)))))));
+    }, ex.muscle)))))), confirmCancel && /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0,0,0,0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 300
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        ...st.card(),
+        margin: 24,
+        padding: 24,
+        maxWidth: 320
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: C.fDisplay,
+        fontSize: 18,
+        textTransform: 'uppercase',
+        marginBottom: 8
+      }
+    }, "Cancel Session?"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 13,
+        color: C.muted,
+        marginBottom: 20
+      }
+    }, "Progress will not be saved."), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        gap: 8
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      style: {
+        ...st.btn(C.red),
+        flex: 1
+      },
+      onClick: cancelSession
+    }, "Yes, Cancel"), /*#__PURE__*/React.createElement("button", {
+      style: {
+        ...st.ghost,
+        flex: 1
+      },
+      onClick: () => setConfirmCancel(false)
+    }, "Keep Going")))));
   }
 
   // ── Finisher ─────────────────────────────────────────────────────────
@@ -5264,7 +5518,9 @@ function History({
     }
   }, '😴😕😐💪🔥'[sess.energy - 1]), sess.duration && /*#__PURE__*/React.createElement("span", {
     style: st.pill(C.muted)
-  }, sess.duration, "min"), /*#__PURE__*/React.createElement("span", {
+  }, "\u23F1 ", sess.duration, "min"), !sess.duration && !sess.completed && /*#__PURE__*/React.createElement("span", {
+    style: st.pill(C.muted)
+  }, "in progress"), /*#__PURE__*/React.createElement("span", {
     style: {
       color: C.muted,
       fontSize: 12
@@ -6481,6 +6737,8 @@ function Manage({
   setCustomExercises,
   workoutCustom,
   setWorkoutCustom,
+  workoutHidden,
+  setWorkoutHidden,
   allExercises,
   driveSync,
   onDriveSave,
@@ -6645,16 +6903,21 @@ function Manage({
       key: id,
       style: {
         ...st.card(),
-        borderColor: ex.isCustom ? C.amber + '44' : C.border
+        borderColor: ex.isCustom ? C.amber + '44' : C.border,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 10
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
-        justifyContent: 'space-between',
         alignItems: 'flex-start',
-        marginBottom: 6
+        gap: 10
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement(ExerciseIcon, {
+      id: id,
+      size: 36
+    }), /*#__PURE__*/React.createElement("div", {
       style: {
         flex: 1
       }
@@ -6946,7 +7209,7 @@ function Manage({
       marginBottom: 14,
       lineHeight: 1.5
     }
-  }, "Add exercises from the library to each workout permanently. Built-in exercises are locked."), /*#__PURE__*/React.createElement("div", {
+  }, "Add or remove exercises from each workout. Tap Remove to hide a built-in exercise, Restore to bring it back."), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'grid',
       gridTemplateColumns: '1fr 1fr 1fr',
@@ -6987,30 +7250,58 @@ function Manage({
         ...st.col(4),
         marginBottom: 14
       }
-    }, baseIds.map(id => /*#__PURE__*/React.createElement("div", {
-      key: id,
-      style: {
-        ...st.card(),
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '10px 14px'
-      }
-    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 13
-      }
-    }, allExercises[id]?.name || id), /*#__PURE__*/React.createElement("span", {
-      style: {
-        ...st.mono(10, C.muted),
-        marginLeft: 8
-      }
-    }, allExercises[id]?.muscle)), /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 11,
-        color: C.dim
-      }
-    }, "\uD83D\uDD12"))), extraIds.map(id => /*#__PURE__*/React.createElement("div", {
+    }, baseIds.map(id => {
+      const isHidden = (workoutHidden[key] || []).includes(id);
+      return /*#__PURE__*/React.createElement("div", {
+        key: id,
+        style: {
+          ...st.card(),
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '10px 14px',
+          opacity: isHidden ? 0.45 : 1
+        }
+      }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 13,
+          textDecoration: isHidden ? 'line-through' : 'none'
+        }
+      }, allExercises[id]?.name || id), /*#__PURE__*/React.createElement("span", {
+        style: {
+          ...st.mono(10, C.muted),
+          marginLeft: 8
+        }
+      }, allExercises[id]?.muscle)), isHidden ? /*#__PURE__*/React.createElement("button", {
+        onClick: () => setWorkoutHidden(prev => ({
+          ...prev,
+          [key]: (prev[key] || []).filter(eid => eid !== id)
+        })),
+        style: {
+          background: C.green + '18',
+          border: '1px solid ' + C.green + '44',
+          borderRadius: 4,
+          color: C.green,
+          padding: '4px 8px',
+          cursor: 'pointer',
+          fontSize: 11
+        }
+      }, "Restore") : /*#__PURE__*/React.createElement("button", {
+        onClick: () => setWorkoutHidden(prev => ({
+          ...prev,
+          [key]: [...(prev[key] || []), id]
+        })),
+        style: {
+          background: C.red + '18',
+          border: '1px solid ' + C.red + '44',
+          borderRadius: 4,
+          color: C.red,
+          padding: '4px 8px',
+          cursor: 'pointer',
+          fontSize: 12
+        }
+      }, "Remove"));
+    }), extraIds.map(id => /*#__PURE__*/React.createElement("div", {
       key: id,
       style: {
         ...st.card(),
@@ -7222,6 +7513,11 @@ function App() {
     B: [],
     C: []
   });
+  const [workoutHidden, setWorkoutHidden] = useState({
+    A: [],
+    B: [],
+    C: []
+  });
   const [ready, setReady] = useState(false);
   const [driveSync, setDriveSync] = useState({
     status: 'idle',
@@ -7247,7 +7543,7 @@ function App() {
   }, [sessions, rides, customExercises, workoutCustom]);
   useEffect(() => {
     (async () => {
-      const [s, r, a, ce, wc] = await Promise.all([load('il_sessions'), load('il_rides'), load('il_active'), load('il_custom_exercises'), load('il_workout_custom')]);
+      const [s, r, a, ce, wc, wh] = await Promise.all([load('il_sessions'), load('il_rides'), load('il_active'), load('il_custom_exercises'), load('il_workout_custom'), load('il_workout_hidden')]);
       const localSessions = s || [];
       const localRides = r || [];
 
@@ -7261,6 +7557,7 @@ function App() {
       if (a) setActiveSession(a);
       if (ce) setCustomExercises(ce);
       if (wc) setWorkoutCustom(wc);
+      if (wh) setWorkoutHidden(wh);
       setSelectedWorkout(nextWorkout(finalSessions));
       setReady(true);
     })();
@@ -7285,6 +7582,9 @@ function App() {
   useEffect(() => {
     if (ready) save('il_workout_custom', workoutCustom);
   }, [workoutCustom, ready]);
+  useEffect(() => {
+    if (ready) save('il_workout_hidden', workoutHidden);
+  }, [workoutHidden, ready]);
   function handleExport() {
     exportData(dataRef.current);
     setDriveSync({
@@ -7384,6 +7684,8 @@ function App() {
     setSelectedWorkout: setSelectedWorkout,
     allExercises: allExercises,
     workoutCustom: workoutCustom,
+    workoutHidden: workoutHidden,
+    setWorkoutHidden: setWorkoutHidden,
     driveSync: driveSync,
     onCloudSync: handleCloudSync,
     updateAvailable: updateAvailable
@@ -7395,7 +7697,9 @@ function App() {
     setView: setView,
     selectedWorkout: selectedWorkout,
     allExercises: allExercises,
-    workoutCustom: workoutCustom
+    workoutCustom: workoutCustom,
+    workoutHidden: workoutHidden,
+    setWorkoutHidden: setWorkoutHidden
   }), view === 'history' && /*#__PURE__*/React.createElement(History, {
     sessions: sessions,
     allExercises: allExercises
@@ -7410,6 +7714,8 @@ function App() {
     setCustomExercises: setCustomExercises,
     workoutCustom: workoutCustom,
     setWorkoutCustom: setWorkoutCustom,
+    workoutHidden: workoutHidden,
+    setWorkoutHidden: setWorkoutHidden,
     allExercises: allExercises,
     driveSync: driveSync,
     onDriveSave: handleExport,

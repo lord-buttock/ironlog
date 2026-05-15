@@ -98,7 +98,11 @@ const EXERCISE_ICONS = {
 const Icon = ({ name, size = 18, color = 'currentColor', strokeWidth = 1.8 }) => {
   const ref = useRef(null);
   useEffect(() => {
-    if (ref.current && window.lucide) window.lucide.createIcons({ nameAttr: 'data-lucide', rootNode: ref.current });
+    if (ref.current && window.lucide) {
+      try {
+        window.lucide.createIcons({ nameAttr: 'data-lucide', rootNode: ref.current });
+      } catch(e) {}
+    }
   }, [name]);
   return (
     <span ref={ref} style={{ display: 'inline-flex', alignItems: 'center' }}>
@@ -329,10 +333,11 @@ function getLastLogged(sessions, exId) {
   return null;
 }
 
-function buildSession(workoutKey, prevSessions, allExercises = EXERCISES, workoutCustom = {}) {
+function buildSession(workoutKey, prevSessions, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}) {
   const wkt = WORKOUTS[workoutKey];
   const extraIds = workoutCustom[workoutKey] || [];
-  const exerciseIds = [...wkt.exercises, ...extraIds];
+  const hiddenIds = new Set(workoutHidden[workoutKey] || []);
+  const exerciseIds = [...wkt.exercises, ...extraIds].filter(id => !hiddenIds.has(id));
   const exercises = exerciseIds.map(exId => {
     const def = allExercises[exId] || EXERCISES[exId];
     if (!def) return null;
@@ -399,7 +404,7 @@ function weekStart() {
 // STYLE HELPERS
 // ═══════════════════════════════════════════════════════════════════════
 const st = {
-  screen: { minHeight: '100vh', background: C.bg, color: C.text, fontFamily: C.fBody, paddingBottom: 80 },
+  screen: { minHeight: '100vh', background: C.bg, color: C.text, fontFamily: C.fBody, paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' },
   card: bg => ({ background: bg || C.card, border: `1px solid ${C.border}`, borderRadius: 8, padding: 16 }),
   h1: { fontFamily: C.fDisplay, fontSize: 34, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', margin: 0, lineHeight: 1 },
   h2: { fontFamily: C.fDisplay, fontSize: 22, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', margin: 0 },
@@ -465,14 +470,14 @@ function FontLoader() {
 function Nav({ view, setView, hasActive }) {
   const tabs = [
     { id: 'dashboard', label: 'Home',   icon: 'home' },
-    { id: 'workout',   label: 'Train',  icon: 'dumbbell', dot: hasActive },
+    { id: 'workout',   label: 'Workout',  icon: 'dumbbell', dot: hasActive },
     { id: 'history',   label: 'Log',    icon: 'clipboard-list' },
     { id: 'progress',  label: 'Stats',  icon: 'bar-chart-2' },
     { id: 'rides',     label: 'Rides',  icon: 'bike' },
     { id: 'manage',    label: 'Manage', icon: 'grid-2x2' },
   ];
   return (
-    <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: C.surface, borderTop: `1px solid ${C.border}`, display: 'flex', zIndex: 200 }}>
+    <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: C.surface, borderTop: `1px solid ${C.border}`, display: 'flex', zIndex: 200, paddingBottom: 'env(safe-area-inset-bottom, 0px)', paddingLeft: 'env(safe-area-inset-left, 0px)', paddingRight: 'env(safe-area-inset-right, 0px)' }}>
       {tabs.map(t => (
         <button key={t.id} onClick={() => setView(t.id)} style={{
           flex: 1, background: 'none', border: 'none', padding: '10px 4px 12px',
@@ -492,11 +497,14 @@ function Nav({ view, setView, hasActive }) {
 // ═══════════════════════════════════════════════════════════════════════
 // DASHBOARD
 // ═══════════════════════════════════════════════════════════════════════
-function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, setSelectedWorkout, allExercises = EXERCISES, workoutCustom = {}, driveSync, onCloudSync, updateAvailable }) {
+function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, setSelectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, driveSync, onCloudSync, updateAvailable }) {
+  const [showWarmup, setShowWarmup] = useState(false);
+  const [showCooldown, setShowCooldown] = useState(false);
   const suggested = nextWorkout(sessions);
   const wkt = WORKOUTS[selectedWorkout];
   const extraIds = workoutCustom[selectedWorkout] || [];
-  const allWorkoutExIds = [...wkt.exercises, ...extraIds];
+  const hiddenIds = new Set((workoutHidden || {})[selectedWorkout] || []);
+  const allWorkoutExIds = [...wkt.exercises, ...extraIds].filter(id => !hiddenIds.has(id));
   const ws = weekStart();
   const weekSessions = sessions.filter(s => new Date(s.date) >= ws);
   const weekRides = rides.filter(r => new Date(r.date) >= ws);
@@ -599,6 +607,38 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
               </div>
             );
           })}
+        </div>
+        <div style={{ borderTop: '1px solid ' + C.border, marginBottom: 10, paddingTop: 10 }}>
+          <button onClick={() => setShowWarmup(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
+            <span style={{ ...st.label, fontSize: 10, color: C.muted }}>Warm-Up Routine</span>
+            <span style={{ color: C.muted, fontSize: 11, marginLeft: 'auto' }}>{showWarmup ? '▲' : '▼'}</span>
+          </button>
+          {showWarmup && (
+            <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {WARMUP.map((item, i) => (
+                <div key={i} style={{ display: 'flex', gap: 10, fontSize: 12, color: C.muted, lineHeight: 1.4 }}>
+                  <span style={{ color: C.amber, fontFamily: C.fMono, minWidth: 16 }}>{i + 1}</span>
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div style={{ borderTop: '1px solid ' + C.border, marginBottom: 14, paddingTop: 10 }}>
+          <button onClick={() => setShowCooldown(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
+            <span style={{ ...st.label, fontSize: 10, color: C.muted }}>Cool-Down / Finisher</span>
+            <span style={{ color: C.muted, fontSize: 11, marginLeft: 'auto' }}>{showCooldown ? '▲' : '▼'}</span>
+          </button>
+          {showCooldown && (
+            <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {wkt.finisher.map((item, i) => (
+                <div key={i} style={{ display: 'flex', gap: 10, fontSize: 12, color: C.muted, lineHeight: 1.4 }}>
+                  <span style={{ color: C.green, fontFamily: C.fMono, minWidth: 16 }}>{i + 1}</span>
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         <button style={{ ...st.btn(), display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }} onClick={() => setView('workout')}>
           <Icon name="play" size={16} /> {activeSession ? 'Resume Workout' : `Start Workout ${selectedWorkout}`}
@@ -755,7 +795,7 @@ function SetRow({ num, set, def, onUpdate, onDone }) {
 // ═══════════════════════════════════════════════════════════════════════
 // ACTIVE WORKOUT
 // ═══════════════════════════════════════════════════════════════════════
-function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, setView, selectedWorkout, allExercises = EXERCISES, workoutCustom = {} }) {
+function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, setView, selectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {} }) {
   const nextWkt = selectedWorkout;
   const [session, setSession] = useState(activeSession || null);
   const [phase, setPhase] = useState(activeSession ? 'workout' : 'energy');
@@ -766,6 +806,7 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
   const [prs, setPRs] = useState([]);
   const [nudges, setNudges] = useState([]);
   const [showAddEx, setShowAddEx] = useState(false);
+  const [confirmCancel, setConfirmCancel] = useState(false);
 
   const elapsedRef = useRef(null);
   const restRef = useRef(null);
@@ -786,11 +827,17 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
   function stopRest() { setRestActive(false); setRestSecs(30); }
 
   function startSession(energy) {
-    const s = buildSession(nextWkt, sessions, allExercises, workoutCustom);
+    const s = buildSession(nextWkt, sessions, allExercises, workoutCustom, workoutHidden);
     s.energy = energy;
     setSession(s);
     setActiveSession(s);
     setPhase('warmup');
+  }
+
+  function cancelSession() {
+    setActiveSession(null);
+    setConfirmCancel(false);
+    setView('dashboard');
   }
 
   function updateSet(eIdx, sIdx, field, val) {
@@ -849,6 +896,9 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
   if (phase === 'energy') {
     return (
       <div style={{ padding: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+          <button onClick={() => setView('dashboard')} style={{ background: 'none', border: 'none', color: C.muted, cursor: 'pointer', fontSize: 13, fontFamily: C.fMono, padding: 0 }}>back to Home</button>
+        </div>
         <div style={{ ...st.label, marginBottom: 4 }}>Workout {nextWkt}</div>
         <div style={{ fontFamily: C.fDisplay, fontSize: 26, textTransform: 'uppercase', marginBottom: 24 }}>{WORKOUTS[nextWkt].title}</div>
         <div style={{ ...st.card(), marginBottom: 16 }}>
@@ -888,6 +938,19 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
           ))}
         </div>
         <button style={{ ...st.btn() }} onClick={() => setPhase('workout')}>Begin Workout ›</button>
+        <button style={{ ...st.ghost, marginTop: 8 }} onClick={() => setConfirmCancel(true)}>Cancel Session</button>
+        {confirmCancel && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300 }}>
+            <div style={{ ...st.card(), margin: 24, padding: 24, maxWidth: 320 }}>
+              <div style={{ fontFamily: C.fDisplay, fontSize: 18, textTransform: 'uppercase', marginBottom: 8 }}>Cancel Session?</div>
+              <div style={{ fontSize: 13, color: C.muted, marginBottom: 20 }}>Progress will not be saved.</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button style={{ ...st.btn(C.red), flex: 1 }} onClick={cancelSession}>Yes, Cancel</button>
+                <button style={{ ...st.ghost, flex: 1 }} onClick={() => setConfirmCancel(false)}>Keep Going</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -943,6 +1006,7 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
             ) : (
               <div style={{ fontFamily: C.fMono, fontSize: 18, color: C.muted }}>{fmtTimer(elapsed)}</div>
             )}
+            <button onClick={() => setConfirmCancel(true)} style={{ background: 'none', border: 'none', color: C.muted, cursor: 'pointer', fontSize: 10, fontFamily: C.fMono, marginTop: 6, padding: 0, textDecoration: 'underline', display: 'block' }}>Cancel</button>
           </div>
         </div>
 
@@ -1075,6 +1139,18 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
             </div>
           )}
         </div>
+        {confirmCancel && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300 }}>
+            <div style={{ ...st.card(), margin: 24, padding: 24, maxWidth: 320 }}>
+              <div style={{ fontFamily: C.fDisplay, fontSize: 18, textTransform: 'uppercase', marginBottom: 8 }}>Cancel Session?</div>
+              <div style={{ fontSize: 13, color: C.muted, marginBottom: 20 }}>Progress will not be saved.</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button style={{ ...st.btn(C.red), flex: 1 }} onClick={cancelSession}>Yes, Cancel</button>
+                <button style={{ ...st.ghost, flex: 1 }} onClick={() => setConfirmCancel(false)}>Keep Going</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -1175,7 +1251,8 @@ function History({ sessions, allExercises = EXERCISES }) {
               </div>
               <div style={{ ...st.row, gap: 6 }}>
                 {sess.energy && <span style={{ fontSize: 14 }}>{'😴😕😐💪🔥'[sess.energy - 1]}</span>}
-                {sess.duration && <span style={st.pill(C.muted)}>{sess.duration}min</span>}
+                {sess.duration && <span style={st.pill(C.muted)}>⏱ {sess.duration}min</span>}
+                {!sess.duration && !sess.completed && <span style={st.pill(C.muted)}>in progress</span>}
                 <span style={{ color: C.muted, fontSize: 12 }}>{expanded === sess.id ? '▲' : '▼'}</span>
               </div>
             </div>
@@ -1666,7 +1743,7 @@ applyMuscleMeta(PRESET_LIBRARY);
 const MUSCLE_FILTERS = ['All','Arms','Shoulders','Push','Pull','Hinge','Legs','Glutes','Core'];
 const EMPTY_FORM = { name: '', muscle: 'Arms', unit: 'kg', defaultSets: 3, defaultReps: 10, repMax: 10, cue: '' };
 
-function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkoutCustom, allExercises, driveSync, onDriveSave, onDriveLoad, onCloudSync }) {
+function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkoutCustom, workoutHidden, setWorkoutHidden, allExercises, driveSync, onDriveSave, onDriveLoad, onCloudSync }) {
   const [tab, setTab] = useState('library');
   const [search, setSearch] = useState('');
   const [muscle, setMuscle] = useState('All');
@@ -1775,8 +1852,9 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
               );
               const isAdding = addWktPicker === id;
               return (
-                <div key={id} style={{ ...st.card(), borderColor: ex.isCustom ? C.amber + '44' : C.border }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                <div key={id} style={{ ...st.card(), borderColor: ex.isCustom ? C.amber + '44' : C.border, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                    <ExerciseIcon id={id} size={36} />
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
                         <span style={{ fontFamily: C.fDisplay, fontSize: 16, textTransform: 'uppercase', letterSpacing: 0.5 }}>{ex.name}</span>
@@ -1893,7 +1971,7 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
       {tab === 'workouts' && (
         <div>
           <div style={{ fontSize: 12, color: C.muted, marginBottom: 14, lineHeight: 1.5 }}>
-            Add exercises from the library to each workout permanently. Built-in exercises are locked.
+            Add or remove exercises from each workout. Tap Remove to hide a built-in exercise, Restore to bring it back.
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginBottom: 20 }}>
             {['A','B','C'].map(k => (
@@ -1917,12 +1995,24 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
               <div>
                 <div style={{ ...st.label, marginBottom: 4 }}>Workout {key} · {WORKOUTS[key].title}</div>
                 <div style={{ ...st.col(4), marginBottom: 14 }}>
-                  {baseIds.map(id => (
-                    <div key={id} style={{ ...st.card(), display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px' }}>
-                      <div><span style={{ fontSize: 13 }}>{allExercises[id]?.name || id}</span><span style={{ ...st.mono(10, C.muted), marginLeft: 8 }}>{allExercises[id]?.muscle}</span></div>
-                      <span style={{ fontSize: 11, color: C.dim }}>🔒</span>
-                    </div>
-                  ))}
+                  {baseIds.map(id => {
+                    const isHidden = (workoutHidden[key] || []).includes(id);
+                    return (
+                      <div key={id} style={{ ...st.card(), display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', opacity: isHidden ? 0.45 : 1 }}>
+                        <div>
+                          <span style={{ fontSize: 13, textDecoration: isHidden ? 'line-through' : 'none' }}>{allExercises[id]?.name || id}</span>
+                          <span style={{ ...st.mono(10, C.muted), marginLeft: 8 }}>{allExercises[id]?.muscle}</span>
+                        </div>
+                        {isHidden ? (
+                          <button onClick={() => setWorkoutHidden(prev => ({ ...prev, [key]: (prev[key] || []).filter(eid => eid !== id) }))}
+                            style={{ background: C.green + '18', border: '1px solid ' + C.green + '44', borderRadius: 4, color: C.green, padding: '4px 8px', cursor: 'pointer', fontSize: 11 }}>Restore</button>
+                        ) : (
+                          <button onClick={() => setWorkoutHidden(prev => ({ ...prev, [key]: [...(prev[key] || []), id] }))}
+                            style={{ background: C.red + '18', border: '1px solid ' + C.red + '44', borderRadius: 4, color: C.red, padding: '4px 8px', cursor: 'pointer', fontSize: 12 }}>Remove</button>
+                        )}
+                      </div>
+                    );
+                  })}
                   {extraIds.map(id => (
                     <div key={id} style={{ ...st.card(), display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderColor: C.amber + '44' }}>
                       <div><span style={{ fontSize: 13 }}>{allExercises[id]?.name || id}</span><span style={{ ...st.mono(10, C.muted), marginLeft: 8 }}>{allExercises[id]?.muscle}</span></div>
@@ -2031,6 +2121,7 @@ export default function App() {
   const [selectedWorkout, setSelectedWorkout] = useState('A');
   const [customExercises, setCustomExercises] = useState({});
   const [workoutCustom, setWorkoutCustom] = useState({ A: [], B: [], C: [] });
+  const [workoutHidden, setWorkoutHidden] = useState({ A: [], B: [], C: [] });
   const [ready, setReady] = useState(false);
   const [driveSync, setDriveSync] = useState({ status: 'idle', lastSync: null, error: null });
   const [updateAvailable, setUpdateAvailable] = useState(false);
@@ -2046,9 +2137,9 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
-      const [s, r, a, ce, wc] = await Promise.all([
+      const [s, r, a, ce, wc, wh] = await Promise.all([
         load('il_sessions'), load('il_rides'), load('il_active'),
-        load('il_custom_exercises'), load('il_workout_custom'),
+        load('il_custom_exercises'), load('il_workout_custom'), load('il_workout_hidden'),
       ]);
       const localSessions = s || [];
       const localRides    = r || [];
@@ -2064,6 +2155,7 @@ export default function App() {
       if (a)  setActiveSession(a);
       if (ce) setCustomExercises(ce);
       if (wc) setWorkoutCustom(wc);
+      if (wh) setWorkoutHidden(wh);
       setSelectedWorkout(nextWorkout(finalSessions));
       setReady(true);
     })();
@@ -2081,6 +2173,7 @@ export default function App() {
   useEffect(() => { if (ready) save('il_active', activeSession); }, [activeSession, ready]);
   useEffect(() => { if (ready) save('il_custom_exercises', customExercises); }, [customExercises, ready]);
   useEffect(() => { if (ready) save('il_workout_custom', workoutCustom); }, [workoutCustom, ready]);
+  useEffect(() => { if (ready) save('il_workout_hidden', workoutHidden); }, [workoutHidden, ready]);
 
   function handleExport() {
     exportData(dataRef.current);
@@ -2148,6 +2241,7 @@ export default function App() {
           <Dashboard sessions={sessions} rides={rides} setView={setView} activeSession={activeSession}
             selectedWorkout={selectedWorkout} setSelectedWorkout={setSelectedWorkout}
             allExercises={allExercises} workoutCustom={workoutCustom}
+            workoutHidden={workoutHidden} setWorkoutHidden={setWorkoutHidden}
             driveSync={driveSync} onCloudSync={handleCloudSync}
             updateAvailable={updateAvailable} />
         )}
@@ -2161,6 +2255,8 @@ export default function App() {
             selectedWorkout={selectedWorkout}
             allExercises={allExercises}
             workoutCustom={workoutCustom}
+            workoutHidden={workoutHidden}
+            setWorkoutHidden={setWorkoutHidden}
           />
         )}
         {view === 'history' && <History sessions={sessions} allExercises={allExercises} />}
@@ -2172,6 +2268,8 @@ export default function App() {
             setCustomExercises={setCustomExercises}
             workoutCustom={workoutCustom}
             setWorkoutCustom={setWorkoutCustom}
+            workoutHidden={workoutHidden}
+            setWorkoutHidden={setWorkoutHidden}
             allExercises={allExercises}
             driveSync={driveSync}
             onDriveSave={handleExport}
