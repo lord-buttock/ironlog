@@ -30,8 +30,9 @@
   </div>
   <script>
 const { useState, useEffect, useRef, useCallback } = React;
-const APP_BUILD = 1778846849175;
+const APP_BUILD = 1778847487723;
 
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 // ═══════════════════════════════════════════════════════════════════════
 // THEME
 // ═══════════════════════════════════════════════════════════════════════
@@ -3043,6 +3044,210 @@ const Icon = ({
     strokeWidth: strokeWidth
   }));
 };
+
+// ═══════════════════════════════════════════════════════════════════════
+// MUSCLE DIAGRAM  (inline SVG — front + back body silhouette)
+// ═══════════════════════════════════════════════════════════════════════
+function MuscleDiagram({
+  primaryMuscle,
+  secondaryMuscle,
+  width = 200
+}) {
+  const REGION_MAP = {
+    chest: ['Chest', 'Push'],
+    fShoulder: ['Shoulders', 'Push'],
+    bicep: ['Biceps', 'Arms'],
+    forearm: ['Forearms', 'Arms'],
+    abs: ['Core'],
+    quad: ['Legs'],
+    calf: ['Legs'],
+    rShoulder: ['Shoulders', 'Pull', 'Back'],
+    upperBack: ['Back', 'Pull'],
+    tricep: ['Triceps', 'Arms', 'Push'],
+    bForearm: ['Forearms', 'Arms'],
+    lowerBack: ['Hinge'],
+    glute: ['Glutes', 'Hinge'],
+    hamstring: ['Hinge', 'Legs'],
+    bCalf: ['Legs']
+  };
+  const clr = region => {
+    const groups = REGION_MAP[region] || [];
+    if (primaryMuscle && groups.includes(primaryMuscle)) return C.amber;
+    if (secondaryMuscle && groups.includes(secondaryMuscle)) return '#b8d5ff';
+    return '#dde8f3';
+  };
+  const sp = region => ({
+    fill: clr(region),
+    stroke: '#b8ccde',
+    strokeWidth: 0.7,
+    strokeLinejoin: 'round'
+  });
+  const neutral = {
+    fill: '#dde8f3',
+    stroke: '#b8ccde',
+    strokeWidth: 0.7
+  };
+  const h = Math.round(width * 162 / 106);
+  return /*#__PURE__*/React.createElement("svg", {
+    viewBox: "0 0 106 162",
+    width: width,
+    height: h,
+    style: {
+      display: 'block'
+    }
+  }, /*#__PURE__*/React.createElement("line", {
+    x1: "53",
+    y1: "5",
+    x2: "53",
+    y2: "150",
+    stroke: C.border,
+    strokeWidth: "0.8"
+  }), /*#__PURE__*/React.createElement("circle", _extends({
+    cx: "26",
+    cy: "10",
+    r: "7.5"
+  }, neutral)), /*#__PURE__*/React.createElement("rect", _extends({
+    x: "23",
+    y: "17",
+    width: "6",
+    height: "5.5",
+    rx: "1"
+  }, neutral)), /*#__PURE__*/React.createElement("ellipse", _extends({
+    cx: "11",
+    cy: "28",
+    rx: "5.5",
+    ry: "8"
+  }, sp('fShoulder'))), /*#__PURE__*/React.createElement("ellipse", _extends({
+    cx: "41",
+    cy: "28",
+    rx: "5.5",
+    ry: "8"
+  }, sp('fShoulder'))), /*#__PURE__*/React.createElement("path", _extends({
+    d: "M13,21 L39,21 L37,46 L15,46 Z"
+  }, sp('chest'))), /*#__PURE__*/React.createElement("ellipse", _extends({
+    cx: "8.5",
+    cy: "42",
+    rx: "4.5",
+    ry: "9"
+  }, sp('bicep'))), /*#__PURE__*/React.createElement("ellipse", _extends({
+    cx: "43.5",
+    cy: "42",
+    rx: "4.5",
+    ry: "9"
+  }, sp('bicep'))), /*#__PURE__*/React.createElement("ellipse", _extends({
+    cx: "7.5",
+    cy: "58",
+    rx: "3.5",
+    ry: "7.5"
+  }, sp('forearm'))), /*#__PURE__*/React.createElement("ellipse", _extends({
+    cx: "44.5",
+    cy: "58",
+    rx: "3.5",
+    ry: "7.5"
+  }, sp('forearm'))), /*#__PURE__*/React.createElement("path", _extends({
+    d: "M16,47 L36,47 L34,70 L18,70 Z"
+  }, sp('abs'))), /*#__PURE__*/React.createElement("ellipse", _extends({
+    cx: "19",
+    cy: "91",
+    rx: "6.5",
+    ry: "17"
+  }, sp('quad'))), /*#__PURE__*/React.createElement("ellipse", _extends({
+    cx: "33",
+    cy: "91",
+    rx: "6.5",
+    ry: "17"
+  }, sp('quad'))), /*#__PURE__*/React.createElement("ellipse", _extends({
+    cx: "19",
+    cy: "121",
+    rx: "5",
+    ry: "11"
+  }, sp('calf'))), /*#__PURE__*/React.createElement("ellipse", _extends({
+    cx: "33",
+    cy: "121",
+    rx: "5",
+    ry: "11"
+  }, sp('calf'))), /*#__PURE__*/React.createElement("text", {
+    x: "26",
+    y: "156",
+    textAnchor: "middle",
+    fontSize: "7",
+    fill: C.muted,
+    fontFamily: "monospace"
+  }, "FRONT"), /*#__PURE__*/React.createElement("circle", _extends({
+    cx: "80",
+    cy: "10",
+    r: "7.5"
+  }, neutral)), /*#__PURE__*/React.createElement("rect", _extends({
+    x: "77",
+    y: "17",
+    width: "6",
+    height: "5.5",
+    rx: "1"
+  }, neutral)), /*#__PURE__*/React.createElement("ellipse", _extends({
+    cx: "65",
+    cy: "28",
+    rx: "5.5",
+    ry: "8"
+  }, sp('rShoulder'))), /*#__PURE__*/React.createElement("ellipse", _extends({
+    cx: "95",
+    cy: "28",
+    rx: "5.5",
+    ry: "8"
+  }, sp('rShoulder'))), /*#__PURE__*/React.createElement("path", _extends({
+    d: "M67,21 L93,21 L91,46 L69,46 Z"
+  }, sp('upperBack'))), /*#__PURE__*/React.createElement("ellipse", _extends({
+    cx: "62.5",
+    cy: "42",
+    rx: "4.5",
+    ry: "9"
+  }, sp('tricep'))), /*#__PURE__*/React.createElement("ellipse", _extends({
+    cx: "97.5",
+    cy: "42",
+    rx: "4.5",
+    ry: "9"
+  }, sp('tricep'))), /*#__PURE__*/React.createElement("ellipse", _extends({
+    cx: "61.5",
+    cy: "58",
+    rx: "3.5",
+    ry: "7.5"
+  }, sp('bForearm'))), /*#__PURE__*/React.createElement("ellipse", _extends({
+    cx: "98.5",
+    cy: "58",
+    rx: "3.5",
+    ry: "7.5"
+  }, sp('bForearm'))), /*#__PURE__*/React.createElement("path", _extends({
+    d: "M69,47 L91,47 L89,70 L71,70 Z"
+  }, sp('lowerBack'))), /*#__PURE__*/React.createElement("path", _extends({
+    d: "M69,71 L91,71 L93,87 L67,87 Z"
+  }, sp('glute'))), /*#__PURE__*/React.createElement("ellipse", _extends({
+    cx: "73",
+    cy: "107",
+    rx: "6.5",
+    ry: "17"
+  }, sp('hamstring'))), /*#__PURE__*/React.createElement("ellipse", _extends({
+    cx: "87",
+    cy: "107",
+    rx: "6.5",
+    ry: "17"
+  }, sp('hamstring'))), /*#__PURE__*/React.createElement("ellipse", _extends({
+    cx: "73",
+    cy: "137",
+    rx: "5",
+    ry: "11"
+  }, sp('bCalf'))), /*#__PURE__*/React.createElement("ellipse", _extends({
+    cx: "87",
+    cy: "137",
+    rx: "5",
+    ry: "11"
+  }, sp('bCalf'))), /*#__PURE__*/React.createElement("text", {
+    x: "80",
+    y: "156",
+    textAnchor: "middle",
+    fontSize: "7",
+    fill: C.muted,
+    fontFamily: "monospace"
+  }, "BACK"));
+}
 const PNG_EXERCISE_ICON_IDS = new Set(['bb_flat_bench', 'p_db_fly', 'p_db_shoulder_press', 'p_lateral_raise', 'p_rear_delt_fly', 'p_band_ext_rot', 'p_close_grip_bench', 'p_tricep_pushdown', 'kb_deadlift', 'chin_up', 'cs_db_row', 'reverse_fly', 'face_pull', 'p_straight_arm_pd', 'p_db_bicep_curl', 'goblet_squat', 'p_sumo_squat', 'rdl', 'hip_thrust', 'reverse_lunge', 'sb_ham_curl', 'p_cable_kickback', 'calf_raises', 'p_dead_bug', 'p_plank', 'pallof_press', 'farmers_walk']);
 const ExerciseIcon = ({
   id,
@@ -5014,7 +5219,17 @@ function ActiveWorkout({
         color: C.red,
         fontSize: 13
       }
-    }, "\u25B6"), " Watch Demo")), /*#__PURE__*/React.createElement("div", {
+    }, "\u25B6"), " Watch Demo")), (def.primaryMuscle || def.secondaryMuscle || def.muscle) && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        justifyContent: 'center',
+        marginBottom: 14
+      }
+    }, /*#__PURE__*/React.createElement(MuscleDiagram, {
+      primaryMuscle: def.primaryMuscle || def.muscle,
+      secondaryMuscle: def.secondaryMuscle,
+      width: 220
+    })), /*#__PURE__*/React.createElement("div", {
       style: {
         ...st.col(6),
         marginBottom: 10
@@ -6749,6 +6964,7 @@ function Manage({
   const [search, setSearch] = useState('');
   const [muscle, setMuscle] = useState('All');
   const [addWktPicker, setAddWktPicker] = useState(null); // exId being placed into a workout
+  const [expandedLib, setExpandedLib] = useState(null); // exId currently expanded in library
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [wktTab, setWktTab] = useState('A');
@@ -6899,6 +7115,7 @@ function Manage({
   }, "No exercises match. Try creating a custom one below."), filtered.map(([id, ex]) => {
     const inWorkouts = ['A', 'B', 'C'].filter(k => [...WORKOUTS[k].exercises, ...(workoutCustom[k] || [])].includes(id));
     const isAdding = addWktPicker === id;
+    const isExpanded = expandedLib === id;
     return /*#__PURE__*/React.createElement("div", {
       key: id,
       style: {
@@ -6912,14 +7129,17 @@ function Manage({
       style: {
         display: 'flex',
         alignItems: 'flex-start',
-        gap: 10
-      }
+        gap: 10,
+        cursor: 'pointer'
+      },
+      onClick: () => setExpandedLib(isExpanded ? null : id)
     }, /*#__PURE__*/React.createElement(ExerciseIcon, {
       id: id,
       size: 36
     }), /*#__PURE__*/React.createElement("div", {
       style: {
-        flex: 1
+        flex: 1,
+        minWidth: 0
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -6941,7 +7161,14 @@ function Manage({
         ...st.pill(),
         fontSize: 9
       }
-    }, "Custom")), /*#__PURE__*/React.createElement("div", {
+    }, "Custom"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        marginLeft: 'auto',
+        color: C.muted,
+        fontSize: 11,
+        flexShrink: 0
+      }
+    }, isExpanded ? '▲' : '▼')), /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         gap: 6,
@@ -6949,21 +7176,23 @@ function Manage({
       }
     }, /*#__PURE__*/React.createElement("span", {
       style: st.pill(C.muted)
-    }, ex.muscle), /*#__PURE__*/React.createElement("span", {
+    }, ex.primaryMuscle || ex.muscle), ex.secondaryMuscle && /*#__PURE__*/React.createElement("span", {
+      style: {
+        ...st.pill('#e8f0ff'),
+        color: '#5b8fdc',
+        fontSize: 9
+      }
+    }, ex.secondaryMuscle), /*#__PURE__*/React.createElement("span", {
       style: {
         ...st.mono(10, C.muted)
       }
     }, ex.defaultSets, " sets \xB7 ", ex.isTimed ? `${ex.defaultDuration}s` : `${ex.defaultReps}${ex.repMax && ex.repMax !== ex.defaultReps ? '–' + ex.repMax : ''} reps`, " \xB7 ", ex.unit), ex.perSide && /*#__PURE__*/React.createElement("span", {
       style: st.pill(C.blue)
-    }, "Per side")), ex.cue && /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 11,
-        color: C.muted,
-        marginTop: 5,
-        lineHeight: 1.4
-      }
-    }, ex.cue)), ex.isCustom && /*#__PURE__*/React.createElement("button", {
-      onClick: () => deleteCustom(id),
+    }, "Per side"))), ex.isCustom && /*#__PURE__*/React.createElement("button", {
+      onClick: e => {
+        e.stopPropagation();
+        deleteCustom(id);
+      },
       style: {
         background: C.red + '18',
         border: `1px solid ${C.red}33`,
@@ -6972,10 +7201,58 @@ function Manage({
         padding: '4px 8px',
         cursor: 'pointer',
         fontSize: 12,
-        marginLeft: 8,
         flexShrink: 0
       }
-    }, "\u2715")), inWorkouts.length > 0 && /*#__PURE__*/React.createElement("div", {
+    }, "\u2715")), isExpanded && /*#__PURE__*/React.createElement("div", {
+      style: {
+        borderTop: `1px solid ${C.border}`,
+        paddingTop: 14
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        justifyContent: 'center',
+        marginBottom: 10
+      }
+    }, /*#__PURE__*/React.createElement(MuscleDiagram, {
+      primaryMuscle: ex.primaryMuscle || ex.muscle,
+      secondaryMuscle: ex.secondaryMuscle,
+      width: 240
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        gap: 8,
+        justifyContent: 'center',
+        flexWrap: 'wrap',
+        marginBottom: ex.cue ? 10 : 0
+      }
+    }, (ex.primaryMuscle || ex.muscle) && /*#__PURE__*/React.createElement("span", {
+      style: {
+        background: C.amberDim,
+        color: C.amber,
+        fontSize: 11,
+        borderRadius: 20,
+        padding: '3px 10px',
+        fontFamily: C.fMono
+      }
+    }, "\u25CF ", ex.primaryMuscle || ex.muscle), ex.secondaryMuscle && /*#__PURE__*/React.createElement("span", {
+      style: {
+        background: '#e8f0ff',
+        color: '#5b8fdc',
+        fontSize: 11,
+        borderRadius: 20,
+        padding: '3px 10px',
+        fontFamily: C.fMono
+      }
+    }, "\u25CB ", ex.secondaryMuscle)), ex.cue && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: C.muted,
+        lineHeight: 1.5,
+        marginBottom: 6,
+        padding: '8px 0'
+      }
+    }, ex.cue)), inWorkouts.length > 0 && /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         gap: 4,

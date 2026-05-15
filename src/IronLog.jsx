@@ -111,6 +111,83 @@ const Icon = ({ name, size = 18, color = 'currentColor', strokeWidth = 1.8 }) =>
   );
 };
 
+// ═══════════════════════════════════════════════════════════════════════
+// MUSCLE DIAGRAM  (inline SVG — front + back body silhouette)
+// ═══════════════════════════════════════════════════════════════════════
+function MuscleDiagram({ primaryMuscle, secondaryMuscle, width = 200 }) {
+  const REGION_MAP = {
+    chest:     ['Chest', 'Push'],
+    fShoulder: ['Shoulders', 'Push'],
+    bicep:     ['Biceps', 'Arms'],
+    forearm:   ['Forearms', 'Arms'],
+    abs:       ['Core'],
+    quad:      ['Legs'],
+    calf:      ['Legs'],
+    rShoulder: ['Shoulders', 'Pull', 'Back'],
+    upperBack: ['Back', 'Pull'],
+    tricep:    ['Triceps', 'Arms', 'Push'],
+    bForearm:  ['Forearms', 'Arms'],
+    lowerBack: ['Hinge'],
+    glute:     ['Glutes', 'Hinge'],
+    hamstring: ['Hinge', 'Legs'],
+    bCalf:     ['Legs'],
+  };
+
+  const clr = (region) => {
+    const groups = REGION_MAP[region] || [];
+    if (primaryMuscle && groups.includes(primaryMuscle)) return C.amber;
+    if (secondaryMuscle && groups.includes(secondaryMuscle)) return '#b8d5ff';
+    return '#dde8f3';
+  };
+
+  const sp = (region) => ({
+    fill: clr(region), stroke: '#b8ccde', strokeWidth: 0.7, strokeLinejoin: 'round',
+  });
+  const neutral = { fill: '#dde8f3', stroke: '#b8ccde', strokeWidth: 0.7 };
+  const h = Math.round(width * 162 / 106);
+
+  return (
+    <svg viewBox="0 0 106 162" width={width} height={h} style={{ display: 'block' }}>
+      <line x1="53" y1="5" x2="53" y2="150" stroke={C.border} strokeWidth="0.8" />
+
+      {/* ── FRONT ── */}
+      <circle cx="26" cy="10" r="7.5" {...neutral} />
+      <rect x="23" y="17" width="6" height="5.5" rx="1" {...neutral} />
+      <ellipse cx="11" cy="28" rx="5.5" ry="8" {...sp('fShoulder')} />
+      <ellipse cx="41" cy="28" rx="5.5" ry="8" {...sp('fShoulder')} />
+      <path d="M13,21 L39,21 L37,46 L15,46 Z" {...sp('chest')} />
+      <ellipse cx="8.5" cy="42" rx="4.5" ry="9" {...sp('bicep')} />
+      <ellipse cx="43.5" cy="42" rx="4.5" ry="9" {...sp('bicep')} />
+      <ellipse cx="7.5" cy="58" rx="3.5" ry="7.5" {...sp('forearm')} />
+      <ellipse cx="44.5" cy="58" rx="3.5" ry="7.5" {...sp('forearm')} />
+      <path d="M16,47 L36,47 L34,70 L18,70 Z" {...sp('abs')} />
+      <ellipse cx="19" cy="91" rx="6.5" ry="17" {...sp('quad')} />
+      <ellipse cx="33" cy="91" rx="6.5" ry="17" {...sp('quad')} />
+      <ellipse cx="19" cy="121" rx="5" ry="11" {...sp('calf')} />
+      <ellipse cx="33" cy="121" rx="5" ry="11" {...sp('calf')} />
+      <text x="26" y="156" textAnchor="middle" fontSize="7" fill={C.muted} fontFamily="monospace">FRONT</text>
+
+      {/* ── BACK ── */}
+      <circle cx="80" cy="10" r="7.5" {...neutral} />
+      <rect x="77" y="17" width="6" height="5.5" rx="1" {...neutral} />
+      <ellipse cx="65" cy="28" rx="5.5" ry="8" {...sp('rShoulder')} />
+      <ellipse cx="95" cy="28" rx="5.5" ry="8" {...sp('rShoulder')} />
+      <path d="M67,21 L93,21 L91,46 L69,46 Z" {...sp('upperBack')} />
+      <ellipse cx="62.5" cy="42" rx="4.5" ry="9" {...sp('tricep')} />
+      <ellipse cx="97.5" cy="42" rx="4.5" ry="9" {...sp('tricep')} />
+      <ellipse cx="61.5" cy="58" rx="3.5" ry="7.5" {...sp('bForearm')} />
+      <ellipse cx="98.5" cy="58" rx="3.5" ry="7.5" {...sp('bForearm')} />
+      <path d="M69,47 L91,47 L89,70 L71,70 Z" {...sp('lowerBack')} />
+      <path d="M69,71 L91,71 L93,87 L67,87 Z" {...sp('glute')} />
+      <ellipse cx="73" cy="107" rx="6.5" ry="17" {...sp('hamstring')} />
+      <ellipse cx="87" cy="107" rx="6.5" ry="17" {...sp('hamstring')} />
+      <ellipse cx="73" cy="137" rx="5" ry="11" {...sp('bCalf')} />
+      <ellipse cx="87" cy="137" rx="5" ry="11" {...sp('bCalf')} />
+      <text x="80" y="156" textAnchor="middle" fontSize="7" fill={C.muted} fontFamily="monospace">BACK</text>
+    </svg>
+  );
+}
+
 const PNG_EXERCISE_ICON_IDS = new Set([
   'bb_flat_bench', 'p_db_fly', 'p_db_shoulder_press', 'p_lateral_raise',
   'p_rear_delt_fly', 'p_band_ext_rot', 'p_close_grip_bench', 'p_tricep_pushdown',
@@ -1029,6 +1106,17 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
           )}
         </div>
 
+        {/* Muscle diagram */}
+        {(def.primaryMuscle || def.secondaryMuscle || def.muscle) && (
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
+            <MuscleDiagram
+              primaryMuscle={def.primaryMuscle || def.muscle}
+              secondaryMuscle={def.secondaryMuscle}
+              width={220}
+            />
+          </div>
+        )}
+
         {/* Sets */}
         <div style={{ ...st.col(6), marginBottom: 10 }}>
           {exData.sets.map((set, si) => (
@@ -1748,6 +1836,7 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
   const [search, setSearch] = useState('');
   const [muscle, setMuscle] = useState('All');
   const [addWktPicker, setAddWktPicker] = useState(null); // exId being placed into a workout
+  const [expandedLib, setExpandedLib] = useState(null);  // exId currently expanded in library
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [wktTab, setWktTab] = useState('A');
@@ -1851,26 +1940,60 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
                 [...WORKOUTS[k].exercises, ...(workoutCustom[k] || [])].includes(id)
               );
               const isAdding = addWktPicker === id;
+              const isExpanded = expandedLib === id;
               return (
                 <div key={id} style={{ ...st.card(), borderColor: ex.isCustom ? C.amber + '44' : C.border, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                  {/* Card header — tappable to expand/collapse */}
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer' }}
+                    onClick={() => setExpandedLib(isExpanded ? null : id)}>
                     <ExerciseIcon id={id} size={36} />
-                    <div style={{ flex: 1 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
                         <span style={{ fontFamily: C.fDisplay, fontSize: 16, textTransform: 'uppercase', letterSpacing: 0.5 }}>{ex.name}</span>
                         {ex.isCustom && <span style={{ ...st.pill(), fontSize: 9 }}>Custom</span>}
+                        <span style={{ marginLeft: 'auto', color: C.muted, fontSize: 11, flexShrink: 0 }}>{isExpanded ? '▲' : '▼'}</span>
                       </div>
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                        <span style={st.pill(C.muted)}>{ex.muscle}</span>
+                        <span style={st.pill(C.muted)}>{ex.primaryMuscle || ex.muscle}</span>
+                        {ex.secondaryMuscle && <span style={{ ...st.pill('#e8f0ff'), color: '#5b8fdc', fontSize: 9 }}>{ex.secondaryMuscle}</span>}
                         <span style={{ ...st.mono(10, C.muted) }}>{ex.defaultSets} sets · {ex.isTimed ? `${ex.defaultDuration}s` : `${ex.defaultReps}${ex.repMax && ex.repMax !== ex.defaultReps ? '–' + ex.repMax : ''} reps`} · {ex.unit}</span>
                         {ex.perSide && <span style={st.pill(C.blue)}>Per side</span>}
                       </div>
-                      {ex.cue && <div style={{ fontSize: 11, color: C.muted, marginTop: 5, lineHeight: 1.4 }}>{ex.cue}</div>}
                     </div>
                     {ex.isCustom && (
-                      <button onClick={() => deleteCustom(id)} style={{ background: C.red + '18', border: `1px solid ${C.red}33`, borderRadius: 4, color: C.red, padding: '4px 8px', cursor: 'pointer', fontSize: 12, marginLeft: 8, flexShrink: 0 }}>✕</button>
+                      <button onClick={e => { e.stopPropagation(); deleteCustom(id); }} style={{ background: C.red + '18', border: `1px solid ${C.red}33`, borderRadius: 4, color: C.red, padding: '4px 8px', cursor: 'pointer', fontSize: 12, flexShrink: 0 }}>✕</button>
                     )}
                   </div>
+
+                  {/* Expanded detail — muscle diagram + cue */}
+                  {isExpanded && (
+                    <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
+                      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
+                        <MuscleDiagram
+                          primaryMuscle={ex.primaryMuscle || ex.muscle}
+                          secondaryMuscle={ex.secondaryMuscle}
+                          width={240}
+                        />
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginBottom: ex.cue ? 10 : 0 }}>
+                        {(ex.primaryMuscle || ex.muscle) && (
+                          <span style={{ background: C.amberDim, color: C.amber, fontSize: 11, borderRadius: 20, padding: '3px 10px', fontFamily: C.fMono }}>
+                            ● {ex.primaryMuscle || ex.muscle}
+                          </span>
+                        )}
+                        {ex.secondaryMuscle && (
+                          <span style={{ background: '#e8f0ff', color: '#5b8fdc', fontSize: 11, borderRadius: 20, padding: '3px 10px', fontFamily: C.fMono }}>
+                            ○ {ex.secondaryMuscle}
+                          </span>
+                        )}
+                      </div>
+                      {ex.cue && (
+                        <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5, marginBottom: 6, padding: '8px 0' }}>
+                          {ex.cue}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Already-in badges */}
                   {inWorkouts.length > 0 && (
