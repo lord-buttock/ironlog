@@ -30,7 +30,7 @@
   </div>
   <script>
 const { useState, useEffect, useRef, useCallback } = React;
-const APP_BUILD = 1778848197315;
+const APP_BUILD = 1778848819682;
 
 function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 // ═══════════════════════════════════════════════════════════════════════
@@ -3804,8 +3804,18 @@ function checkOverloadNudges(sess, allExercises = EXERCISES) {
   sess.exercises.forEach(ex => {
     const def = allExercises[ex.id] || EXERCISES[ex.id];
     if (!def || !def.repMax || def.unit === 'bw' || def.unit === 'band') return;
-    const allHitMax = ex.sets.every(s => s.done && Number(s.reps) >= def.repMax);
-    if (allHitMax) nudges.push(def.name);
+    if (!def.defaultReps || def.repMax <= def.defaultReps) return;
+    const doneSets = ex.sets.filter(s => s.done);
+    if (doneSets.length === 0) return;
+    const allHitMax = doneSets.every(s => Number(s.reps) >= def.repMax);
+    if (!allHitMax) return;
+    if (doneSets.some(s => Number(s.pain) >= 3)) return;
+    const rpeValues = doneSets.map(s => Number(s.rpe)).filter(v => !isNaN(v) && v > 0);
+    if (rpeValues.length > 0) {
+      const avgRpe = rpeValues.reduce((a, b) => a + b, 0) / rpeValues.length;
+      if (avgRpe > 8) return;
+    }
+    nudges.push(def.name);
   });
   return nudges;
 }
@@ -4733,11 +4743,15 @@ function ActiveWorkout({
 }) {
   const nextWkt = selectedWorkout;
   const [session, setSession] = useState(activeSession || null);
-  const [phase, setPhase] = useState(activeSession ? 'workout' : 'energy');
-  const [exIdx, setExIdx] = useState(0);
+  const [phase, setPhase] = useState(activeSession?.phase || (activeSession ? 'workout' : 'energy'));
+  const [exIdx, setExIdx] = useState(() => {
+    if (!activeSession?.exercises) return 0;
+    const firstIncomplete = activeSession.exercises.findIndex(ex => ex.sets && ex.sets.some(s => !s.done));
+    return firstIncomplete >= 0 ? firstIncomplete : 0;
+  });
   const [restSecs, setRestSecs] = useState(30);
   const [restActive, setRestActive] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
+  const [elapsed, setElapsed] = useState(session?.startTime ? Math.floor((Date.now() - session.startTime) / 1000) : 0);
   const [prs, setPRs] = useState([]);
   const [nudges, setNudges] = useState([]);
   const [showAddEx, setShowAddEx] = useState(false);
@@ -4745,7 +4759,10 @@ function ActiveWorkout({
   const elapsedRef = useRef(null);
   const restRef = useRef(null);
   useEffect(() => {
-    elapsedRef.current = setInterval(() => setElapsed(e => e + 1), 1000);
+    const origin = session?.startTime || Date.now();
+    elapsedRef.current = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - origin) / 1000));
+    }, 1000);
     return () => clearInterval(elapsedRef.current);
   }, []);
   useEffect(() => {
@@ -4774,6 +4791,10 @@ function ActiveWorkout({
     setSession(s);
     setActiveSession(s);
     setPhase('warmup');
+    setActiveSession(s => s ? {
+      ...s,
+      phase: 'warmup'
+    } : s);
   }
   function cancelSession() {
     setActiveSession(null);
@@ -4844,6 +4865,42 @@ function ActiveWorkout({
     setNudges(checkOverloadNudges(completed, allExercises));
     onComplete(completed);
     setPhase('done');
+  }
+  if (session && (!Array.isArray(session.exercises) || session.exercises.length === 0)) {
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        minHeight: '100vh',
+        background: C.bg,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 24,
+        gap: 16
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: C.fDisplay,
+        fontSize: 18,
+        color: C.amber,
+        letterSpacing: 1,
+        textAlign: 'center'
+      }
+    }, "SESSION DATA CORRUPTED"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: C.fMono,
+        fontSize: 13,
+        color: C.muted,
+        textAlign: 'center'
+      }
+    }, "The active session could not be loaded. Your completed sessions are safe."), /*#__PURE__*/React.createElement("button", {
+      style: st.btn(C.red || '#e05c5c'),
+      onClick: () => {
+        setActiveSession(null);
+        setSession(null);
+        setPhase('energy');
+      }
+    }, "Clear Session & Start Fresh"));
   }
 
   // ── Energy ──────────────────────────────────────────────────────────
@@ -4988,7 +5045,13 @@ function ActiveWorkout({
       style: {
         ...st.btn()
       },
-      onClick: () => setPhase('workout')
+      onClick: () => {
+        setPhase('workout');
+        setActiveSession(s => s ? {
+          ...s,
+          phase: 'workout'
+        } : s);
+      }
     }, "Begin Workout \u203A"), /*#__PURE__*/React.createElement("button", {
       style: {
         ...st.ghost,
@@ -5050,7 +5113,45 @@ function ActiveWorkout({
     const exId = session.exercises[exIdx]?.id;
     const def = allExercises[exId] || EXERCISES[exId] || {};
     const exData = session.exercises[exIdx];
-    if (!exData) return null;
+    if (!exData) {
+      return /*#__PURE__*/React.createElement("div", {
+        style: {
+          minHeight: '100vh',
+          background: C.bg,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 24,
+          gap: 16
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontFamily: C.fDisplay,
+          fontSize: 18,
+          color: C.amber,
+          letterSpacing: 1,
+          textAlign: 'center'
+        }
+      }, "EXERCISE NOT FOUND"), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontFamily: C.fMono,
+          fontSize: 13,
+          color: C.muted,
+          textAlign: 'center'
+        }
+      }, "Could not load exercise data. Try going back to the first exercise."), /*#__PURE__*/React.createElement("button", {
+        style: st.btn(),
+        onClick: () => setExIdx(0)
+      }, "Go to First Exercise"), /*#__PURE__*/React.createElement("button", {
+        style: st.ghost,
+        onClick: () => {
+          setActiveSession(null);
+          setSession(null);
+          setPhase('energy');
+        }
+      }, "Cancel Session"));
+    }
     const primaryMuscle = def.primaryMuscle || def.muscle;
     const secondaryMuscle = def.secondaryMuscle;
     const doneSetsCount = exData.sets.filter(s => s.done).length;
@@ -5268,7 +5369,10 @@ function ActiveWorkout({
         fontSize: 11,
         padding: '6px 10px'
       }
-    }, t, "s"))), allExDone && def.repMax && def.unit === 'kg' && exData.sets.every(s => Number(s.reps) >= def.repMax) && /*#__PURE__*/React.createElement("div", {
+    }, t, "s"))), allExDone && def.repMax && def.unit === 'kg' && def.repMax > (def.defaultReps || 0) && exData.sets.filter(s => s.done).every(s => Number(s.reps) >= def.repMax) && !exData.sets.filter(s => s.done).some(s => Number(s.pain) >= 3) && (() => {
+      const rpes = exData.sets.filter(s => s.done).map(s => Number(s.rpe)).filter(v => !isNaN(v) && v > 0);
+      return rpes.length === 0 || rpes.reduce((a, b) => a + b, 0) / rpes.length <= 8;
+    })() && /*#__PURE__*/React.createElement("div", {
       style: {
         ...st.card(C.amber + '10'),
         borderColor: C.amber + '44',
@@ -5325,7 +5429,13 @@ function ActiveWorkout({
         ...st.btn(C.green),
         flex: 1
       },
-      onClick: () => setPhase('finisher')
+      onClick: () => {
+        setPhase('finisher');
+        setActiveSession(s => s ? {
+          ...s,
+          phase: 'finisher'
+        } : s);
+      }
     }, "Finisher \u203A")), /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
@@ -7894,6 +8004,10 @@ function App() {
     }));
     try {
       const data = await importData(file);
+      if (data.sessions !== undefined && !Array.isArray(data.sessions)) throw new Error('Invalid backup: sessions must be an array.');
+      if (data.rides !== undefined && !Array.isArray(data.rides)) throw new Error('Invalid backup: rides must be an array.');
+      if (data.customExercises !== undefined && !Array.isArray(data.customExercises) && typeof data.customExercises !== 'object') throw new Error('Invalid backup: customExercises is malformed.');
+      setActiveSession(null);
       if (data.sessions) setSessions(data.sessions);
       if (data.rides) setRides(data.rides);
       if (data.customExercises) setCustomExercises(data.customExercises);

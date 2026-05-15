@@ -465,8 +465,18 @@ function checkOverloadNudges(sess, allExercises = EXERCISES) {
   sess.exercises.forEach(ex => {
     const def = allExercises[ex.id] || EXERCISES[ex.id];
     if (!def || !def.repMax || def.unit === 'bw' || def.unit === 'band') return;
-    const allHitMax = ex.sets.every(s => s.done && Number(s.reps) >= def.repMax);
-    if (allHitMax) nudges.push(def.name);
+    if (!def.defaultReps || def.repMax <= def.defaultReps) return;
+    const doneSets = ex.sets.filter(s => s.done);
+    if (doneSets.length === 0) return;
+    const allHitMax = doneSets.every(s => Number(s.reps) >= def.repMax);
+    if (!allHitMax) return;
+    if (doneSets.some(s => Number(s.pain) >= 3)) return;
+    const rpeValues = doneSets.map(s => Number(s.rpe)).filter(v => !isNaN(v) && v > 0);
+    if (rpeValues.length > 0) {
+      const avgRpe = rpeValues.reduce((a, b) => a + b, 0) / rpeValues.length;
+      if (avgRpe > 8) return;
+    }
+    nudges.push(def.name);
   });
   return nudges;
 }
@@ -875,11 +885,19 @@ function SetRow({ num, set, def, onUpdate, onDone }) {
 function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, setView, selectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {} }) {
   const nextWkt = selectedWorkout;
   const [session, setSession] = useState(activeSession || null);
-  const [phase, setPhase] = useState(activeSession ? 'workout' : 'energy');
-  const [exIdx, setExIdx] = useState(0);
+  const [phase, setPhase] = useState(activeSession?.phase || (activeSession ? 'workout' : 'energy'));
+  const [exIdx, setExIdx] = useState(() => {
+    if (!activeSession?.exercises) return 0;
+    const firstIncomplete = activeSession.exercises.findIndex(
+      ex => ex.sets && ex.sets.some(s => !s.done)
+    );
+    return firstIncomplete >= 0 ? firstIncomplete : 0;
+  });
   const [restSecs, setRestSecs] = useState(30);
   const [restActive, setRestActive] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
+  const [elapsed, setElapsed] = useState(
+    session?.startTime ? Math.floor((Date.now() - session.startTime) / 1000) : 0
+  );
   const [prs, setPRs] = useState([]);
   const [nudges, setNudges] = useState([]);
   const [showAddEx, setShowAddEx] = useState(false);
@@ -889,7 +907,10 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
   const restRef = useRef(null);
 
   useEffect(() => {
-    elapsedRef.current = setInterval(() => setElapsed(e => e + 1), 1000);
+    const origin = session?.startTime || Date.now();
+    elapsedRef.current = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - origin) / 1000));
+    }, 1000);
     return () => clearInterval(elapsedRef.current);
   }, []);
 
@@ -909,6 +930,7 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
     setSession(s);
     setActiveSession(s);
     setPhase('warmup');
+    setActiveSession(s => s ? { ...s, phase: 'warmup' } : s);
   }
 
   function cancelSession() {
@@ -969,6 +991,18 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
     setPhase('done');
   }
 
+  if (session && (!Array.isArray(session.exercises) || session.exercises.length === 0)) {
+    return (
+      <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, gap: 16 }}>
+        <div style={{ fontFamily: C.fDisplay, fontSize: 18, color: C.amber, letterSpacing: 1, textAlign: 'center' }}>SESSION DATA CORRUPTED</div>
+        <div style={{ fontFamily: C.fMono, fontSize: 13, color: C.muted, textAlign: 'center' }}>The active session could not be loaded. Your completed sessions are safe.</div>
+        <button style={st.btn(C.red || '#e05c5c')} onClick={() => { setActiveSession(null); setSession(null); setPhase('energy'); }}>
+          Clear Session &amp; Start Fresh
+        </button>
+      </div>
+    );
+  }
+
   // ── Energy ──────────────────────────────────────────────────────────
   if (phase === 'energy') {
     return (
@@ -1014,7 +1048,7 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
             </div>
           ))}
         </div>
-        <button style={{ ...st.btn() }} onClick={() => setPhase('workout')}>Begin Workout ›</button>
+        <button style={{ ...st.btn() }} onClick={() => { setPhase('workout'); setActiveSession(s => s ? { ...s, phase: 'workout' } : s); }}>Begin Workout ›</button>
         <button style={{ ...st.ghost, marginTop: 8 }} onClick={() => setConfirmCancel(true)}>Cancel Session</button>
         {confirmCancel && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300 }}>
@@ -1037,7 +1071,16 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
     const exId = session.exercises[exIdx]?.id;
     const def = allExercises[exId] || EXERCISES[exId] || {};
     const exData = session.exercises[exIdx];
-    if (!exData) return null;
+    if (!exData) {
+      return (
+        <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, gap: 16 }}>
+          <div style={{ fontFamily: C.fDisplay, fontSize: 18, color: C.amber, letterSpacing: 1, textAlign: 'center' }}>EXERCISE NOT FOUND</div>
+          <div style={{ fontFamily: C.fMono, fontSize: 13, color: C.muted, textAlign: 'center' }}>Could not load exercise data. Try going back to the first exercise.</div>
+          <button style={st.btn()} onClick={() => setExIdx(0)}>Go to First Exercise</button>
+          <button style={st.ghost} onClick={() => { setActiveSession(null); setSession(null); setPhase('energy'); }}>Cancel Session</button>
+        </div>
+      );
+    }
 
     const primaryMuscle = def.primaryMuscle || def.muscle;
     const secondaryMuscle = def.secondaryMuscle;
@@ -1138,7 +1181,14 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
         </div>
 
         {/* Overload nudge for this exercise */}
-        {allExDone && def.repMax && def.unit === 'kg' && exData.sets.every(s => Number(s.reps) >= def.repMax) && (
+        {allExDone && def.repMax && def.unit === 'kg' &&
+          def.repMax > (def.defaultReps || 0) &&
+          exData.sets.filter(s => s.done).every(s => Number(s.reps) >= def.repMax) &&
+          !exData.sets.filter(s => s.done).some(s => Number(s.pain) >= 3) &&
+          (() => {
+            const rpes = exData.sets.filter(s => s.done).map(s => Number(s.rpe)).filter(v => !isNaN(v) && v > 0);
+            return rpes.length === 0 || rpes.reduce((a,b)=>a+b,0)/rpes.length <= 8;
+          })() && (
           <div style={{ ...st.card(C.amber + '10'), borderColor: C.amber + '44', marginBottom: 12, padding: '10px 14px' }}>
             <div style={{ fontSize: 12, color: C.amber }}>
               ◈ All sets at top of rep range — consider adding load next session
@@ -1165,7 +1215,7 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
           {exIdx < session.exercises.length - 1 ? (
             <button style={{ ...st.btn(), flex: 1 }} onClick={() => setExIdx(i => i + 1)}>Next ›</button>
           ) : (
-            <button style={{ ...st.btn(C.green), flex: 1 }} onClick={() => setPhase('finisher')}>Finisher ›</button>
+            <button style={{ ...st.btn(C.green), flex: 1 }} onClick={() => { setPhase('finisher'); setActiveSession(s => s ? { ...s, phase: 'finisher' } : s); }}>Finisher ›</button>
           )}
         </div>
 
@@ -2327,6 +2377,13 @@ export default function App() {
     setDriveSync(s => ({ ...s, status: 'loading', error: null }));
     try {
       const data = await importData(file);
+      if (data.sessions !== undefined && !Array.isArray(data.sessions))
+        throw new Error('Invalid backup: sessions must be an array.');
+      if (data.rides !== undefined && !Array.isArray(data.rides))
+        throw new Error('Invalid backup: rides must be an array.');
+      if (data.customExercises !== undefined && !Array.isArray(data.customExercises) && typeof data.customExercises !== 'object')
+        throw new Error('Invalid backup: customExercises is malformed.');
+      setActiveSession(null);
       if (data.sessions)        setSessions(data.sessions);
       if (data.rides)           setRides(data.rides);
       if (data.customExercises) setCustomExercises(data.customExercises);
