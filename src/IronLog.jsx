@@ -186,11 +186,12 @@ function MuscleDiagram({ primary = [], secondary = [], size = 'medium' }) {
 const PNG_EXERCISE_ICON_IDS = new Set([
   'bb_flat_bench', 'p_db_fly', 'p_db_shoulder_press', 'p_lateral_raise',
   'p_rear_delt_fly', 'p_band_ext_rot', 'p_close_grip_bench', 'p_tricep_pushdown',
+  'db_shoulder', 'lateral_raise', 'tricep_pushdown', 'p_skull_crushers',
   'kb_deadlift', 'chin_up', 'cs_db_row', 'reverse_fly',
-  'face_pull', 'p_straight_arm_pd', 'p_db_bicep_curl',
+  'face_pull', 'p_straight_arm_pd', 'p_db_bicep_curl', 'db_curl', 'db_hammer',
   'goblet_squat', 'p_sumo_squat', 'rdl', 'hip_thrust', 'reverse_lunge',
   'sb_ham_curl', 'p_cable_kickback', 'calf_raises', 'p_dead_bug',
-  'p_plank', 'pallof_press', 'farmers_walk',
+  'p_plank', 'pallof_press', 'farmers_walk', 'split_squat', 'step_ups', 'suitcase_carry',
 ]);
 
 const ExerciseIcon = ({ id, size = 36 }) => {

@@ -6,6 +6,7 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ## 2026-05-16
 
+- [Codex] Added and verified PNG exercise icons for ten missing/default workout exercise IDs.
 - [Codex] Rewrote MuscleDiagram to inline annotated anatomical SVGs and colour muscles from primary/secondary arrays.
 - [Codex] Revised the iOS/PWA app icon again to remove the blue monogram look and better match the brushed-metal reference.
 - [Codex] Replaced the iOS/PWA app icon with a brushed-metal rounded-square IL design.
