@@ -889,7 +889,7 @@ function SetRow({ num, set, def, onUpdate, onDone }) {
 // ═══════════════════════════════════════════════════════════════════════
 // ACTIVE WORKOUT
 // ═══════════════════════════════════════════════════════════════════════
-function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, setView, selectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {} }) {
+function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, setView, selectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, onDemoOpen }) {
   const nextWkt = selectedWorkout;
   const [session, setSession] = useState(activeSession || null);
   const [phase, setPhase] = useState(activeSession?.phase || (activeSession ? 'workout' : 'energy'));
@@ -1157,7 +1157,9 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
               </a>
             )}
           </div>
-          <ExerciseIcon id={exId} size={96} />
+          <div onClick={() => onDemoOpen && onDemoOpen(exId)} style={{ cursor: 'pointer', flexShrink: 0 }}>
+            <ExerciseIcon id={exId} size={96} />
+          </div>
         </div>
 
         {/* Muscle diagram */}
@@ -1932,7 +1934,7 @@ applyMuscleMeta(PRESET_LIBRARY);
 const MUSCLE_FILTERS = ['All','Arms','Shoulders','Push','Pull','Hinge','Legs','Glutes','Core'];
 const EMPTY_FORM = { name: '', muscle: 'Arms', unit: 'kg', defaultSets: 3, defaultReps: 10, repMax: 10, cue: '' };
 
-function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkoutCustom, workoutHidden, setWorkoutHidden, allExercises, driveSync, onDriveSave, onDriveLoad, onCloudSync }) {
+function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkoutCustom, workoutHidden, setWorkoutHidden, allExercises, driveSync, onDriveSave, onDriveLoad, onCloudSync, onDemoOpen }) {
   const [tab, setTab] = useState('library');
   const [search, setSearch] = useState('');
   const [muscle, setMuscle] = useState('All');
@@ -2070,7 +2072,9 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
                   {isExpanded && (
                     <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
                       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
-                        <ExerciseIcon id={id} size={96} />
+                        <div onClick={() => onDemoOpen && onDemoOpen(id)} style={{ cursor: 'pointer' }}>
+                          <ExerciseIcon id={id} size={96} />
+                        </div>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
                         <MuscleDiagram
@@ -2338,9 +2342,72 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
 }
 
 // ═══════════════════════════════════════════════════════════════════════
+// EXERCISE DEMO MODAL
+// ═══════════════════════════════════════════════════════════════════════
+function ExerciseDemoModal({ exerciseId, onClose }) {
+  const [frames, setFrames] = React.useState([]);
+  const [seqIdx, setSeqIdx] = React.useState(0);
+
+  // Probe for available demo frames (up to 3)
+  React.useEffect(() => {
+    setFrames([]);
+    setSeqIdx(0);
+    let checked = 0;
+    const found = [];
+    for (let i = 1; i <= 3; i++) {
+      const img = new window.Image();
+      const src = `assets/demos/${exerciseId}_${i}.png?v=${APP_BUILD}`;
+      const idx = i - 1;
+      img.onload  = () => { found[idx] = src; checked++; if (checked === 3) setFrames(found.filter(Boolean)); };
+      img.onerror = () => {                    checked++; if (checked === 3) setFrames(found.filter(Boolean)); };
+      img.src = src;
+    }
+  }, [exerciseId]);
+
+  // Ping-pong cycle: 2 frames → [0,1], 3 frames → [0,1,2,1]
+  React.useEffect(() => {
+    if (frames.length < 2) return;
+    const seq = frames.length >= 3 ? [0, 1, 2, 1] : [0, 1];
+    const id = setInterval(() => setSeqIdx(p => (p + 1) % seq.length), 450);
+    return () => clearInterval(id);
+  }, [frames]);
+
+  const seq = frames.length >= 3 ? [0, 1, 2, 1] : [0, 1];
+  const currentSrc = frames.length > 0 ? frames[seq[seqIdx]] : null;
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 500,
+        background: 'rgba(0,0,0,0.88)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}
+    >
+      {currentSrc ? (
+        <img
+          src={currentSrc}
+          style={{ width: 320, height: 320, objectFit: 'contain', borderRadius: 24 }}
+          onClick={e => e.stopPropagation()}
+        />
+      ) : (
+        <div style={{ color: 'rgba(255,255,255,0.4)', fontFamily: C.fMono, fontSize: 11, letterSpacing: 1 }}>
+          NO DEMO YET
+        </div>
+      )}
+      <div style={{
+        position: 'absolute', top: 24, right: 24,
+        color: 'rgba(255,255,255,0.5)', fontSize: 28, lineHeight: 1, cursor: 'pointer',
+      }}>✕</div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 // ROOT APP
 // ═══════════════════════════════════════════════════════════════════════
 export default function App() {
+  const [demoExId, setDemoExId] = useState(null);
   const [view, setView] = useState('dashboard');
   const [sessions, setSessions] = useState([]);
   const [rides, setRides] = useState([]);
@@ -2491,6 +2558,7 @@ export default function App() {
             workoutCustom={workoutCustom}
             workoutHidden={workoutHidden}
             setWorkoutHidden={setWorkoutHidden}
+            onDemoOpen={setDemoExId}
           />
         )}
         {view === 'history' && <History sessions={sessions} allExercises={allExercises} />}
@@ -2509,10 +2577,12 @@ export default function App() {
             onDriveSave={handleExport}
             onDriveLoad={handleImport}
             onCloudSync={handleCloudSync}
+            onDemoOpen={setDemoExId}
           />
         )}
       </div>
       <Nav view={view} setView={setView} hasActive={!!activeSession} />
+      {demoExId && <ExerciseDemoModal exerciseId={demoExId} onClose={() => setDemoExId(null)} />}
     </>
   );
 }
