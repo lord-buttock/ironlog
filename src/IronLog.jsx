@@ -1946,8 +1946,9 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
   const [addingTo, setAddingTo] = useState(null);
   const [wktSearch, setWktSearch] = useState('');
 
-  // All exercises that can be browsed/added (presets + user-created custom)
+  // All exercises that can be browsed/added (workout exercises + presets + user-created custom)
   const libraryEntries = [
+    ...Object.entries(EXERCISES),
     ...Object.entries(PRESET_LIBRARY),
     ...Object.entries(customExercises),
   ];
