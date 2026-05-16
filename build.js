@@ -37,7 +37,9 @@ fs.unlinkSync(`${TMP}.out.js`);
 // ── 3. Build final JS bundle ──────────────────────────────────────────
 const BUILD_TS = Date.now();
 fs.writeFileSync(path.join(__dirname, 'version.json'), JSON.stringify({ v: BUILD_TS }), 'utf8');
-const prefix = `const { useState, useEffect, useRef, useCallback } = React;\nconst APP_BUILD = ${BUILD_TS};\n\n`;
+const FRONT_MUSCLE_SVG = fs.readFileSync(path.join(__dirname, 'assets', 'anatomy', 'front-muscle-map.svg'), 'utf8');
+const REAR_MUSCLE_SVG = fs.readFileSync(path.join(__dirname, 'assets', 'anatomy', 'rear-muscle-map.svg'), 'utf8');
+const prefix = `const { useState, useEffect, useRef, useCallback } = React;\nconst APP_BUILD = ${BUILD_TS};\nconst FRONT_MUSCLE_SVG = ${JSON.stringify(FRONT_MUSCLE_SVG)};\nconst REAR_MUSCLE_SVG = ${JSON.stringify(REAR_MUSCLE_SVG)};\n\n`;
 const suffix = `\nReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));\n`;
 const appJs  = (prefix + compiled + suffix).replace(/<\/script>/g, '<\\/script>');
 

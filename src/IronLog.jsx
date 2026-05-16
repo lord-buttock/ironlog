@@ -112,79 +112,74 @@ const Icon = ({ name, size = 18, color = 'currentColor', strokeWidth = 1.8 }) =>
 };
 
 // ═══════════════════════════════════════════════════════════════════════
-// MUSCLE DIAGRAM  (inline SVG — front + back body silhouette)
+// MUSCLE DIAGRAM  (inline anatomical SVGs — front + rear)
 // ═══════════════════════════════════════════════════════════════════════
-function MuscleDiagram({ primaryMuscle, secondaryMuscle, width = 200 }) {
-  const REGION_MAP = {
-    chest:     ['Chest', 'Push'],
-    fShoulder: ['Shoulders', 'Push'],
-    bicep:     ['Biceps', 'Arms'],
-    forearm:   ['Forearms', 'Arms'],
-    abs:       ['Core'],
-    quad:      ['Legs'],
-    calf:      ['Legs'],
-    rShoulder: ['Shoulders', 'Pull', 'Back'],
-    upperBack: ['Back', 'Pull'],
-    tricep:    ['Triceps', 'Arms', 'Push'],
-    bForearm:  ['Forearms', 'Arms'],
-    lowerBack: ['Hinge'],
-    glute:     ['Glutes', 'Hinge'],
-    hamstring: ['Hinge', 'Legs'],
-    bCalf:     ['Legs'],
-  };
+const ANATOMY_COLOURS = {
+  primary: '#5B8DEF',
+  secondary: '#B8A7FF',
+  neutral: '#D2D1D1',
+};
 
-  const clr = (region) => {
-    const groups = REGION_MAP[region] || [];
-    if (primaryMuscle && groups.includes(primaryMuscle)) return C.amber;
-    if (secondaryMuscle && groups.includes(secondaryMuscle)) return '#b8d5ff';
-    return '#dde8f3';
-  };
+const DISPLAY_TO_SVG_IDS = {
+  'Chest': ['pectoralis_major'],
+  'Front Delts': ['anterior_deltoid'],
+  'Side Delts': ['lateral_deltoid'],
+  'Biceps': ['biceps_brachii'],
+  'Forearms': ['forearm_flexors', 'forearm_extensors'],
+  'Abs': ['rectus_abdominis'],
+  'Obliques': ['external_obliques'],
+  'Quads': ['quadriceps'],
+  'Calves': ['front_lower_leg', 'gastrocnemius'],
+  'Rear Delts': ['posterior_deltoid'],
+  'Lats': ['latissimus_dorsi'],
+  'Mid Traps': ['middle_trapezius_rhomboids'],
+  'Upper Traps': ['upper_trapezius'],
+  'Triceps': ['triceps_brachii'],
+  'Spinal Erectors': ['erector_spinae'],
+  'Glutes': ['gluteus_maximus'],
+  'Hamstrings': ['hamstrings'],
+};
 
-  const sp = (region) => ({
-    fill: clr(region), stroke: '#b8ccde', strokeWidth: 0.7, strokeLinejoin: 'round',
-  });
-  const neutral = { fill: '#dde8f3', stroke: '#b8ccde', strokeWidth: 0.7 };
-  const h = Math.round(width * 162 / 106);
+function MuscleDiagram({ primary = [], secondary = [], size = 'medium' }) {
+  const frontRef = useRef(null);
+  const rearRef = useRef(null);
+  const viewSize = { small: 100, medium: 160, large: 220 }[size] || 160;
+  const toSvgIdSet = (names) => new Set(
+    (Array.isArray(names) ? names : [])
+      .flatMap(name => DISPLAY_TO_SVG_IDS[name] || [])
+  );
+
+  useEffect(() => {
+    const primaryIds = toSvgIdSet(primary);
+    const secondaryIds = toSvgIdSet(secondary);
+    [frontRef.current, rearRef.current].forEach(root => {
+      if (!root) return;
+      const svg = root.querySelector('svg');
+      if (svg) {
+        svg.style.width = '100%';
+        svg.style.height = 'auto';
+        svg.style.display = 'block';
+      }
+      root.querySelectorAll('[data-muscle]').forEach(path => {
+        const muscleName = path.getAttribute('data-muscle');
+        if (primaryIds.has(muscleName)) path.setAttribute('fill', ANATOMY_COLOURS.primary);
+        else if (secondaryIds.has(muscleName)) path.setAttribute('fill', ANATOMY_COLOURS.secondary);
+        else path.setAttribute('fill', ANATOMY_COLOURS.neutral);
+      });
+    });
+  }, [primary.join('|'), secondary.join('|')]);
+
+  const viewStyle = {
+    width: viewSize,
+    flex: '0 0 auto',
+    lineHeight: 0,
+  };
 
   return (
-    <svg viewBox="0 0 106 162" width={width} height={h} style={{ display: 'block' }}>
-      <line x1="53" y1="5" x2="53" y2="150" stroke={C.border} strokeWidth="0.8" />
-
-      {/* ── FRONT ── */}
-      <circle cx="26" cy="10" r="7.5" {...neutral} />
-      <rect x="23" y="17" width="6" height="5.5" rx="1" {...neutral} />
-      <ellipse cx="11" cy="28" rx="5.5" ry="8" {...sp('fShoulder')} />
-      <ellipse cx="41" cy="28" rx="5.5" ry="8" {...sp('fShoulder')} />
-      <path d="M13,21 L39,21 L37,46 L15,46 Z" {...sp('chest')} />
-      <ellipse cx="8.5" cy="42" rx="4.5" ry="9" {...sp('bicep')} />
-      <ellipse cx="43.5" cy="42" rx="4.5" ry="9" {...sp('bicep')} />
-      <ellipse cx="7.5" cy="58" rx="3.5" ry="7.5" {...sp('forearm')} />
-      <ellipse cx="44.5" cy="58" rx="3.5" ry="7.5" {...sp('forearm')} />
-      <path d="M16,47 L36,47 L34,70 L18,70 Z" {...sp('abs')} />
-      <ellipse cx="19" cy="91" rx="6.5" ry="17" {...sp('quad')} />
-      <ellipse cx="33" cy="91" rx="6.5" ry="17" {...sp('quad')} />
-      <ellipse cx="19" cy="121" rx="5" ry="11" {...sp('calf')} />
-      <ellipse cx="33" cy="121" rx="5" ry="11" {...sp('calf')} />
-      <text x="26" y="156" textAnchor="middle" fontSize="7" fill={C.muted} fontFamily="monospace">FRONT</text>
-
-      {/* ── BACK ── */}
-      <circle cx="80" cy="10" r="7.5" {...neutral} />
-      <rect x="77" y="17" width="6" height="5.5" rx="1" {...neutral} />
-      <ellipse cx="65" cy="28" rx="5.5" ry="8" {...sp('rShoulder')} />
-      <ellipse cx="95" cy="28" rx="5.5" ry="8" {...sp('rShoulder')} />
-      <path d="M67,21 L93,21 L91,46 L69,46 Z" {...sp('upperBack')} />
-      <ellipse cx="62.5" cy="42" rx="4.5" ry="9" {...sp('tricep')} />
-      <ellipse cx="97.5" cy="42" rx="4.5" ry="9" {...sp('tricep')} />
-      <ellipse cx="61.5" cy="58" rx="3.5" ry="7.5" {...sp('bForearm')} />
-      <ellipse cx="98.5" cy="58" rx="3.5" ry="7.5" {...sp('bForearm')} />
-      <path d="M69,47 L91,47 L89,70 L71,70 Z" {...sp('lowerBack')} />
-      <path d="M69,71 L91,71 L93,87 L67,87 Z" {...sp('glute')} />
-      <ellipse cx="73" cy="107" rx="6.5" ry="17" {...sp('hamstring')} />
-      <ellipse cx="87" cy="107" rx="6.5" ry="17" {...sp('hamstring')} />
-      <ellipse cx="73" cy="137" rx="5" ry="11" {...sp('bCalf')} />
-      <ellipse cx="87" cy="137" rx="5" ry="11" {...sp('bCalf')} />
-      <text x="80" y="156" textAnchor="middle" fontSize="7" fill={C.muted} fontFamily="monospace">BACK</text>
-    </svg>
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', gap: Math.max(8, Math.round(viewSize * 0.08)) }}>
+      <div ref={frontRef} style={viewStyle} dangerouslySetInnerHTML={{ __html: FRONT_MUSCLE_SVG }} />
+      <div ref={rearRef} style={viewStyle} dangerouslySetInnerHTML={{ __html: REAR_MUSCLE_SVG }} />
+    </div>
   );
 }
 
@@ -1150,15 +1145,13 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
         </div>
 
         {/* Muscle diagram */}
-        {(def.primaryMuscle || def.secondaryMuscle || def.muscle) && (
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
-            <MuscleDiagram
-              primaryMuscle={def.primaryMuscle || def.muscle}
-              secondaryMuscle={def.secondaryMuscle}
-              width={220}
-            />
-          </div>
-        )}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
+          <MuscleDiagram
+            primary={def.primary || []}
+            secondary={def.secondary || []}
+            size="medium"
+          />
+        </div>
 
         {/* Sets */}
         <div style={{ ...st.col(6), marginBottom: 10 }}>
@@ -2061,9 +2054,9 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
                     <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
                       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
                         <MuscleDiagram
-                          primaryMuscle={ex.primaryMuscle || ex.muscle}
-                          secondaryMuscle={ex.secondaryMuscle}
-                          width={240}
+                          primary={ex.primary || []}
+                          secondary={ex.secondary || []}
+                          size="medium"
                         />
                       </div>
                       <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginBottom: ex.cue ? 10 : 0 }}>
