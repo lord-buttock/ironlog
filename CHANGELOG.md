@@ -6,6 +6,7 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ## 2026-05-16
 
+- [Codex] Revised the iOS/PWA app icon again to remove the blue monogram look and better match the brushed-metal reference.
 - [Codex] Replaced the iOS/PWA app icon with a brushed-metal rounded-square IL design.
 
 ## 2026-05-15
