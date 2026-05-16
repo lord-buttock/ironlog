@@ -2380,18 +2380,27 @@ function ExerciseDemoModal({ exerciseId, onClose }) {
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0, zIndex: 500,
-        background: 'rgba(0,0,0,0.88)',
+        background: 'rgba(10,15,40,0.92)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}
     >
       {currentSrc ? (
-        <img
-          src={currentSrc}
-          style={{ width: 320, height: 320, objectFit: 'contain', borderRadius: 24 }}
+        <div
           onClick={e => e.stopPropagation()}
-        />
+          style={{
+            background: '#EEF3FF',
+            borderRadius: 28,
+            padding: 16,
+            boxShadow: '0 8px 48px rgba(0,0,0,0.5)',
+          }}
+        >
+          <img
+            src={currentSrc}
+            style={{ width: 300, height: 300, objectFit: 'contain', display: 'block' }}
+          />
+        </div>
       ) : (
-        <div style={{ color: 'rgba(255,255,255,0.4)', fontFamily: C.fMono, fontSize: 11, letterSpacing: 1 }}>
+        <div style={{ color: 'rgba(255,255,255,0.35)', fontFamily: C.fMono, fontSize: 11, letterSpacing: 1 }}>
           NO DEMO YET
         </div>
       )}
