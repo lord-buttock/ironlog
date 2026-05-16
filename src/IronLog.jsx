@@ -227,14 +227,14 @@ const ExerciseIcon = ({ id, size = 36 }) => {
 // WORKOUT DATA
 // ═══════════════════════════════════════════════════════════════════════
 const WARMUP = [
-  '2 min · Easy stepper or gentle trampoline bounce — get the blood moving',
-  '1 min · Cat-cow — 10 slow reps, unloaded, pain-free range · Gentle spinal mobility',
-  '1 min · Prone cobra — lie face down, hands beside chest, lift chest gently · 6 × 5 sec holds · Back extension and disc health',
-  '30 sec each side · Lying hamstring stretch — on back, loop band or towel around foot, gentle straight-leg pull',
-  '1 min · Doorframe chest & shoulder opener — arms at 90° on frame, lean body gently forward · Chest and anterior shoulder',
-  '30 sec each side · Pendulum swings — lean on bench, arm hangs loose, small gentle circles · Shoulder mobility, important for bursitis',
-  '1 min · Band pull-aparts — 15 reps, light tension · Scapular retraction and upper back activation',
-  '1 min · Glute bridge — 10–12 reps bodyweight · Full hip extension at top',
+  { id: 'wu_stepper',           text: '2 min · Easy stepper or gentle trampoline bounce — get the blood moving' },
+  { id: 'wu_cat_cow',           text: '1 min · Cat-cow — 10 slow reps, unloaded, pain-free range · Gentle spinal mobility' },
+  { id: 'wu_prone_cobra',       text: '1 min · Prone cobra — lie face down, hands beside chest, lift chest gently · 6 × 5 sec holds · Back extension and disc health' },
+  { id: 'wu_hamstring_stretch', text: '30 sec each side · Lying hamstring stretch — on back, loop band or towel around foot, gentle straight-leg pull' },
+  { id: 'wu_chest_opener',      text: '1 min · Doorframe chest & shoulder opener — arms at 90° on frame, lean body gently forward · Chest and anterior shoulder' },
+  { id: 'wu_pendulum',          text: '30 sec each side · Pendulum swings — lean on bench, arm hangs loose, small gentle circles · Shoulder mobility, important for bursitis' },
+  { id: 'wu_pull_aparts',       text: '1 min · Band pull-aparts — 15 reps, light tension · Scapular retraction and upper back activation' },
+  { id: 'wu_glute_bridge',      text: '1 min · Glute bridge — 10–12 reps bodyweight · Full hip extension at top' },
 ];
 
 const YT = q => `https://www.youtube.com/results?search_query=${q}`;
@@ -279,7 +279,10 @@ const WORKOUTS = {
       'p_close_grip_bench', // Triceps / Chest
       'p_tricep_pushdown',  // Triceps — band, door anchor
     ],
-    finisher: ['Wall slides — 2 × 6 slow (pain-free only)','Band pull-aparts — 2 × 12'],
+    finisher: [
+      { id: 'fin_wall_slides', text: 'Wall slides — 2 × 6 slow (pain-free only)' },
+      { id: 'fin_pull_aparts', text: 'Band pull-aparts — 2 × 12' },
+    ],
   },
   B: {
     title: 'Pull — Back · Biceps · Hinge',
@@ -292,7 +295,10 @@ const WORKOUTS = {
       'p_straight_arm_pd',  // Back / Shoulders — lat isolation, door anchor high hook
       'p_db_bicep_curl',    // Biceps / Forearms
     ],
-    finisher: ['Hamstring floss (band, lying) — 45 sec each side',"Child's pose breathing — 60 sec"],
+    finisher: [
+      { id: 'fin_ham_floss',   text: 'Hamstring floss (band, lying) — 45 sec each side' },
+      { id: 'fin_childs_pose', text: "Child's pose breathing — 60 sec" },
+    ],
   },
   C: {
     title: 'Legs + Core',
@@ -310,7 +316,10 @@ const WORKOUTS = {
       'pallof_press',       // Core — anti-rotation, band
       'farmers_walk',       // Core / Forearms
     ],
-    finisher: ['Band external rotation — 2 × 10 each side','Single-leg balance — 30 sec each side'],
+    finisher: [
+      { id: 'fin_ext_rotation', text: 'Band external rotation — 2 × 10 each side' },
+      { id: 'fin_single_leg',   text: 'Single-leg balance — 30 sec each side' },
+    ],
   },
 };
 
@@ -699,9 +708,10 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
           {showWarmup && (
             <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
               {WARMUP.map((item, i) => (
-                <div key={i} style={{ display: 'flex', gap: 10, fontSize: 12, color: C.muted, lineHeight: 1.4 }}>
+                <div key={i} style={{ display: 'flex', gap: 10, fontSize: 12, color: C.muted, lineHeight: 1.4, alignItems: 'center' }}>
+                  <img src={`assets/icons/warmup/${item.id}.png`} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#EEF3FF', marginRight: 12, flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
                   <span style={{ color: C.amber, fontFamily: C.fMono, minWidth: 16 }}>{i + 1}</span>
-                  <span>{item}</span>
+                  <span>{item.text}</span>
                 </div>
               ))}
             </div>
@@ -715,9 +725,10 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
           {showCooldown && (
             <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
               {wkt.finisher.map((item, i) => (
-                <div key={i} style={{ display: 'flex', gap: 10, fontSize: 12, color: C.muted, lineHeight: 1.4 }}>
+                <div key={i} style={{ display: 'flex', gap: 10, fontSize: 12, color: C.muted, lineHeight: 1.4, alignItems: 'center' }}>
+                  <img src={`assets/icons/warmup/${item.id}.png`} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#EEF3FF', marginRight: 12, flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
                   <span style={{ color: C.green, fontFamily: C.fMono, minWidth: 16 }}>{i + 1}</span>
-                  <span>{item}</span>
+                  <span>{item.text}</span>
                 </div>
               ))}
             </div>
@@ -1035,12 +1046,13 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
           <div style={st.h2}>Warm-Up</div>
           <div style={{ ...st.mono(20, C.amber) }}>{fmtTimer(elapsed)}</div>
         </div>
-        <div style={{ ...st.label, marginBottom: 12 }}>6 minutes · complete all five items</div>
+        <div style={{ ...st.label, marginBottom: 12 }}>~10 minutes · complete all eight items</div>
         <div style={{ ...st.col(), marginBottom: 24 }}>
           {WARMUP.map((item, i) => (
             <div key={i} style={{ ...st.card(), display: 'flex', gap: 12, alignItems: 'center', padding: '12px 14px' }}>
+              <img src={`assets/icons/warmup/${item.id}.png`} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#EEF3FF', flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
               <div style={{ fontFamily: C.fMono, color: C.amber, fontSize: 14, minWidth: 20 }}>{i + 1}</div>
-              <div style={{ fontSize: 13, lineHeight: 1.4 }}>{item}</div>
+              <div style={{ fontSize: 13, lineHeight: 1.4 }}>{item.text}</div>
             </div>
           ))}
         </div>
@@ -1299,9 +1311,10 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
         <div style={{ ...st.label, marginBottom: 16 }}>Cool-down · {session.workout}</div>
         <div style={{ ...st.col(), marginBottom: 20 }}>
           {wkt.finisher.map((item, i) => (
-            <div key={i} style={{ ...st.card(), display: 'flex', gap: 12, padding: '12px 14px' }}>
+            <div key={i} style={{ ...st.card(), display: 'flex', gap: 12, padding: '12px 14px', alignItems: 'center' }}>
+              <img src={`assets/icons/warmup/${item.id}.png`} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#EEF3FF', flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
               <div style={{ color: C.amber, fontFamily: C.fMono, minWidth: 18 }}>{i + 1}</div>
-              <div style={{ fontSize: 13 }}>{item}</div>
+              <div style={{ fontSize: 13 }}>{item.text}</div>
             </div>
           ))}
         </div>
