@@ -397,11 +397,21 @@ One missed bug: finisher notes update only local `session` state and never call 
 - RPE fixed-domain [5,10] charts unchanged
 
 **Remaining priorities:**
-- Complete Workout A + B exercise icons (status unknown — Codex tasked in prior session)
-- Quality-gate Workout C icons against approved RDL style anchor; regenerate failures
-- Generate remaining PRESET_LIBRARY icons
-- Replace SVG MuscleDiagram with PNG anatomy images (after all exercise icons done)
-- High-priority bugs: BUG-002, BUG-003, BUG-004, BUG-005, BUG-008, BUG-009
+- ✅ Workout A + B + C exercise icons — complete (36 icons in assets/icons/)
+- ✅ Warmup and finisher icons — complete (14 icons in assets/icons/warmup/, commit d34cc78)
+- ✅ WARMUP/finisher data structures converted to {id, text} objects, all 4 render sites updated (commit 2e8b65a)
+- 🔄 Generate remaining 43 PRESET_LIBRARY exercise icons (see CODEX_BRIEFING.md for full list)
+- High-priority bugs: BUG-008, BUG-009
+
+### 2026-05-16 — Warmup/finisher icons session (Claude Sonnet 4.6 + Codex)
+- Converted WARMUP from plain string array to `{id, text}` object array (8 items)
+- Converted all three workout finisher arrays to `{id, text}` objects
+- Updated all 4 render sites (home warmup, active warmup, home finisher, active finisher) with icon `<img>` + onError fallback
+- Fixed wording bug: "6 minutes · complete all five items" → "~10 minutes · complete all eight items"
+- Generated and cleaned 13 warmup/finisher icons (108×108px, transparent PNG, blue illustration style)
+- All 14 files committed to assets/icons/warmup/ (commit d34cc78)
+- Created CODEX_BRIEFING.md to restore Codex context after 4-day session gap
+- Next: generate remaining 43 exercise icons for the preset library
 
 ### 2026-05-13 — Implementation session (Claude Sonnet 4.6)
 - Added 8 new exercises to `EXERCISES`: bb_flat_bench, bb_incline_bench, chin_up, face_pull, reverse_fly, rdl, reverse_lunge, farmers_walk
