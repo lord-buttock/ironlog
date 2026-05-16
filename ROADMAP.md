@@ -162,7 +162,59 @@ Exercise ID
 
 ---
 
-## Priority 4 — Caution Flags on Modified Exercises
+## Priority 4 — Exercise Demo Animations
+
+**Status:** Planned — after all exercise icons are complete  
+**Depends on:** All 79 exercise icons generated and committed
+
+### Concept
+
+Replace YouTube demo links with a built-in flip-book animation. Each exercise gets 2–3 still frames showing key positions. The demo viewer cycles through them automatically, simulating motion without video.
+
+### Animation pattern
+
+```
+2-frame exercises:  start → end → start → end …
+3-frame exercises:  start → mid → end → mid → start … (ping-pong)
+```
+
+Interval: 0.4–0.5s per frame (tune after visual testing — 0.25s may feel too fast for slower movements like deadlifts).
+
+### Frame counts by exercise type
+
+| Use 2 frames | Use 3 frames |
+|---|---|
+| Curls, raises, pushdowns, rows, flies | Squat, deadlift, hip thrust, lunge, split squat |
+| Any single-joint isolation movement | Any multi-joint compound with a meaningful mid-position |
+
+### Asset spec
+
+- Folder: `assets/demos/`
+- Naming: `{exercise_id}_1.png`, `{exercise_id}_2.png`, `{exercise_id}_3.png`
+- Size: 300×300px (larger than the 108×108 icon — these are shown in a modal/expanded view)
+- Format: transparent PNG, same blue illustration style as icons
+- Generation: same prompt template and Pillow cleanup pipeline as icons
+
+The 108×108 icon in `assets/icons/` is unchanged — it stays as a single peak-position image for exercise cards and library tiles.
+
+### Implementation
+
+- New `ExerciseDemo` component replaces the current YouTube link button
+- Accepts a `frames` array of image paths and an optional `interval` prop
+- Uses `useEffect` + `setInterval` to cycle frames
+- Falls back gracefully if only 1 frame exists (static image, no animation)
+- Codex task: ~20 lines of React once frames exist
+
+### Dependency check before starting
+
+```bash
+ls assets/demos/ 2>/dev/null | wc -l   # should be 0 until this feature begins
+ls assets/icons/ | wc -l               # should be 79 (all icons complete)
+```
+
+---
+
+## Priority 5 — Caution Flags on Modified Exercises
 
 **Status:** Planned
 
@@ -172,7 +224,7 @@ Implementation suggestion: add an optional `caution` string field to the exercis
 
 ---
 
-## Priority 5 — Pull-Up Bar Onboarding
+## Priority 6 — Pull-Up Bar Onboarding
 
 **Status:** Planned
 
@@ -183,7 +235,7 @@ The user has a doorframe chin-up bar. The app should support:
 
 ---
 
-## Priority 6 — Workout Rotation Logic
+## Priority 7 — Workout Rotation Logic
 
 **Status:** Under consideration
 
