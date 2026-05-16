@@ -153,20 +153,12 @@ Exercise ID
 - `applyMuscleMeta()` now stamps `primary[]` and `secondary[]` arrays onto each exercise
 - `primaryMuscle` / `secondaryMuscle` string fields preserved temporarily for current UI
 
-### Phase 2 — Component rewrite 🔄 Next task for Codex
+### Phase 2 — Component rewrite ✅ Complete (2026-05-16, commit 325c10e)
 
-Assets ready:
-- `assets/anatomy/front-muscle-map.svg` — 28 annotated muscle paths with `id`, `data-muscle`, `data-side`
-- `assets/anatomy/rear-muscle-map.svg` — 22 annotated muscle paths
-- `assets/anatomy/assign_muscle_ids.py` — preprocessing script (already run, do not re-run)
-
-Remaining work:
-1. Modify `build.js` to inline both SVGs as JS string constants
-2. Replace `MuscleDiagram` component to consume the new SVGs and `primary[]`/`secondary[]` arrays
-3. Update all call sites from `primaryMuscle`/`secondaryMuscle` strings to `primary`/`secondary` arrays
-4. Visual QA — Phill must verify highlighting is correct before merge
-
-**Instructions for Codex:** See `CODEX_ANATOMY_SVG_INSTRUCTIONS.md`. Start at Task 4.
+- `build.js` inlines both SVGs as JS string constants
+- `MuscleDiagram` rewritten to use annotated SVGs, `primary[]`/`secondary[]` arrays, and `DISPLAY_TO_SVG_IDS` translation map
+- Both call sites updated (active workout + manage exercise detail)
+- All 10 QA gates passed before commit
 
 ---
 
@@ -249,6 +241,14 @@ Currently the user manually selects which workout to do. The app suggests the ne
 ## Agent Notes & Feedback Log
 
 *Append notes here after any significant agent session — what was changed, what was decided, what was left for next time.*
+
+### 2026-05-16 — Codex (Task 4 — MuscleDiagram component rewrite)
+
+- Identified display-name vs anatomical-ID mismatch between Task 3 output and SVG attributes
+- Resolved via `DISPLAY_TO_SVG_IDS` translation map inside MuscleDiagram (Option 2)
+- Rewrote MuscleDiagram: build.js inlines SVGs, useEffect colours paths by data-muscle attribute
+- Updated both call sites to pass primary[] / secondary[] arrays
+- All 10 QA gates passed — commit 325c10e
 
 ### 2026-05-16 — Claude Sonnet 4.6 + Codex (anatomy SVG pipeline)
 
