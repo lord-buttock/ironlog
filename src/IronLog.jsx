@@ -589,7 +589,7 @@ function Nav({ view, setView, hasActive }) {
 // ═══════════════════════════════════════════════════════════════════════
 // DASHBOARD
 // ═══════════════════════════════════════════════════════════════════════
-function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, setSelectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, driveSync, onCloudSync, updateAvailable }) {
+function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, setSelectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, driveSync, onCloudSync, updateAvailable, onWarmupOpen }) {
   const [showWarmup, setShowWarmup] = useState(false);
   const [showCooldown, setShowCooldown] = useState(false);
   const suggested = nextWorkout(sessions);
@@ -709,7 +709,7 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
             <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
               {WARMUP.map((item, i) => (
                 <div key={i} style={{ display: 'flex', gap: 10, fontSize: 12, color: C.muted, lineHeight: 1.4, alignItems: 'center' }}>
-                  <img src={`assets/icons/warmup/${item.id}.png`} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#EEF3FF', marginRight: 12, flexShrink: 0, cursor: 'pointer' }} onError={e => { e.target.style.display = 'none'; }} onClick={() => setWarmupDemoItem(item)} />
+                  <img src={`assets/icons/warmup/${item.id}.png`} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#EEF3FF', marginRight: 12, flexShrink: 0, cursor: 'pointer' }} onError={e => { e.target.style.display = 'none'; }} onClick={() => onWarmupOpen && onWarmupOpen(item)} />
                   <span style={{ color: C.amber, fontFamily: C.fMono, minWidth: 16 }}>{i + 1}</span>
                   <span>{item.text}</span>
                 </div>
@@ -726,7 +726,7 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
             <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
               {wkt.finisher.map((item, i) => (
                 <div key={i} style={{ display: 'flex', gap: 10, fontSize: 12, color: C.muted, lineHeight: 1.4, alignItems: 'center' }}>
-                  <img src={`assets/icons/warmup/${item.id}.png`} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#EEF3FF', marginRight: 12, flexShrink: 0, cursor: 'pointer' }} onError={e => { e.target.style.display = 'none'; }} onClick={() => setWarmupDemoItem(item)} />
+                  <img src={`assets/icons/warmup/${item.id}.png`} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#EEF3FF', marginRight: 12, flexShrink: 0, cursor: 'pointer' }} onError={e => { e.target.style.display = 'none'; }} onClick={() => onWarmupOpen && onWarmupOpen(item)} />
                   <span style={{ color: C.green, fontFamily: C.fMono, minWidth: 16 }}>{i + 1}</span>
                   <span>{item.text}</span>
                 </div>
@@ -889,7 +889,7 @@ function SetRow({ num, set, def, onUpdate, onDone }) {
 // ═══════════════════════════════════════════════════════════════════════
 // ACTIVE WORKOUT
 // ═══════════════════════════════════════════════════════════════════════
-function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, setView, selectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, onDemoOpen }) {
+function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, setView, selectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, onDemoOpen, onWarmupOpen }) {
   const nextWkt = selectedWorkout;
   const [session, setSession] = useState(activeSession || null);
   const [phase, setPhase] = useState(activeSession?.phase || (activeSession ? 'workout' : 'energy'));
@@ -1050,7 +1050,7 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
         <div style={{ ...st.col(), marginBottom: 24 }}>
           {WARMUP.map((item, i) => (
             <div key={i} style={{ ...st.card(), display: 'flex', gap: 12, alignItems: 'center', padding: '12px 14px' }}>
-              <img src={`assets/icons/warmup/${item.id}.png`} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#EEF3FF', flexShrink: 0, cursor: 'pointer' }} onError={e => { e.target.style.display = 'none'; }} onClick={() => setWarmupDemoItem(item)} />
+              <img src={`assets/icons/warmup/${item.id}.png`} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#EEF3FF', flexShrink: 0, cursor: 'pointer' }} onError={e => { e.target.style.display = 'none'; }} onClick={() => onWarmupOpen && onWarmupOpen(item)} />
               <div style={{ fontFamily: C.fMono, color: C.amber, fontSize: 14, minWidth: 20 }}>{i + 1}</div>
               <div style={{ fontSize: 13, lineHeight: 1.4 }}>{item.text}</div>
             </div>
@@ -1317,7 +1317,7 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
         <div style={{ ...st.col(), marginBottom: 20 }}>
           {wkt.finisher.map((item, i) => (
             <div key={i} style={{ ...st.card(), display: 'flex', gap: 12, padding: '12px 14px', alignItems: 'center' }}>
-              <img src={`assets/icons/warmup/${item.id}.png`} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#EEF3FF', flexShrink: 0, cursor: 'pointer' }} onError={e => { e.target.style.display = 'none'; }} onClick={() => setWarmupDemoItem(item)} />
+              <img src={`assets/icons/warmup/${item.id}.png`} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#EEF3FF', flexShrink: 0, cursor: 'pointer' }} onError={e => { e.target.style.display = 'none'; }} onClick={() => onWarmupOpen && onWarmupOpen(item)} />
               <div style={{ color: C.amber, fontFamily: C.fMono, minWidth: 18 }}>{i + 1}</div>
               <div style={{ fontSize: 13 }}>{item.text}</div>
             </div>
@@ -2597,7 +2597,7 @@ export default function App() {
             allExercises={allExercises} workoutCustom={workoutCustom}
             workoutHidden={workoutHidden} setWorkoutHidden={setWorkoutHidden}
             driveSync={driveSync} onCloudSync={handleCloudSync}
-            updateAvailable={updateAvailable} />
+            updateAvailable={updateAvailable} onWarmupOpen={setWarmupDemoItem} />
         )}
         {view === 'workout' && (
           <ActiveWorkout
@@ -2612,6 +2612,7 @@ export default function App() {
             workoutHidden={workoutHidden}
             setWorkoutHidden={setWorkoutHidden}
             onDemoOpen={setDemoExId}
+            onWarmupOpen={setWarmupDemoItem}
           />
         )}
         {view === 'history' && <History sessions={sessions} allExercises={allExercises} />}
