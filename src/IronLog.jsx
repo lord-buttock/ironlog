@@ -1095,7 +1095,7 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
     const doneSetsCount = exData.sets.filter(s => s.done).length;
     const allExDone = exData.sets.every(s => s.done);
     const sessionExIds = new Set(session.exercises.map(e => e.id));
-    const availableToAdd = Object.entries(allExercises).filter(([id]) => !sessionExIds.has(id));
+    const availableToAdd = Object.entries(allExercises).filter(([id, def]) => !sessionExIds.has(id) && !def.gymOnly);
 
     return (
       <div style={{ padding: 16 }}>
@@ -1328,7 +1328,11 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
           style={{ ...st.inp, textAlign: 'left', minHeight: 72, resize: 'vertical', marginBottom: 16, fontSize: 13, padding: 10 }}
           placeholder="How did it feel? Any niggles or things to note..."
           value={session.notes}
-          onChange={e => setSession(p => ({ ...p, notes: e.target.value }))}
+          onChange={e => {
+            const notes = e.target.value;
+            setSession(p => ({ ...p, notes }));
+            setActiveSession(p => p ? { ...p, notes } : p);
+          }}
         />
         <button style={{ ...st.btn(C.green) }} onClick={completeWorkout}>Complete Session ✓</button>
       </div>
@@ -1787,19 +1791,19 @@ const PRESET_LIBRARY = {
   p_db_fly:             { name: 'Dumbbell Fly',               muscle: 'Push',      unit: 'kg',   defaultSets: 3, defaultReps: 12, repMax: 12, cue: 'Slight bend in elbows throughout. Wide arc, feel the stretch.', demo: YT('dumbbell+fly+proper+form+tutorial') },
   p_incline_db_press:   { name: 'Incline DB Press',           muscle: 'Push',      unit: 'kg',   defaultSets: 3, defaultReps: 10, repMax: 10, cue: '30–45° incline. Elbows at 45°. Targets upper chest.',           demo: YT('incline+dumbbell+press+form+tutorial') },
   p_chest_dip:          { name: 'Chest Dip',                  muscle: 'Push',      unit: 'bw',   defaultSets: 3, defaultReps: 8,  repMax: 12, cue: 'Lean slightly forward. Elbows flare to target chest.',          demo: YT('chest+dip+form+tutorial') },
-  p_cable_fly:          { name: 'Cable Fly',                  muscle: 'Push',      unit: 'kg',   defaultSets: 3, defaultReps: 12, repMax: 15, cue: 'Arms arc in a hugging motion. Squeeze at the midpoint.',        demo: YT('cable+fly+chest+form+tutorial') },
+  p_cable_fly:          { name: 'Cable Fly',                  muscle: 'Push',      unit: 'kg',   defaultSets: 3, defaultReps: 12, repMax: 15, cue: 'Arms arc in a hugging motion. Squeeze at the midpoint.',        demo: YT('cable+fly+chest+form+tutorial'), gymOnly: true },
   // ── Pull: Back ────────────────────────────────────────────────────
   p_pull_up:            { name: 'Pull-Up',                    muscle: 'Pull',      unit: 'bw',   defaultSets: 3, defaultReps: 4,  repMax: 8,  cue: 'Shoulder-width or narrower grip only — no wide grip (aggravates shoulder bursitis). Overhand. Start band-assisted or negatives only. Full hang, chin over bar.', demo: YT('pull+up+form+narrow+grip+band+assisted+beginners') },
-  p_lat_pulldown:       { name: 'Lat Pulldown',               muscle: 'Pull',      unit: 'kg',   defaultSets: 3, defaultReps: 10, repMax: 12, cue: 'Pull bar to upper chest. Lean back slightly, lead with elbows.', demo: YT('lat+pulldown+proper+form+tutorial') },
-  p_seated_cable_row:   { name: 'Seated Cable Row',           muscle: 'Pull',      unit: 'kg',   defaultSets: 3, defaultReps: 10, repMax: 12, cue: 'Sit tall. Pull to lower chest. Squeeze shoulder blades together.', demo: YT('seated+cable+row+form+tutorial') },
-  p_t_bar_row:          { name: 'T-Bar Row',                  muscle: 'Pull',      unit: 'kg',   defaultSets: 3, defaultReps: 8,  repMax: 10, cue: 'Neutral spine, hinge at hips. Pull to lower chest.',            demo: YT('t+bar+row+form+tutorial') },
+  p_lat_pulldown:       { name: 'Lat Pulldown',               muscle: 'Pull',      unit: 'kg',   defaultSets: 3, defaultReps: 10, repMax: 12, cue: 'Pull bar to upper chest. Lean back slightly, lead with elbows.', demo: YT('lat+pulldown+proper+form+tutorial'), gymOnly: true },
+  p_seated_cable_row:   { name: 'Seated Cable Row',           muscle: 'Pull',      unit: 'kg',   defaultSets: 3, defaultReps: 10, repMax: 12, cue: 'Sit tall. Pull to lower chest. Squeeze shoulder blades together.', demo: YT('seated+cable+row+form+tutorial'), gymOnly: true },
+  p_t_bar_row:          { name: 'T-Bar Row',                  muscle: 'Pull',      unit: 'kg',   defaultSets: 3, defaultReps: 8,  repMax: 10, cue: 'Neutral spine, hinge at hips. Pull to lower chest.',            demo: YT('t+bar+row+form+tutorial'), gymOnly: true },
   p_straight_arm_pd:    { name: 'Straight-Arm Pulldown',      muscle: 'Pull',      unit: 'kg',   defaultSets: 3, defaultReps: 12, repMax: 15, cue: 'Arms straight. Hinge at shoulder only. Excellent lat isolation.', demo: YT('straight+arm+pulldown+form+tutorial') },
   // ── Legs ──────────────────────────────────────────────────────────
   p_rdl:                { name: 'Romanian Deadlift',          muscle: 'Hinge',     unit: 'kg',   defaultSets: 3, defaultReps: 10, repMax: 10, cue: 'Hinge at hips, soft knee bend. Bar stays close to legs. Feel hamstring stretch.', demo: YT('romanian+deadlift+form+tutorial+beginners') },
   p_bulgarian_squat:    { name: 'Bulgarian Split Squat',      muscle: 'Legs',      unit: 'kg',   defaultSets: 3, defaultReps: 8,  repMax: 8,  cue: 'Rear foot elevated. Front knee tracks over toes. Stay upright.', demo: YT('bulgarian+split+squat+form+tutorial'), perSide: true },
-  p_leg_press:          { name: 'Leg Press',                  muscle: 'Legs',      unit: 'kg',   defaultSets: 3, defaultReps: 10, repMax: 12, cue: 'Feet hip-width. Do not lock knees at top. Full range.',         demo: YT('leg+press+proper+form+tutorial') },
-  p_leg_extension:      { name: 'Leg Extension',              muscle: 'Legs',      unit: 'kg',   defaultSets: 3, defaultReps: 12, repMax: 15, cue: 'Extend fully, hold 1 sec, lower controlled. Isolates quads.',    demo: YT('leg+extension+machine+form+tutorial') },
-  p_seated_leg_curl:    { name: 'Seated Leg Curl',            muscle: 'Legs',      unit: 'kg',   defaultSets: 3, defaultReps: 12, repMax: 12, cue: 'Curl to full flexion. Control the return. Hamstring isolation.', demo: YT('seated+leg+curl+machine+form+tutorial') },
+  p_leg_press:          { name: 'Leg Press',                  muscle: 'Legs',      unit: 'kg',   defaultSets: 3, defaultReps: 10, repMax: 12, cue: 'Feet hip-width. Do not lock knees at top. Full range.',         demo: YT('leg+press+proper+form+tutorial'), gymOnly: true },
+  p_leg_extension:      { name: 'Leg Extension',              muscle: 'Legs',      unit: 'kg',   defaultSets: 3, defaultReps: 12, repMax: 15, cue: 'Extend fully, hold 1 sec, lower controlled. Isolates quads.',    demo: YT('leg+extension+machine+form+tutorial'), gymOnly: true },
+  p_seated_leg_curl:    { name: 'Seated Leg Curl',            muscle: 'Legs',      unit: 'kg',   defaultSets: 3, defaultReps: 12, repMax: 12, cue: 'Curl to full flexion. Control the return. Hamstring isolation.', demo: YT('seated+leg+curl+machine+form+tutorial'), gymOnly: true },
   p_sumo_squat:         { name: 'Sumo Squat',                 muscle: 'Legs',      unit: 'kg',   defaultSets: 3, defaultReps: 10, repMax: 12, cue: 'Wide stance, toes out. Knees track over toes. Targets inner thigh.', demo: YT('sumo+squat+form+tutorial') },
   p_wall_sit:           { name: 'Wall Sit',                   muscle: 'Legs',      unit: 'bw',   defaultSets: 3, defaultReps: null, defaultDuration: 30, repMax: null, cue: 'Back flat on wall, thighs parallel to floor. Hold.',   demo: YT('wall+sit+exercise+tutorial'), isTimed: true },
   // ── Glutes ────────────────────────────────────────────────────────

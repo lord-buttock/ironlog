@@ -40,11 +40,10 @@ Format for commits: `Fix BUG-NNN: short description`
 
 ---
 
-### BUG-008 [OPEN] Finisher notes lost on reload before completion
-**Priority:** Medium
-**File:** `src/IronLog.jsx` ~lines 820–825
-**Detail:** Finisher note updates only local `session` state and never call `setActiveSession`. If the app reloads during the finisher after notes are typed but before the session is completed, the notes are lost even though set updates are persisted immediately.
-**Fix:** Call `setActiveSession(updated)` (or equivalent persistence call) whenever finisher notes change.
+### BUG-008 [FIXED] Finisher notes lost on reload before completion
+**Fixed:** 2026-05-18 by Claude
+**Detail:** Finisher note updates only local `session` state and never called `setActiveSession`. Notes typed before tapping Complete were lost on reload.
+**Fix applied:** `onChange` now calls both `setSession` and `setActiveSession` so notes are immediately persisted to localStorage.
 
 ---
 
@@ -56,11 +55,10 @@ Format for commits: `Fix BUG-NNN: short description`
 
 ---
 
-### BUG-010 [OPEN] Equipment-incompatible exercises appear in mid-session Add Exercise picker
-**Priority:** Low
-**File:** `src/IronLog.jsx` ~lines 1262–1293
-**Detail:** Cable machines, leg press, T-bar row, and other equipment the user does not own appear in the Add Exercise picker mid-session.
-**Fix:** Add an `equipment` or `available` flag to incompatible preset exercises and filter them from the picker.
+### BUG-010 [FIXED] Equipment-incompatible exercises appear in mid-session Add Exercise picker
+**Fixed:** 2026-05-18 by Claude
+**Detail:** Cable machines, leg press, T-bar row, and other equipment the user does not own appeared in the Add Exercise picker mid-session.
+**Fix applied:** Added `gymOnly: true` to 7 machine-only exercises (p_cable_fly, p_lat_pulldown, p_seated_cable_row, p_t_bar_row, p_leg_press, p_leg_extension, p_seated_leg_curl). The picker now filters out any exercise where `gymOnly === true`.
 
 ---
 
