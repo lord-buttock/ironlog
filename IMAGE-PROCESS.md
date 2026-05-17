@@ -319,18 +319,7 @@ The first **goblet squat icon** represents the style to avoid:
 
 ### Generation prompt — approved version
 
-Use this prompt for all icon generation going forward:
-
-```text
-Professional fitness app exercise illustration, [EXERCISE DESCRIPTION],
-blue line art with subtle pale-blue body shading, transparent background,
-detailed human figure with shaped head and hair and facial profile,
-no blank oval face, realistic exercise pose with correct body proportions,
-clear equipment visible, clean vector illustration style,
-consistent stroke weight, no text, no border, no background, 108x108 PNG
-```
-
-Replace `[EXERCISE DESCRIPTION]` with the specific movement description for each exercise.
+Use the master prompt template in **IronLog Athlete Bible & Camera Families** for all icon and demo generation going forward. The old single-slot prompt is retired because it did not lock the athlete identity or camera angle tightly enough.
 
 ### Workflow for remaining icons
 
@@ -347,6 +336,117 @@ The following Workout C icons were generated before this style standard was esta
 
 - `goblet_squat.png` — confirmed substandard (blank oval head, no body shading)
 - All other Workout C icons should be reviewed against the quality gate and regenerated if they do not match
+
+---
+
+## IronLog Athlete Bible & Camera Families
+
+**Established 2026-05-17 before Phase 2C.** This section is the source of truth for character identity and camera consistency. Paste the locked athlete description and the appropriate camera-family sentence into every future image generation prompt.
+
+### Locked athlete description
+
+```text
+Use the same IronLog athlete in every frame: an adult male fitness illustration with a lean, muscular build, broad shoulders, defined arms, narrow waist, athletic legs, and realistic but not bodybuilder-extreme proportions. He has a three-quarter facial profile with a strong angular jaw, straight nose, small focused eyes under defined brows, neutral concentrated expression, and visible ear when side-on. His hair is bright medium blue, short on the sides, fuller on top, swept upward and back in a clean quiff with visible strand lines. He wears a fitted black sleeveless athletic tank with racerback-style arm openings, light pale-blue athletic shorts ending just above the knee with simple seam lines, and white/very pale-blue low-top training shoes with blue outline details and visible laces. The body uses pale-blue translucent fill on skin, clothing highlights, and equipment highlights, sitting inside and just under the blue line work to create volume. Edges use crisp medium-blue vector line art with consistent 2-3px apparent stroke weight, darker blue contour accents for anatomy and folds, clean anti-aliased outlines, no sketchiness, no grey shadows, no text, and no background.
+```
+
+### Camera families
+
+#### Standing frontal/three-quarter
+
+Use for calf raises, farmer's walk, Pallof press, curls, shoulder press, raises, pushdowns, face pulls, and other upright exercises.
+
+```text
+Camera: full-body standing view at chest height, slight three-quarter angle with the athlete facing right, neutral flat perspective, feet fully visible, equipment fully visible, figure occupies 72-82% of frame height and remains centred with generous transparent padding.
+```
+
+#### Squat/lunge
+
+Use for goblet squat, sumo squat, reverse lunge, split squat, and step-up patterns.
+
+```text
+Camera: full-body side-to-three-quarter view at hip height, athlete facing right, floor line implied but not drawn, both feet and the full lower-body position visible, weight held clearly in frame, figure occupies 72-82% of frame height and remains centred with generous transparent padding.
+```
+
+#### Hinge
+
+Use for RDL, deadlift, kettlebell deadlift, and other hip-hinge movements.
+
+```text
+Camera: full-body side-to-three-quarter view at hip height, athlete facing right, flat back and hip hinge readable, hands and weight visible close to the legs, feet fully visible, figure occupies 72-82% of frame height and remains centred with generous transparent padding.
+```
+
+#### Bench/supine
+
+Use for hip thrust, Swiss ball hamstring curl, bench press family, floor press, fly, skull crushers, glute bridge, and lying stretches.
+
+```text
+Camera: side view at bench or torso height, athlete facing right unless the exercise guide specifies otherwise, bench/mat/ball runs horizontally across the frame, head, feet, and equipment all fully visible, figure and equipment together occupy 70-82% of frame width and remain centred with generous transparent padding.
+```
+
+#### Floor/mat
+
+Use for dead bug, plank, side plank, bird dog, child's pose, clamshell, frog pumps, donkey kick, and other mat-based work.
+
+```text
+Camera: low side view at torso height, athlete facing right where anatomically natural, mat runs horizontally across the frame, full body visible from head to feet or hands, pose silhouette clear at small size, figure occupies 70-82% of frame width and remains centred with generous transparent padding.
+```
+
+#### Quadruped/low anchor
+
+Use for cable kickback and any hands-and-knees band/cable movement.
+
+```text
+Camera: low side view at hip height, athlete facing right on hands and knees, low door anchor or band attachment visible behind the working foot, band line visible but not dominant, full body and anchor visible, figure occupies 70-82% of frame width and remains centred with generous transparent padding.
+```
+
+### Updated master prompt template
+
+Use this structure for every future icon or demo frame. Paste the complete athlete bible into `[ATHLETE BIBLE]`, paste exactly one camera-family sentence into `[CAMERA FAMILY]`, then add the specific frame/exercise instruction.
+
+```text
+Professional fitness app exercise illustration.
+
+[ATHLETE BIBLE]
+
+[CAMERA FAMILY]
+
+[EXERCISE DESCRIPTION]
+
+Blue line art with subtle pale-blue body shading, transparent background, clean vector illustration style, consistent stroke weight, no text, no border, no background, 1024x1024 PNG.
+```
+
+For a 324px icon, generate the same source style and derive the icon from the best cleaned demo frame using the icon cleanup process. Do not use a separate character or camera prompt for the icon.
+
+### Worked example — goblet squat frame 2
+
+```text
+Professional fitness app exercise illustration.
+
+Use the same IronLog athlete in every frame: an adult male fitness illustration with a lean, muscular build, broad shoulders, defined arms, narrow waist, athletic legs, and realistic but not bodybuilder-extreme proportions. He has a three-quarter facial profile with a strong angular jaw, straight nose, small focused eyes under defined brows, neutral concentrated expression, and visible ear when side-on. His hair is bright medium blue, short on the sides, fuller on top, swept upward and back in a clean quiff with visible strand lines. He wears a fitted black sleeveless athletic tank with racerback-style arm openings, light pale-blue athletic shorts ending just above the knee with simple seam lines, and white/very pale-blue low-top training shoes with blue outline details and visible laces. The body uses pale-blue translucent fill on skin, clothing highlights, and equipment highlights, sitting inside and just under the blue line work to create volume. Edges use crisp medium-blue vector line art with consistent 2-3px apparent stroke weight, darker blue contour accents for anatomy and folds, clean anti-aliased outlines, no sketchiness, no grey shadows, no text, and no background.
+
+Camera: full-body side-to-three-quarter view at hip height, athlete facing right, floor line implied but not drawn, both feet and the full lower-body position visible, weight held clearly in frame, figure occupies 72-82% of frame height and remains centred with generous transparent padding.
+
+Goblet squat midpoint frame: athlete holding a kettlebell at chest height with both hands, descending into a squat halfway through the range of motion, knees tracking outward, chest upright, kettlebell clearly visible and consistent with the other goblet squat frames.
+
+Blue line art with subtle pale-blue body shading, transparent background, clean vector illustration style, consistent stroke weight, no text, no border, no background, 1024x1024 PNG.
+```
+
+### Phase 2C camera lookup table
+
+| Exercise ID | Camera family |
+|---|---|
+| `goblet_squat` | Squat/lunge |
+| `p_sumo_squat` | Squat/lunge |
+| `rdl` | Hinge |
+| `hip_thrust` | Bench/supine |
+| `reverse_lunge` | Squat/lunge |
+| `sb_ham_curl` | Bench/supine |
+| `p_cable_kickback` | Quadruped/low anchor |
+| `calf_raises` | Standing frontal/three-quarter |
+| `p_dead_bug` | Floor/mat |
+| `p_plank` | Floor/mat |
+| `pallof_press` | Standing frontal/three-quarter |
+| `farmers_walk` | Standing frontal/three-quarter |
 
 ---
 
@@ -567,4 +667,3 @@ For all icons and demo frames:
 5. Verify every output with `sips`.
 
 Quick Look SVG conversion is also viable for hand-authored SVG icons, but for AI-generated artwork, Pillow cleanup is currently the best tested route.
-
