@@ -709,7 +709,7 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
             <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
               {WARMUP.map((item, i) => (
                 <div key={i} style={{ display: 'flex', gap: 10, fontSize: 12, color: C.muted, lineHeight: 1.4, alignItems: 'center' }}>
-                  <img src={`assets/icons/warmup/${item.id}.png`} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#EEF3FF', marginRight: 12, flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
+                  <img src={`assets/icons/warmup/${item.id}.png`} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#EEF3FF', marginRight: 12, flexShrink: 0, cursor: 'pointer' }} onError={e => { e.target.style.display = 'none'; }} onClick={() => setWarmupDemoItem(item)} />
                   <span style={{ color: C.amber, fontFamily: C.fMono, minWidth: 16 }}>{i + 1}</span>
                   <span>{item.text}</span>
                 </div>
@@ -726,7 +726,7 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
             <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
               {wkt.finisher.map((item, i) => (
                 <div key={i} style={{ display: 'flex', gap: 10, fontSize: 12, color: C.muted, lineHeight: 1.4, alignItems: 'center' }}>
-                  <img src={`assets/icons/warmup/${item.id}.png`} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#EEF3FF', marginRight: 12, flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
+                  <img src={`assets/icons/warmup/${item.id}.png`} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#EEF3FF', marginRight: 12, flexShrink: 0, cursor: 'pointer' }} onError={e => { e.target.style.display = 'none'; }} onClick={() => setWarmupDemoItem(item)} />
                   <span style={{ color: C.green, fontFamily: C.fMono, minWidth: 16 }}>{i + 1}</span>
                   <span>{item.text}</span>
                 </div>
@@ -1050,7 +1050,7 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
         <div style={{ ...st.col(), marginBottom: 24 }}>
           {WARMUP.map((item, i) => (
             <div key={i} style={{ ...st.card(), display: 'flex', gap: 12, alignItems: 'center', padding: '12px 14px' }}>
-              <img src={`assets/icons/warmup/${item.id}.png`} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#EEF3FF', flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
+              <img src={`assets/icons/warmup/${item.id}.png`} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#EEF3FF', flexShrink: 0, cursor: 'pointer' }} onError={e => { e.target.style.display = 'none'; }} onClick={() => setWarmupDemoItem(item)} />
               <div style={{ fontFamily: C.fMono, color: C.amber, fontSize: 14, minWidth: 20 }}>{i + 1}</div>
               <div style={{ fontSize: 13, lineHeight: 1.4 }}>{item.text}</div>
             </div>
@@ -1317,7 +1317,7 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
         <div style={{ ...st.col(), marginBottom: 20 }}>
           {wkt.finisher.map((item, i) => (
             <div key={i} style={{ ...st.card(), display: 'flex', gap: 12, padding: '12px 14px', alignItems: 'center' }}>
-              <img src={`assets/icons/warmup/${item.id}.png`} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#EEF3FF', flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
+              <img src={`assets/icons/warmup/${item.id}.png`} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#EEF3FF', flexShrink: 0, cursor: 'pointer' }} onError={e => { e.target.style.display = 'none'; }} onClick={() => setWarmupDemoItem(item)} />
               <div style={{ color: C.amber, fontFamily: C.fMono, minWidth: 18 }}>{i + 1}</div>
               <div style={{ fontSize: 13 }}>{item.text}</div>
             </div>
@@ -2414,10 +2414,53 @@ function ExerciseDemoModal({ exerciseId, onClose }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
+// WARMUP / FINISHER ICON MODAL
+// ═══════════════════════════════════════════════════════════════════════
+function WarmupDemoModal({ item, onClose }) {
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 500,
+        background: 'rgba(10,15,40,0.92)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexDirection: 'column', gap: 16,
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: '#EEF3FF',
+          borderRadius: 28,
+          padding: 20,
+          boxShadow: '0 8px 48px rgba(0,0,0,0.5)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
+          maxWidth: 320, margin: 24,
+        }}
+      >
+        <img
+          src={`assets/icons/warmup/${item.id}.png`}
+          style={{ width: 260, height: 260, objectFit: 'contain', display: 'block' }}
+          onError={e => { e.target.style.opacity = 0.2; }}
+        />
+        <div style={{ fontSize: 13, lineHeight: 1.5, color: '#1a2a4a', textAlign: 'center', fontFamily: C.fMono }}>
+          {item.text}
+        </div>
+      </div>
+      <div style={{
+        position: 'absolute', top: 24, right: 24,
+        color: 'rgba(255,255,255,0.5)', fontSize: 28, lineHeight: 1, cursor: 'pointer',
+      }}>✕</div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 // ROOT APP
 // ═══════════════════════════════════════════════════════════════════════
 export default function App() {
   const [demoExId, setDemoExId] = useState(null);
+  const [warmupDemoItem, setWarmupDemoItem] = useState(null);
   const [view, setView] = useState('dashboard');
   const [sessions, setSessions] = useState([]);
   const [rides, setRides] = useState([]);
@@ -2593,6 +2636,7 @@ export default function App() {
       </div>
       <Nav view={view} setView={setView} hasActive={!!activeSession} />
       {demoExId && <ExerciseDemoModal exerciseId={demoExId} onClose={() => setDemoExId(null)} />}
+      {warmupDemoItem && <WarmupDemoModal item={warmupDemoItem} onClose={() => setWarmupDemoItem(null)} />}
     </>
   );
 }
