@@ -1854,6 +1854,7 @@ function Progress({ sessions, allExercises = EXERCISES }) {
 
   const data = sessions
     .filter(s => s.exercises?.some(e => e.id === selEx))
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
     .map(s => {
       const ex = s.exercises.find(e => e.id === selEx);
       if (!ex) return null;
