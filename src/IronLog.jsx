@@ -721,8 +721,10 @@ function Nav({ view, setView, hasActive }) {
 // ═══════════════════════════════════════════════════════════════════════
 function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, setSelectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, driveSync, onCloudSync, updateAvailable, onWarmupOpen, onDemoOpen }) {
   const [showExercises, setShowExercises] = useState(false);
+  const [showStretches, setShowStretches] = useState(false);
   const [showWarmup, setShowWarmup] = useState(false);
   const [showCooldown, setShowCooldown] = useState(false);
+  const [stretchDemoItem, setStretchDemoItem] = useState(null);
   const suggested = nextWorkout(sessions);
   const wkt = WORKOUTS[selectedWorkout];
   const extraIds = workoutCustom[selectedWorkout] || [];
@@ -876,18 +878,56 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
 
       {/* Stretch Routine card */}
       <div style={{ ...st.card(), marginBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <div>
-            <div style={{ ...st.label, marginBottom: 4 }}>Stretch Routine</div>
-            <div style={{ fontSize: 16, fontWeight: 700, fontFamily: C.fDisplay, textTransform: 'uppercase' }}>Full-Body Flexibility</div>
-            <div style={{ fontSize: 12, color: C.muted, fontFamily: C.fMono, marginTop: 3 }}>12 stretches · ~15–20 min</div>
+        <button onClick={() => setShowStretches(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, width: '100%', textAlign: 'left', marginBottom: showStretches ? 0 : 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ ...st.label, marginBottom: 4 }}>Stretch Routine</div>
+              <div style={{ fontSize: 16, fontWeight: 700, fontFamily: C.fDisplay, textTransform: 'uppercase' }}>Full-Body Flexibility</div>
+              <div style={{ fontSize: 12, color: C.muted, fontFamily: C.fMono, marginTop: 3 }}>12 stretches · ~15–20 min</div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <Icon name="activity" size={24} color={C.amber} />
+              <span style={{ color: C.muted, fontSize: 13 }}>{showStretches ? '▲' : '▼'}</span>
+            </div>
           </div>
-          <Icon name="activity" size={28} color={C.amber} />
-        </div>
+        </button>
+
+        {showStretches && (
+          <div style={{ marginTop: 12, marginBottom: 12 }}>
+            {STRETCHES.map((stretch, i) => (
+              <div key={stretch.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < STRETCHES.length - 1 ? `1px solid ${C.border}` : 'none' }}>
+                <img
+                  src={`assets/icons/stretches/${stretch.id}.png`}
+                  style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#EEF3FF', flexShrink: 0, cursor: 'pointer' }}
+                  onError={e => { e.target.style.opacity = 0.2; }}
+                  onClick={() => setStretchDemoItem(stretch)}
+                />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, color: C.text, lineHeight: 1.2 }}>{stretch.name}</div>
+                  <div style={{ fontSize: 11, color: C.muted, fontFamily: C.fMono, marginTop: 2 }}>{stretch.targets}</div>
+                </div>
+                {stretch.bilateral && <span style={{ fontSize: 10, color: C.amber, fontFamily: C.fMono, flexShrink: 0 }}>Both sides</span>}
+              </div>
+            ))}
+          </div>
+        )}
+
         <button style={{ ...st.ghost }} onClick={() => setView('stretch')}>
           Start Stretching
         </button>
       </div>
+
+      {stretchDemoItem && (
+        <div onClick={() => setStretchDemoItem(null)} style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'rgba(10,15,40,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#EEF3FF', borderRadius: 28, padding: 20, boxShadow: '0 8px 48px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, maxWidth: 320, margin: 24 }}>
+            <img src={`assets/icons/stretches/${stretchDemoItem.id}.png`} style={{ width: 220, height: 220, objectFit: 'contain', display: 'block' }} onError={e => { e.target.style.opacity = 0.2; }} alt={stretchDemoItem.name} />
+            <div style={{ fontSize: 15, fontWeight: 700, fontFamily: C.fDisplay, textTransform: 'uppercase', color: '#1a2a4a', textAlign: 'center' }}>{stretchDemoItem.name}</div>
+            <div style={{ fontSize: 11, color: C.amber, fontFamily: C.fMono, textAlign: 'center' }}>{stretchDemoItem.targets}</div>
+            <div style={{ fontSize: 13, lineHeight: 1.55, color: '#1a2a4a', textAlign: 'center', fontFamily: C.fMono }}>{stretchDemoItem.cue}</div>
+          </div>
+          <div style={{ position: 'absolute', top: 24, right: 24, color: 'rgba(255,255,255,0.5)', fontSize: 28, lineHeight: 1, cursor: 'pointer' }}>✕</div>
+        </div>
+      )}
 
       {/* Stats row */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 16 }}>
