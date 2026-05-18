@@ -13,12 +13,14 @@ assets/icons/<exercise_id>.png
 Target format:
 
 - PNG
-- 108 x 108 px
+- **324 × 324 px** (3× Retina — renders sharp at 108px CSS display size)
 - true transparent alpha channel
 - no checkerboard baked into the image
 - no text
 - no background
 - blue fitness illustration suitable for display inside IronLog's circular icon holder
+
+> **Note:** Early test icons were produced at 108×108px (see test record below). The current standard is 324×324px. All new icons must use the updated spec.
 
 ## Test Icon
 
@@ -327,7 +329,7 @@ Use the master prompt template in **IronLog Athlete Bible & Camera Families** fo
 2. Visually check against the quality gate before running Pillow cleanup
 3. If the icon fails the quality gate — regenerate, do not clean and ship a substandard icon
 4. Run Pillow cleanup script (see above)
-5. Verify with `sips` (108×108, hasAlpha: yes)
+5. Verify with `sips` (324×324, hasAlpha: yes)
 6. Save to `assets/icons/<exercise_id>.png`
 
 ### Regeneration required
