@@ -733,7 +733,7 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
   const ws = weekStart();
   const weekSessions = sessions.filter(s => new Date(s.date) >= ws);
   const weekRides = rides.filter(r => new Date(r.date) >= ws);
-  const recent = [...sessions].reverse().slice(0, 4);
+  const recent = [...sessions].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 4);
   const lastSyncTime = driveSync?.lastCloudSync
     ? new Date(driveSync.lastCloudSync).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })
     : 'not yet';
