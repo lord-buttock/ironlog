@@ -256,10 +256,11 @@ const STRETCHES = [
     suggestedSecs: 30,
   },
   {
-    id: 'str_pec_roller',
+    id: 'str_pec_roller_t',
+    id2: 'str_pec_roller_w',
     name: 'Pec Stretch on Foam Roller',
     targets: 'Chest · Anterior shoulder',
-    cue: 'Lie lengthways along the foam roller so it supports your entire spine. Let arms fall to the sides — first in a T (arms level with shoulders), then a W (elbows bent, arms raised). Let gravity open the chest. Don\'t force your hands to the floor.',
+    cue: 'Lie lengthways along the foam roller so it supports your entire spine. First: T position — arms spread level with shoulders. Then: W position — elbows bent, forearms raised. Let gravity open the chest in each position. Don\'t force your hands to the floor.',
     bilateral: false,
     suggestedSecs: 60,
   },
@@ -272,7 +273,8 @@ const STRETCHES = [
     suggestedSecs: 60,
   },
   {
-    id: 'str_cat_cow',
+    id: 'str_cat_cow_cow',
+    id2: 'str_cat_cow_cat',
     name: 'Cat-Cow',
     targets: 'Spine · Lower back · Core',
     cue: 'On hands and knees, wrists under shoulders. Inhale — drop belly, lift head and tailbone (cow). Exhale — round spine toward ceiling, tuck chin and pelvis (cat). Move slowly through 10 full breaths, one breath per rep.',
@@ -328,10 +330,11 @@ const STRETCHES = [
     suggestedSecs: 30,
   },
   {
-    id: 'str_calf',
+    id: 'str_calf_straight',
+    id2: 'str_calf_bent',
     name: 'Calf Stretch',
     targets: 'Gastrocnemius · Soleus',
-    cue: 'Stand in a lunge, hands on a wall. Back leg straight, push heel to floor for the upper calf. Then slightly bend the back knee to stretch the lower calf (soleus). Hold each variation before switching sides.',
+    cue: 'Stand in a lunge, hands on a wall. First: back leg straight, heel pressed to the floor — stretches the upper calf (gastroc). Then: slightly bend the back knee — shifts the stretch to the lower calf (soleus). Hold each variation before switching sides.',
     bilateral: true,
     suggestedSecs: 30,
   },
@@ -2635,7 +2638,7 @@ function ActiveStretch({ onDone }) {
   const [idx, setIdx] = useState(0);
   const [side, setSide] = useState(() => STRETCHES[0].bilateral ? 'left' : null);
   const [elapsed, setElapsed] = useState(0);
-  const [demoOpen, setDemoOpen] = useState(false);
+  const [demoImg, setDemoImg] = useState(null); // src string or null
 
   // Reset and restart timer whenever stretch or side changes
   useEffect(() => {
@@ -2682,15 +2685,32 @@ function ActiveStretch({ onDone }) {
         {stretch.targets}
       </div>
 
-      {/* Image */}
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
-        <img
-          src={`assets/icons/stretches/${stretch.id}.png`}
-          style={{ width: 180, height: 180, objectFit: 'contain', borderRadius: 20, background: '#EEF3FF', cursor: 'pointer', display: 'block' }}
-          onError={e => { e.target.style.opacity = 0.15; }}
-          onClick={() => setDemoOpen(true)}
-          alt={stretch.name}
-        />
+      {/* Image(s) */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 20 }}>
+        {[stretch.id, stretch.id2].filter(Boolean).map((imgId, i) => {
+          const src = `assets/icons/stretches/${imgId}.png`;
+          const size = stretch.id2 ? 140 : 180;
+          const labels = stretch.id2
+            ? stretch.id.startsWith('str_pec_roller') ? ['T Position', 'W Position']
+              : stretch.id.startsWith('str_cat_cow') ? ['Cow', 'Cat']
+              : stretch.id.startsWith('str_calf') ? ['Straight Knee', 'Bent Knee']
+              : [null, null]
+            : [null];
+          return (
+            <div key={imgId} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+              <img
+                src={src}
+                style={{ width: size, height: size, objectFit: 'contain', borderRadius: 16, background: '#EEF3FF', cursor: 'pointer', display: 'block' }}
+                onError={e => { e.target.style.opacity = 0.15; }}
+                onClick={() => setDemoImg(src)}
+                alt={labels[i] || stretch.name}
+              />
+              {labels[i] && (
+                <span style={{ fontSize: 10, fontFamily: C.fMono, color: C.muted, textTransform: 'uppercase', letterSpacing: 0.5 }}>{labels[i]}</span>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Side indicator */}
@@ -2730,8 +2750,8 @@ function ActiveStretch({ onDone }) {
       )}
 
       {/* Lightbox */}
-      {demoOpen && (
-        <div onClick={() => setDemoOpen(false)} style={{
+      {demoImg && (
+        <div onClick={() => setDemoImg(null)} style={{
           position: 'fixed', inset: 0, zIndex: 500,
           background: 'rgba(10,15,40,0.92)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -2744,7 +2764,7 @@ function ActiveStretch({ onDone }) {
             maxWidth: 320, margin: 24,
           }}>
             <img
-              src={`assets/icons/stretches/${stretch.id}.png`}
+              src={demoImg}
               style={{ width: 260, height: 260, objectFit: 'contain', display: 'block' }}
               onError={e => { e.target.style.opacity = 0.15; }}
               alt={stretch.name}
