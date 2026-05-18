@@ -203,17 +203,19 @@ const PNG_EXERCISE_ICON_IDS = new Set([
   'single_leg_bal', 'split_squat', 'step_ups', 'suitcase_carry', 'tricep_pushdown',
   // Preset library exercises
   'p_ab_wheel', 'p_arnold_press', 'p_band_ext_rot', 'p_band_face_pull',
-  'p_barbell_curl', 'p_bird_dog', 'p_bulgarian_squat', 'p_cable_crunch',
-  'p_cable_fly', 'p_cable_kickback', 'p_chest_dip', 'p_clamshell',
-  'p_close_grip_bench', 'p_concentration_curl', 'p_db_bicep_curl', 'p_db_fly',
-  'p_db_shoulder_press', 'p_dead_bug', 'p_diamond_pushup', 'p_donkey_kick',
-  'p_frog_pumps', 'p_front_raise', 'p_hammer_curl', 'p_hanging_knee_raise',
-  'p_hip_abduction', 'p_incline_db_press', 'p_lat_pulldown', 'p_lateral_raise',
+  'p_barbell_curl', 'p_bb_decline_bench', 'p_bb_hip_thrust', 'p_bb_row',
+  'p_bird_dog', 'p_bulgarian_squat', 'p_cable_crunch', 'p_cable_fly',
+  'p_cable_kickback', 'p_chest_dip', 'p_clamshell', 'p_close_grip_bench',
+  'p_concentration_curl', 'p_db_bicep_curl', 'p_db_fly', 'p_db_shoulder_press',
+  'p_db_squat', 'p_db_tricep_kickback', 'p_dead_bug', 'p_deadlift',
+  'p_diamond_pushup', 'p_donkey_kick', 'p_frog_pumps', 'p_front_raise',
+  'p_hammer_curl', 'p_hanging_knee_raise', 'p_hip_abduction', 'p_incline_db_curl',
+  'p_incline_db_fly', 'p_incline_db_press', 'p_lat_pulldown', 'p_lateral_raise',
   'p_leg_extension', 'p_leg_press', 'p_overhead_ext', 'p_plank', 'p_preacher_curl',
   'p_pull_up', 'p_push_up', 'p_rdl', 'p_rear_delt_fly', 'p_seated_cable_row',
   'p_seated_leg_curl', 'p_shrugs', 'p_side_plank', 'p_skull_crushers',
   'p_straight_arm_pd', 'p_sumo_squat', 'p_t_bar_row', 'p_tricep_dips',
-  'p_tricep_pushdown', 'p_wall_sit',
+  'p_tricep_pushdown', 'p_walking_lunge', 'p_wall_sit',
 ]);
 
 const ExerciseIcon = ({ id, size = 36 }) => {
