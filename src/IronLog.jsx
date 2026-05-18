@@ -719,7 +719,7 @@ function Nav({ view, setView, hasActive }) {
 // ═══════════════════════════════════════════════════════════════════════
 // DASHBOARD
 // ═══════════════════════════════════════════════════════════════════════
-function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, setSelectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, driveSync, onCloudSync, updateAvailable, onWarmupOpen }) {
+function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, setSelectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, driveSync, onCloudSync, updateAvailable, onWarmupOpen, onDemoOpen }) {
   const [showWarmup, setShowWarmup] = useState(false);
   const [showCooldown, setShowCooldown] = useState(false);
   const suggested = nextWorkout(sessions);
@@ -813,7 +813,9 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
             const isExtra = extraIds.includes(id);
             return (
               <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: `1px solid ${C.border}` }}>
-                <ExerciseIcon id={id} size={36} />
+                <div onClick={() => onDemoOpen && onDemoOpen(id)} style={{ cursor: 'pointer', flexShrink: 0 }}>
+                  <ExerciseIcon id={id} size={36} />
+                </div>
                 <span style={{ flex: 1, minWidth: 0, fontSize: 15, color: C.text }}>{ex?.name || id}</span>
                 <span style={{
                   border: `1px solid ${C.border}`,
@@ -1914,7 +1916,7 @@ function Rides({ rides, setRides }) {
     setOpen(false); setDur(''); setDist(''); setRpe(''); setType('easy'); setNotes('');
   }
 
-  const typeColor = { easy: C.muted, sprinkles: C.blue, long: C.green };
+  const typeColor = { easy: C.muted, long: C.green, recovery: C.green, intervals: C.blue, sprinkles: C.blue, tempo: C.amber, hills: C.amber };
   const sorted = [...rides].reverse();
 
   return (
@@ -1941,8 +1943,11 @@ function Rides({ rides, setRides }) {
               <div style={{ ...st.label, marginBottom: 5 }}>Ride type</div>
               <select value={type} onChange={e => setType(e.target.value)} style={{ ...st.inp, textAlign: 'left', padding: '10px 12px' }}>
                 <option value="easy">Easy (conversational)</option>
-                <option value="sprinkles">Sprinkles (intervals)</option>
-                <option value="long">Long easy</option>
+                <option value="long">Long Easy (45–60 min)</option>
+                <option value="recovery">Recovery Spin (very easy)</option>
+                <option value="intervals">Intervals (short hard efforts)</option>
+                <option value="tempo">Tempo (comfortably hard)</option>
+                <option value="hills">Hill Ride</option>
               </select>
             </div>
             <div>
@@ -1964,7 +1969,7 @@ function Rides({ rides, setRides }) {
         {[
           { phase: 'Wks 1–2', text: '2 rides/week · 20–30 min easy · conversational pace' },
           { phase: 'Wks 3–4', text: '2–3/week · 25–40 min · optional 6 × 20s slightly harder' },
-          { phase: 'Wk 5+',   text: '3/week · long easy (45–60), easy (25–35), sprinkles (8 × 30s)' },
+          { phase: 'Wk 5+',   text: '3/week · long easy (45–60), easy (25–35), intervals (8 × 30s)' },
         ].map((r, i) => (
           <div key={i} style={{ display: 'flex', gap: 10, fontSize: 12, padding: '4px 0', borderBottom: i < 2 ? `1px solid ${C.dim}` : 'none' }}>
             <span style={{ fontFamily: C.fMono, color: C.amber, minWidth: 56 }}>{r.phase}</span>
@@ -3023,7 +3028,8 @@ export default function App() {
             allExercises={allExercises} workoutCustom={workoutCustom}
             workoutHidden={workoutHidden} setWorkoutHidden={setWorkoutHidden}
             driveSync={driveSync} onCloudSync={handleCloudSync}
-            updateAvailable={updateAvailable} onWarmupOpen={setWarmupDemoItem} />
+            updateAvailable={updateAvailable} onWarmupOpen={setWarmupDemoItem}
+            onDemoOpen={setDemoExId} />
         )}
         {view === 'workout' && (
           <ActiveWorkout
