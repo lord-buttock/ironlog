@@ -216,7 +216,7 @@ ls assets/icons/ | wc -l               # should be 79 (all icons complete)
 
 ## Priority 5 — Caution Flags on Modified Exercises
 
-**Status:** Planned
+**Status:** ✅ Done — 2026-05-18
 
 🟡 exercises should show a caution banner or note during a session — similar to how pain ≥ 3 currently shows a warning. For example, when the user logs a set of Barbell Bent-Over Row, a yellow note should appear: *"Neutral spine only. Stop if lower back tightens."*
 
