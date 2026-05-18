@@ -184,14 +184,26 @@ function MuscleDiagram({ primary = [], secondary = [], size = 'medium' }) {
 }
 
 const PNG_EXERCISE_ICON_IDS = new Set([
-  'bb_flat_bench', 'p_db_fly', 'p_db_shoulder_press', 'p_lateral_raise',
-  'p_rear_delt_fly', 'p_band_ext_rot', 'p_close_grip_bench', 'p_tricep_pushdown',
-  'db_shoulder', 'lateral_raise', 'tricep_pushdown', 'p_skull_crushers',
-  'kb_deadlift', 'chin_up', 'cs_db_row', 'reverse_fly',
-  'face_pull', 'p_straight_arm_pd', 'p_db_bicep_curl', 'db_curl', 'db_hammer',
-  'goblet_squat', 'p_sumo_squat', 'rdl', 'hip_thrust', 'reverse_lunge',
-  'sb_ham_curl', 'p_cable_kickback', 'calf_raises', 'p_dead_bug',
-  'p_plank', 'pallof_press', 'farmers_walk', 'split_squat', 'step_ups', 'suitcase_carry',
+  // Default workout exercises
+  'band_row', 'bb_flat_bench', 'bb_incline_bench', 'calf_raises', 'chin_up',
+  'cs_db_row', 'db_bench', 'db_curl', 'db_floor_press', 'db_hammer', 'db_lateral',
+  'db_row_1arm', 'db_shoulder', 'db_tricep', 'face_pull', 'farmers_walk',
+  'goblet_squat', 'hip_thrust', 'incline_pushups', 'kb_deadlift', 'lateral_raise',
+  'pallof_press', 'rdl', 'reverse_fly', 'reverse_lunge', 'sb_ham_curl',
+  'single_leg_bal', 'split_squat', 'step_ups', 'suitcase_carry', 'tricep_pushdown',
+  // Preset library exercises
+  'p_ab_wheel', 'p_arnold_press', 'p_band_ext_rot', 'p_band_face_pull',
+  'p_barbell_curl', 'p_bird_dog', 'p_bulgarian_squat', 'p_cable_crunch',
+  'p_cable_fly', 'p_cable_kickback', 'p_chest_dip', 'p_clamshell',
+  'p_close_grip_bench', 'p_concentration_curl', 'p_db_bicep_curl', 'p_db_fly',
+  'p_db_shoulder_press', 'p_dead_bug', 'p_diamond_pushup', 'p_donkey_kick',
+  'p_frog_pumps', 'p_front_raise', 'p_hammer_curl', 'p_hanging_knee_raise',
+  'p_hip_abduction', 'p_incline_db_press', 'p_lat_pulldown', 'p_lateral_raise',
+  'p_leg_extension', 'p_leg_press', 'p_overhead_ext', 'p_plank', 'p_preacher_curl',
+  'p_pull_up', 'p_push_up', 'p_rdl', 'p_rear_delt_fly', 'p_seated_cable_row',
+  'p_seated_leg_curl', 'p_shrugs', 'p_side_plank', 'p_skull_crushers',
+  'p_straight_arm_pd', 'p_sumo_squat', 'p_t_bar_row', 'p_tricep_dips',
+  'p_tricep_pushdown', 'p_wall_sit',
 ]);
 
 const ExerciseIcon = ({ id, size = 36 }) => {
@@ -909,7 +921,7 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   {sess.duration && <div style={{ ...st.mono(12, C.muted) }}>{sess.duration}min</div>}
-                  {sess.energy && <div style={{ fontSize: 16 }}>{'😴😕😐💪🔥'[sess.energy - 1]}</div>}
+                  {sess.energy && <div style={{ fontSize: 16 }}>{['😴','😕','😐','💪','🔥'][sess.energy - 1]}</div>}
                 </div>
               </div>
             ))}
@@ -1609,7 +1621,7 @@ function History({ sessions, allExercises = EXERCISES }) {
                 </div>
               </div>
               <div style={{ ...st.row, gap: 6 }}>
-                {sess.energy && <span style={{ fontSize: 14 }}>{'😴😕😐💪🔥'[sess.energy - 1]}</span>}
+                {sess.energy && <span style={{ fontSize: 14 }}>{['😴','😕','😐','💪','🔥'][sess.energy - 1]}</span>}
                 {sess.duration && <span style={st.pill(C.muted)}>⏱ {sess.duration}min</span>}
                 {!sess.duration && !sess.completed && <span style={st.pill(C.muted)}>in progress</span>}
                 <span style={{ color: C.muted, fontSize: 12 }}>{expanded === sess.id ? '▲' : '▼'}</span>
