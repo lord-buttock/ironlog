@@ -8,35 +8,37 @@ Format for commits: `Fix BUG-NNN: short description`
 
 ## Open
 
-### BUG-002 [OPEN] Overload nudge fires too early
-**Priority:** High
-**File:** `src/IronLog.jsx` ~lines 148–157, 709
-**Detail:** Several exercises have `defaultReps === repMax` (goblet squat, DB bench, KB deadlift, split squat). Completing prescribed reps on the first session triggers "add load." Logic also ignores high pain and high RPE.
-**Fix:** Require `repMax > defaultReps` + no sets with `pain >= 3` + avg RPE ≤ 8 (exclude blank RPE from average). Do not change the per-set comparison (`>= repMax`).
+*(No high-priority bugs currently open)*
 
 ---
 
-### BUG-003 [OPEN] Import validation missing — bad JSON shape crashes app
-**Priority:** High
-**File:** `src/IronLog.jsx` ~lines 1654–1664
+## Fixed
+
+### BUG-002 [FIXED] Overload nudge fires too early
+**Fixed:** 2026-05-18 (confirmed by Claude code review — fix already in codebase)
+**Detail:** Several exercises have `defaultReps === repMax` (goblet squat, DB bench, KB deadlift, split squat). Completing prescribed reps on the first session triggers "add load." Logic also ignored high pain and high RPE.
+**Fix applied:** `checkOverloadNudges` guards with `def.repMax <= def.defaultReps` (early return), `doneSets.some(s => Number(s.pain) >= 3)` (pain gate), and avgRpe > 8 check excluding blank RPE values. Per-set comparison remains `>= repMax`.
+
+---
+
+### BUG-003 [FIXED] Import validation missing — bad JSON shape crashes app
+**Fixed:** 2026-05-18 (confirmed by Claude code review — fix already in codebase)
 **Detail:** `importData()` parses JSON but does not validate that `sessions` and `rides` are arrays. Also does not call `setActiveSession(null)` on success — importing mid-workout leaves a stale active session in state.
-**Fix:** Add `Array.isArray()` checks before accepting imported data. Call `setActiveSession(null)` on successful import.
+**Fix applied:** `handleImport` validates `sessions`, `rides`, and `customExercises` with `Array.isArray()` checks and throws descriptive errors on mismatch. `setActiveSession(null)` called on successful import.
 
 ---
 
-### BUG-004 [OPEN] Resume state incomplete — phase, exIdx, and elapsed time reset on reload
-**Priority:** High
-**File:** `src/IronLog.jsx` ~lines 499–503, 512
-**Detail:** When `il_active` exists, `ActiveWorkout` always reopens at workout phase and exercise index 0. Elapsed time restarts from zero. A reload during warm-up, finisher, or mid-workout loses position and under-reports session duration.
-**Fix:** Persist `phase` and `exIdx` into `activeSession`. On resume, derive `exIdx` from first incomplete exercise. Use wall-clock `startTime` (timestamp) to compute elapsed rather than a counter.
+### BUG-004 [FIXED] Resume state incomplete — phase, exIdx, and elapsed time reset on reload
+**Fixed:** 2026-05-18 (confirmed by Claude code review — fix already in codebase)
+**Detail:** When `il_active` exists, `ActiveWorkout` always reopened at workout phase and exercise index 0. Elapsed time restarted from zero.
+**Fix applied:** Phase restores from `activeSession?.phase`. `exIdx` initialises via `findIndex` to first exercise with any incomplete set. Elapsed computed as `Math.floor((Date.now() - session.startTime) / 1000)` using wall-clock timestamp; timer interval also anchors to `session.startTime`.
 
 ---
 
-### BUG-005 [OPEN] Blank Train screen — no recovery path for malformed active session
-**Priority:** High
-**File:** `src/IronLog.jsx` ~line 638
-**Detail:** If `il_active` contains a session with no valid `exercises` array, the workout phase returns `null`. The screen goes blank with no error state and no escape except manually clearing browser storage.
-**Fix:** Add a fallback UI: detect malformed session on mount, render a "Session data is corrupted — clear and start fresh" screen with a button that calls `clearActiveSession()`.
+### BUG-005 [FIXED] Blank Train screen — no recovery path for malformed active session
+**Fixed:** 2026-05-18 (confirmed by Claude code review — fix already in codebase)
+**Detail:** If `il_active` contains a session with no valid `exercises` array, the workout phase returned `null` with no recovery path.
+**Fix applied:** Guard at top of `ActiveWorkout` render: if `session` exists but `session.exercises` is not a non-empty array, renders a "SESSION DATA CORRUPTED" screen with a "Clear Session & Start Fresh" button that calls `setActiveSession(null)`.
 
 ---
 
@@ -47,11 +49,10 @@ Format for commits: `Fix BUG-NNN: short description`
 
 ---
 
-### BUG-009 [OPEN] EXERCISES not browseable in Manage → Library
-**Priority:** Medium
-**File:** `src/IronLog.jsx` ~lines 1313–1317
-**Detail:** The Library tab in Manage only shows `PRESET_LIBRARY` and custom exercises. Base `EXERCISES` items (the default workout exercises) are not listed. Their form cues and demo links are inaccessible outside an active workout.
-**Fix:** Include `EXERCISES` entries in the Library tab display.
+### BUG-009 [FIXED] EXERCISES not browseable in Manage → Library
+**Fixed:** 2026-05-18 (confirmed by Claude code review — fix already in codebase)
+**Detail:** The Library tab in Manage only showed `PRESET_LIBRARY` and custom exercises. Base `EXERCISES` items were not listed.
+**Fix applied:** `libraryEntries` in `Manage` now spreads `Object.entries(EXERCISES)` first, followed by `PRESET_LIBRARY` and `customExercises`.
 
 ---
 
@@ -61,8 +62,6 @@ Format for commits: `Fix BUG-NNN: short description`
 **Fix applied:** Added `gymOnly: true` to 7 machine-only exercises (p_cable_fly, p_lat_pulldown, p_seated_cable_row, p_t_bar_row, p_leg_press, p_leg_extension, p_seated_leg_curl). The picker now filters out any exercise where `gymOnly === true`.
 
 ---
-
-## Fixed
 
 ### BUG-001 [FIXED] False PR detection on undone sets
 **Fixed:** 2026-05-13 by Claude

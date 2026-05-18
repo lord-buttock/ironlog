@@ -1879,16 +1879,17 @@ function Progress({ sessions, allExercises = EXERCISES }) {
 function Rides({ rides, setRides }) {
   const [open, setOpen] = useState(false);
   const [dur, setDur] = useState('');
+  const [dist, setDist] = useState('');
   const [rpe, setRpe] = useState('');
   const [type, setType] = useState('easy');
   const [notes, setNotes] = useState('');
 
   function log() {
     if (!dur) return;
-    const ride = { id: Date.now().toString(), date: new Date().toISOString(), duration: +dur, effort: rpe ? +rpe : null, type, notes };
+    const ride = { id: Date.now().toString(), date: new Date().toISOString(), duration: +dur, distance: dist ? +dist : null, effort: rpe ? +rpe : null, type, notes };
     setRides(p => [...p, ride]);
     pushRide(ride); // fire-and-forget cloud backup
-    setOpen(false); setDur(''); setRpe(''); setType('easy'); setNotes('');
+    setOpen(false); setDur(''); setDist(''); setRpe(''); setType('easy'); setNotes('');
   }
 
   const typeColor = { easy: C.muted, sprinkles: C.blue, long: C.green };
@@ -1904,9 +1905,15 @@ function Rides({ rides, setRides }) {
       {open && (
         <div style={{ ...st.card(), marginBottom: 16 }}>
           <div style={{ ...st.col(12) }}>
-            <div>
-              <div style={{ ...st.label, marginBottom: 5 }}>Duration (minutes)</div>
-              <input type="number" inputMode="numeric" value={dur} onChange={e => setDur(e.target.value)} style={{ ...st.inp }} placeholder="e.g. 30" />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div>
+                <div style={{ ...st.label, marginBottom: 5 }}>Duration (min)</div>
+                <input type="number" inputMode="numeric" value={dur} onChange={e => setDur(e.target.value)} style={{ ...st.inp }} placeholder="e.g. 45" />
+              </div>
+              <div>
+                <div style={{ ...st.label, marginBottom: 5 }}>Distance (km)</div>
+                <input type="number" inputMode="decimal" value={dist} onChange={e => setDist(e.target.value)} style={{ ...st.inp }} placeholder="e.g. 18.5" />
+              </div>
             </div>
             <div>
               <div style={{ ...st.label, marginBottom: 5 }}>Ride type</div>
@@ -1961,7 +1968,10 @@ function Rides({ rides, setRides }) {
                 {r.notes && <div style={{ fontSize: 12, color: C.muted }}>{r.notes}</div>}
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontFamily: C.fMono, fontSize: 22, color: C.text, lineHeight: 1 }}>{r.duration}<span style={{ fontSize: 11, color: C.muted }}>min</span></div>
+                {r.distance != null && (
+                  <div style={{ fontFamily: C.fMono, fontSize: 22, color: C.amber, lineHeight: 1 }}>{r.distance}<span style={{ fontSize: 11, color: C.muted }}>km</span></div>
+                )}
+                <div style={{ fontFamily: C.fMono, fontSize: r.distance != null ? 15 : 22, color: C.text, lineHeight: 1.4 }}>{r.duration}<span style={{ fontSize: 11, color: C.muted }}>min</span></div>
                 <div style={{ ...st.mono(10, C.muted) }}>{fmtDate(r.date)}</div>
               </div>
             </div>
