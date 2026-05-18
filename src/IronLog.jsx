@@ -1606,9 +1606,20 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
 // ═══════════════════════════════════════════════════════════════════════
 // HISTORY
 // ═══════════════════════════════════════════════════════════════════════
-function History({ sessions, allExercises = EXERCISES }) {
+function History({ sessions, setSessions, allExercises = EXERCISES }) {
   const [expanded, setExpanded] = useState(null);
-  const sorted = [...sessions].reverse();
+  const [confirmDelete, setConfirmDelete] = useState(null); // sess.id pending delete
+  const sorted = [...sessions].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  function deleteSession(id) {
+    setSessions(p => {
+      const next = p.filter(s => s.id !== id);
+      localStorage.setItem('il_sessions', JSON.stringify(next));
+      return next;
+    });
+    setExpanded(null);
+    setConfirmDelete(null);
+  }
 
   if (!sessions.length) return (
     <div style={{ padding: 16, textAlign: 'center', color: C.muted, paddingTop: 64 }}>
@@ -1672,6 +1683,19 @@ function History({ sessions, allExercises = EXERCISES }) {
                   );
                 })}
                 {sess.notes && <div style={{ marginTop: 8, fontSize: 13, color: C.muted, fontStyle: 'italic', borderTop: `1px solid ${C.dim}`, paddingTop: 8 }}>"{sess.notes}"</div>}
+                <div style={{ marginTop: 12, borderTop: `1px solid ${C.dim}`, paddingTop: 10 }}>
+                  {confirmDelete === sess.id ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 12, color: C.muted, flex: 1 }}>Delete this session?</span>
+                      <button onClick={() => deleteSession(sess.id)} style={{ ...st.btnSm('#d9534f'), padding: '5px 12px', fontSize: 12 }}>Delete</button>
+                      <button onClick={() => setConfirmDelete(null)} style={{ ...st.btnSm(), padding: '5px 12px', fontSize: 12 }}>Cancel</button>
+                    </div>
+                  ) : (
+                    <button onClick={() => setConfirmDelete(sess.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontSize: 12, padding: 0, opacity: 0.7 }}>
+                      🗑 Delete session
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -1905,7 +1929,7 @@ function Rides({ rides, setRides }) {
   const [dur, setDur] = useState('');
   const [dist, setDist] = useState('');
   const [rpe, setRpe] = useState('');
-  const [type, setType] = useState('easy');
+  const [type, setType] = useState('moderate');
   const [notes, setNotes] = useState('');
 
   function log() {
@@ -1913,10 +1937,10 @@ function Rides({ rides, setRides }) {
     const ride = { id: Date.now().toString(), date: new Date().toISOString(), duration: +dur, distance: dist ? +dist : null, effort: rpe ? +rpe : null, type, notes };
     setRides(p => [...p, ride]);
     pushRide(ride); // fire-and-forget cloud backup
-    setOpen(false); setDur(''); setDist(''); setRpe(''); setType('easy'); setNotes('');
+    setOpen(false); setDur(''); setDist(''); setRpe(''); setType('moderate'); setNotes('');
   }
 
-  const typeColor = { easy: C.muted, long: C.green, recovery: C.green, intervals: C.blue, sprinkles: C.blue, tempo: C.amber, hills: C.amber };
+  const typeColor = { easy: C.green, moderate: C.amber, hard: C.blue, hilly: C.amber, recovery: C.green, intervals: C.blue, sprinkles: C.blue, tempo: C.amber, long: C.green };
   const sorted = [...rides].reverse();
 
   return (
@@ -1942,12 +1966,11 @@ function Rides({ rides, setRides }) {
             <div>
               <div style={{ ...st.label, marginBottom: 5 }}>Ride type</div>
               <select value={type} onChange={e => setType(e.target.value)} style={{ ...st.inp, textAlign: 'left', padding: '10px 12px' }}>
-                <option value="easy">Easy (conversational)</option>
-                <option value="long">Long Easy (45–60 min)</option>
-                <option value="recovery">Recovery Spin (very easy)</option>
-                <option value="intervals">Intervals (short hard efforts)</option>
-                <option value="tempo">Tempo (comfortably hard)</option>
-                <option value="hills">Hill Ride</option>
+                <option value="easy">Easy — felt easy, could talk</option>
+                <option value="moderate">Moderate — working steadily</option>
+                <option value="hard">Hard — really pushed it</option>
+                <option value="hilly">Hilly — lots of climbing</option>
+                <option value="recovery">Recovery — very easy spin</option>
               </select>
             </div>
             <div>
@@ -1967,9 +1990,9 @@ function Rides({ rides, setRides }) {
       <div style={{ ...st.card(), marginBottom: 16, padding: '12px 14px' }}>
         <div style={{ ...st.label, marginBottom: 8 }}>Programme Guide</div>
         {[
-          { phase: 'Wks 1–2', text: '2 rides/week · 20–30 min easy · conversational pace' },
-          { phase: 'Wks 3–4', text: '2–3/week · 25–40 min · optional 6 × 20s slightly harder' },
-          { phase: 'Wk 5+',   text: '3/week · long easy (45–60), easy (25–35), intervals (8 × 30s)' },
+          { phase: 'Wks 1–2', text: '2 rides/week · 20–30 min · keep it easy, conversational pace' },
+          { phase: 'Wks 3–4', text: '2–3/week · 25–40 min · mostly easy, occasionally moderate effort' },
+          { phase: 'Wk 5+',   text: '3/week · mix of easy, moderate, and one harder or hilly ride' },
         ].map((r, i) => (
           <div key={i} style={{ display: 'flex', gap: 10, fontSize: 12, padding: '4px 0', borderBottom: i < 2 ? `1px solid ${C.dim}` : 'none' }}>
             <span style={{ fontFamily: C.fMono, color: C.amber, minWidth: 56 }}>{r.phase}</span>
@@ -3048,7 +3071,7 @@ export default function App() {
           />
         )}
         {view === 'stretch' && <ActiveStretch onDone={() => setView('dashboard')} />}
-        {view === 'history' && <History sessions={sessions} allExercises={allExercises} />}
+        {view === 'history' && <History sessions={sessions} setSessions={setSessions} allExercises={allExercises} />}
         {view === 'progress' && <Progress sessions={sessions} allExercises={allExercises} />}
         {view === 'rides' && <Rides rides={rides} setRides={setRides} />}
         {view === 'manage' && (
