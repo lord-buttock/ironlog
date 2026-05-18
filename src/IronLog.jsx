@@ -92,6 +92,16 @@ const EXERCISE_ICONS = {
   p_hanging_knee_raise: <><line x1="7" y1="5" x2="25" y2="5" /><circle cx="16" cy="9" r="2.2" /><line x1="16" y1="11" x2="16" y2="19" /><line x1="16" y1="12" x2="11" y2="5" /><line x1="16" y1="12" x2="21" y2="5" /><line x1="16" y1="19" x2="12" y2="23" /><line x1="16" y1="19" x2="21" y2="23" /><line x1="12" y1="23" x2="20" y2="23" /></>,
   p_cable_crunch: <><line x1="23" y1="4" x2="23" y2="13" /><circle cx="15" cy="10" r="2" /><path d="M15 12c1 5 4 8 8 9" /><line x1="15" y1="14" x2="21" y2="13" /><line x1="21" y1="13" x2="23" y2="9" /><line x1="21" y1="21" x2="16" y2="27" /><line x1="21" y1="21" x2="26" y2="27" /></>,
   p_band_ext_rot: <><circle cx="13" cy="5" r="2.2" /><line x1="13" y1="7" x2="13" y2="16" /><line x1="13" y1="11" x2="8" y2="14" /><line x1="13" y1="16" x2="10" y2="25" /><line x1="13" y1="16" x2="18" y2="24" /><line x1="13" y1="11" x2="13" y2="18" /><line x1="13" y1="18" x2="22" y2="18" /><path d="M22 18 Q26 14 24 10" strokeDasharray="2 1.5" /><line x1="24" y1="10" x2="27" y2="9" /></>,
+  // ── Priority 1 additions ─────────────────────────────────────────────
+  p_bb_decline_bench: <><line x1="5" y1="26" x2="28" y2="20" /><circle cx="9" cy="23" r="2" /><line x1="11" y1="22" x2="22" y2="19" /><line x1="17" y1="18" x2="15" y2="11" /><line x1="22" y1="19" x2="25" y2="12" /><line x1="13" y1="10" x2="27" y2="10" /><line x1="13" y1="8" x2="13" y2="12" /><line x1="27" y1="8" x2="27" y2="12" /></>,
+  p_incline_db_fly: <><line x1="7" y1="25" x2="22" y2="14" /><circle cx="12" cy="19" r="2" /><line x1="14" y1="18" x2="20" y2="15" /><path d="M17 16c-3-4-6-5-9-5" /><path d="M20 15c3-3 6-4 9-3" /><line x1="8" y1="11" x2="6" y2="9" /><line x1="28" y1="12" x2="30" y2="10" /></>,
+  p_db_tricep_kickback: <><circle cx="9" cy="9" r="2" /><line x1="11" y1="10" x2="21" y2="16" /><line x1="21" y1="16" x2="15" y2="24" /><line x1="21" y1="16" x2="27" y2="24" /><line x1="16" y1="13" x2="19" y2="10" /><line x1="19" y1="10" x2="26" y2="8" /><line x1="25" y1="7" x2="28" y2="7" /></>,
+  p_incline_db_curl: <><line x1="8" y1="25" x2="22" y2="14" /><circle cx="11" cy="15" r="2" /><line x1="13" y1="16" x2="17" y2="22" /><line x1="16" y1="19" x2="12" y2="26" /><line x1="11" y1="13" x2="16" y2="14" /><line x1="16" y1="14" x2="21" y2="19" /><line x1="21" y1="19" x2="23" y2="18" /></>,
+  p_bb_hip_thrust: <><rect x="3.5" y="16.7" width="10.5" height="3.8" rx="1" fill="#dbeafe" stroke="#5b9df5" strokeWidth="1" /><line x1="6" y1="20.5" x2="6" y2="26.5" /><line x1="12" y1="20.5" x2="12" y2="26.5" /><circle cx="11.5" cy="13.2" r="1.8" /><line x1="13" y1="14" x2="21" y2="17" /><line x1="19" y1="16" x2="22" y2="22" /><line x1="22" y1="22" x2="28" y2="22" /><line x1="17" y1="17" x2="28" y2="17" /><line x1="28" y1="15" x2="28" y2="19" /></>,
+  p_db_squat: <><circle cx="16" cy="5" r="2.2" /><line x1="16" y1="7" x2="16" y2="16" /><line x1="16" y1="10" x2="10" y2="14" /><line x1="16" y1="10" x2="22" y2="14" /><rect x="8" y="13" width="3" height="4" rx=".5" /><rect x="21" y="13" width="3" height="4" rx=".5" /><line x1="16" y1="16" x2="11" y2="25" /><line x1="16" y1="16" x2="21" y2="25" /><line x1="9" y1="25" x2="14" y2="25" /><line x1="19" y1="25" x2="24" y2="25" /></>,
+  p_bb_row: <><circle cx="10" cy="9" r="2" /><line x1="12" y1="10" x2="21" y2="16" /><line x1="21" y1="16" x2="15" y2="25" /><line x1="21" y1="16" x2="25" y2="25" /><line x1="14" y1="12" x2="13" y2="19" /><line x1="6" y1="17" x2="23" y2="13" /><line x1="6" y1="15" x2="6" y2="19" /><line x1="23" y1="11" x2="23" y2="15" /></>,
+  p_deadlift: <><circle cx="13" cy="8" r="2" /><line x1="15" y1="9" x2="20" y2="17" /><line x1="15" y1="9" x2="12" y2="14" /><line x1="20" y1="17" x2="15" y2="25" /><line x1="20" y1="17" x2="23" y2="25" /><line x1="7" y1="21" x2="26" y2="21" /><line x1="7" y1="19" x2="7" y2="23" /><line x1="26" y1="19" x2="26" y2="23" /></>,
+  p_walking_lunge: <><circle cx="15" cy="5" r="2.2" /><line x1="15" y1="7" x2="15" y2="16" /><line x1="15" y1="10" x2="10" y2="14" /><line x1="15" y1="10" x2="20" y2="14" /><line x1="15" y1="16" x2="8" y2="24" /><line x1="15" y1="16" x2="22" y2="22" /><line x1="7" y1="24" x2="12" y2="24" /><line x1="22" y1="22" x2="21" y2="27" /></>,
   _fallback: <><circle cx="16" cy="4" r="2.2" /><line x1="16" y1="6.2" x2="16" y2="17" /><line x1="16" y1="10" x2="10" y2="14" /><line x1="10" y1="14" x2="8" y2="13" /><line x1="8" y1="12" x2="8" y2="15" /><line x1="16" y1="17" x2="12" y2="25" /><line x1="16" y1="17" x2="20" y2="25" /></>,
 };
 
@@ -2055,6 +2065,23 @@ const PRESET_LIBRARY = {
   p_cable_crunch:       { name: 'Cable Crunch',               muscle: 'Core',      unit: 'kg',   defaultSets: 3, defaultReps: 15, repMax: 20, cue: 'Kneel, pull rope to floor. Round spine. Abs do the work.',       demo: YT('cable+crunch+abs+form+tutorial') },
   // ── Shoulder health ───────────────────────────────────────────────────
   p_band_ext_rot:       { name: 'Band External Rotation',     muscle: 'Shoulders', unit: 'band', defaultSets: 3, defaultReps: 12, repMax: 15, cue: 'Elbow tucked at 90° at your side. Rotate forearm outward against band resistance. Slow and controlled both ways. Critical for rotator cuff health — do not skip.', demo: YT('band+external+rotation+rotator+cuff+exercise+form'), perSide: true },
+  // ── Priority 1 additions ─────────────────────────────────────────────
+  // Push: Chest
+  p_bb_decline_bench:   { name: 'Barbell Decline Bench Press', muscle: 'Push',    unit: 'kg',   defaultSets: 3, defaultReps: 8,  repMax: 10, cue: 'Grip just outside shoulder-width. Lower bar to lower chest under control. Drive up. Decline angle targets the lower chest.', demo: YT('barbell+decline+bench+press+form+tutorial') },
+  p_incline_db_fly:     { name: 'Incline DB Fly',              muscle: 'Push',    unit: 'kg',   defaultSets: 3, defaultReps: 12, repMax: 12, cue: '30–45° incline. Slight bend in elbows throughout. Wide arc down then back up — the stretch at the bottom is the key benefit.', demo: YT('incline+dumbbell+fly+form+tutorial'), caution: 'Shoulder bursitis — light weight only. Limit range, stop before arms go fully wide. Stop immediately if shoulder impingement.' },
+  // Triceps
+  p_db_tricep_kickback: { name: 'DB Tricep Kickback',          muscle: 'Arms',    unit: 'kg',   defaultSets: 3, defaultReps: 12, repMax: 15, cue: 'Hinge forward, upper arm parallel to floor. Extend forearm back fully. Squeeze tricep at top. Control the return.', demo: YT('dumbbell+tricep+kickback+form+tutorial'), perSide: true },
+  // Biceps
+  p_incline_db_curl:    { name: 'Incline DB Curl',             muscle: 'Arms',    unit: 'kg',   defaultSets: 3, defaultReps: 10, repMax: 12, cue: 'Sit on incline bench. Arms hang behind the body. Curl up slowly — the stretched starting position is the key benefit. Control down.', demo: YT('incline+dumbbell+curl+form+tutorial') },
+  // Pull: Back
+  p_bb_row:             { name: 'Barbell Bent-Over Row',       muscle: 'Pull',    unit: 'kg',   defaultSets: 3, defaultReps: 8,  repMax: 10, cue: 'Hinge to ~45°. Bar stays close to legs. Pull to lower chest. Squeeze shoulder blades. Keep back FLAT throughout — no rounding.', demo: YT('barbell+bent+over+row+form+tutorial'), caution: 'Slipped disc — keep weight conservative, back must stay flat. Stop immediately if any lower back pain.' },
+  // Hinge
+  p_deadlift:           { name: 'Conventional Deadlift',       muscle: 'Hinge',   unit: 'kg',   defaultSets: 3, defaultReps: 5,  repMax: 5,  cue: 'Bar over mid-foot. Hinge, grip just outside legs. Chest up, back flat, brace. Drive the floor away. Lock out hips at top.', demo: YT('conventional+deadlift+form+tutorial+beginners'), caution: 'Slipped disc — start conservative (60% max). Back must stay neutral throughout. Skip entirely during any disc flare-up.' },
+  // Legs
+  p_db_squat:           { name: 'DB Squat',                    muscle: 'Legs',    unit: 'kg',   defaultSets: 3, defaultReps: 10, repMax: 12, cue: 'Hold dumbbells at your sides. Feet shoulder-width. Squat to parallel. Knees track over toes. Drive through heels to stand.', demo: YT('dumbbell+squat+at+sides+form+tutorial') },
+  p_walking_lunge:      { name: 'Walking Lunge',               muscle: 'Legs',    unit: 'kg',   defaultSets: 3, defaultReps: 10, repMax: 12, cue: 'Long stride forward. Front knee tracks over toes. Stay upright — no forward lean. Alternate legs. Rep count is total steps.', demo: YT('walking+lunge+form+tutorial'), caution: 'Light weight or bodyweight only. Stop if knee pain.' },
+  // Glutes
+  p_bb_hip_thrust:      { name: 'Barbell Hip Thrust',          muscle: 'Glutes',  unit: 'kg',   defaultSets: 3, defaultReps: 10, repMax: 12, cue: 'Shoulders on bench, bar across hips with pad. Drive hips up to full extension. Squeeze glutes hard at top. Control the descent.', demo: YT('barbell+hip+thrust+form+tutorial') },
 };
 
 const MUSCLE_META = {
@@ -2150,6 +2177,16 @@ const MUSCLE_META = {
   p_ab_wheel:           ['Abs',         null],
   p_hanging_knee_raise: ['Abs',         null],       // NOTE: ExRx targets Iliopsoas (hip flexors) — no hip flexors in muscle map; Abs used as closest available
   p_cable_crunch:       ['Abs',         null],
+  // ── Priority 1 additions ────────────────────────────────────────────
+  p_bb_decline_bench:   ['Chest',       'Triceps'],
+  p_incline_db_fly:     ['Chest',       'Front Delts'],
+  p_db_tricep_kickback: ['Triceps',     null],
+  p_incline_db_curl:    ['Biceps',      'Forearms'],
+  p_bb_row:             ['Lats',        'Mid Traps'],
+  p_deadlift:           ['Glutes',      'Hamstrings'],  // ExRx: glutes & hamstrings are primary movers in conventional deadlift
+  p_db_squat:           ['Quads',       'Glutes'],
+  p_walking_lunge:      ['Quads',       'Glutes'],
+  p_bb_hip_thrust:      ['Glutes',      'Hamstrings'],
 };
 
 function applyMuscleMeta(library) {
