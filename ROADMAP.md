@@ -226,7 +226,7 @@ Implementation suggestion: add an optional `caution` string field to the exercis
 
 ## Priority 6 — Pull-Up Bar Onboarding
 
-**Status:** Planned
+**Status:** ✅ Done — 2026-05-18
 
 The user has a doorframe chin-up bar. The app should support:
 - Band-assisted chin-ups (log as assisted with a band colour/tension note)

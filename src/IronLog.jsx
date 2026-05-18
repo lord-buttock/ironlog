@@ -258,7 +258,7 @@ const EXERCISES = {
   single_leg_bal:     { name: 'Single-Leg Balance',          muscle: 'Balance', unit: 'bw',   defaultReps: null, defaultDuration: 25, defaultSets: 2, repMax: null, cue: '20–30 sec each side. Eyes closed to progress.',                   isTimed: true, perSide: true, demo: YT('single+leg+balance+exercise+tutorial+proprioception') },
   bb_flat_bench:      { name: 'Barbell Flat Bench Press',    muscle: 'Push',    unit: 'kg',   defaultReps: 6,   defaultSets: 3, repMax: 8,  cue: 'Elbows 45° from body. Bar lowers to mid-chest. Drive up explosively. Use safety pins or spotter.', demo: YT('barbell+bench+press+proper+form+tutorial') },
   bb_incline_bench:   { name: 'Barbell Incline Bench Press', muscle: 'Push',    unit: 'kg',   defaultReps: 6,   defaultSets: 3, repMax: 8,  cue: 'Low incline only (20–30°). Higher angles approach overhead press — avoid for shoulder bursitis. Elbows at 45°.', demo: YT('barbell+incline+bench+press+form+tutorial'), caution: 'Shoulder bursitis — low incline only (20–30°). Stop if you feel any shoulder impingement.' },
-  chin_up:            { name: 'Chin-Up',                     muscle: 'Pull',    unit: 'bw',   defaultReps: 4,   defaultSets: 3, repMax: 8,  cue: 'Underhand grip, shoulder-width or narrower only. No wide grip — aggravates shoulder bursitis. Start with band assistance or negatives. Full hang, chin over bar.', canBW: true, demo: YT('chin+up+form+band+assisted+beginners+underhand'), caution: 'Shoulder bursitis — shoulder-width or narrower grip only. No wide grip. Stop if impingement.' },
+  chin_up:            { name: 'Chin-Up',                     muscle: 'Pull',    unit: 'bw',   defaultReps: 4,   defaultSets: 3, repMax: 8,  cue: 'Underhand grip, shoulder-width or narrower only. No wide grip — aggravates shoulder bursitis. Start with band assistance or negatives. Full hang, chin over bar.', canBW: true, pullupTracking: true, demo: YT('chin+up+form+band+assisted+beginners+underhand'), caution: 'Shoulder bursitis — shoulder-width or narrower grip only. No wide grip. Stop if impingement.' },
   face_pull:          { name: 'Face Pull',                   muscle: 'Pull',    unit: 'band', defaultReps: 15,  defaultSets: 3, repMax: 20, cue: 'Band at face height. Pull to forehead, elbows high and wide. Finish with external rotation. Essential for shoulder health.', demo: YT('face+pull+band+form+shoulder+health+tutorial') },
   reverse_fly:        { name: 'Reverse Fly',                 muscle: 'Pull',    unit: 'kg',   defaultReps: 15,  defaultSets: 3, repMax: 15, cue: 'Hinge forward or lie face-down on incline bench. Light weight only. Lead with elbows back and out. Rear delts, not traps.', demo: YT('reverse+fly+rear+delt+dumbbell+form+tutorial') },
   rdl:                { name: 'Romanian Deadlift',           muscle: 'Hinge',   unit: 'kg',   defaultReps: 8,   defaultSets: 3, repMax: 10, cue: 'Neutral spine throughout — no rounding. Hinge at hips, soft knee bend. Bar stays close to legs. Stop well before hamstring pull. Conservative range.', demo: YT('romanian+deadlift+form+tutorial+neutral+spine+beginners'), caution: 'Slipped disc — neutral spine only, no rounding. Stop before any lower back tightness or hamstring pull.' },
@@ -427,12 +427,17 @@ function buildSession(workoutKey, prevSessions, allExercises = EXERCISES, workou
     const numSets = last?.sets?.length || def.defaultSets;
     const sets = Array.from({ length: numSets }, (_, i) => {
       const ls = last?.sets?.[i] || last?.sets?.[0];
-      return {
+      const base = {
         weight: ls?.weight ?? '',
         reps: ls?.reps ?? (def.defaultReps || ''),
         duration: ls?.duration ?? (def.defaultDuration || ''),
         rpe: null, pain: null, done: false,
       };
+      if (def.pullupTracking) {
+        base.mode = ls?.mode ?? 'bw';
+        base.band = ls?.band ?? '';
+      }
+      return base;
     });
     return { id: exId, sets, notes: '' };
   }).filter(Boolean);
@@ -804,16 +809,40 @@ function SetRow({ num, set, def, onUpdate, onDone }) {
   const done = set.done;
   const isTimed = def.isTimed;
   const isBW = def.unit === 'bw' || def.unit === 'band';
+  const isPullup = !!def.pullupTracking;
+  const pullupMode = set.mode || 'bw'; // 'bw' | 'band' | 'neg'
 
   const gridCols = isTimed
     ? '28px minmax(52px,1fr) 56px 56px 38px'
-    : isBW
+    : (isBW && !isPullup)
       ? '28px minmax(48px,.8fr) minmax(48px,1fr) 56px 56px 38px'
-      : '28px minmax(0,1fr) minmax(0,1fr) 56px 56px 38px';
+      : isPullup && pullupMode === 'band'
+        ? '28px minmax(0,1.2fr) minmax(48px,.8fr) 56px 56px 38px'
+        : isPullup && pullupMode === 'neg'
+          ? '28px minmax(48px,.8fr) minmax(48px,.8fr) 56px 56px 38px'
+          : isPullup
+            ? '28px minmax(48px,.8fr) minmax(48px,1fr) 56px 56px 38px'
+            : '28px minmax(0,1fr) minmax(0,1fr) 56px 56px 38px';
   const loadLabel = def.unit === 'band' ? 'BAND' : 'BW';
 
   return (
     <div style={{ background: done ? C.green + '12' : C.dim, border: `1px solid ${done ? C.green + '44' : C.border}`, borderRadius: 6, padding: '8px 10px' }}>
+
+      {/* Pullup mode toggle */}
+      {isPullup && (
+        <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+          {[['bw', 'Unassisted'], ['band', 'Band'], ['neg', 'Negatives']].map(([m, label]) => (
+            <button key={m} onClick={() => !done && onUpdate('mode', m)} style={{
+              flex: 1, padding: '4px 0', fontSize: 10, fontFamily: C.fMono,
+              background: pullupMode === m ? C.amber : C.bg,
+              color: pullupMode === m ? '#0a0f28' : C.muted,
+              border: `1px solid ${pullupMode === m ? C.amber : C.border}`,
+              borderRadius: 4, cursor: done ? 'default' : 'pointer', letterSpacing: 0.5,
+            }}>{label}</button>
+          ))}
+        </div>
+      )}
+
       <div style={{ display: 'grid', gridTemplateColumns: gridCols, gap: 5, alignItems: 'center' }}>
         <div style={{ fontFamily: C.fMono, fontSize: 13, color: done ? C.green : C.muted, textAlign: 'center', fontWeight: 600 }}>
           {done ? '✓' : num}
@@ -821,6 +850,12 @@ function SetRow({ num, set, def, onUpdate, onDone }) {
 
         {isTimed ? (
           <input type="number" inputMode="numeric" value={set.duration} onChange={e => onUpdate('duration', e.target.value)}
+            style={{ ...st.inp }} placeholder="sec" />
+        ) : isPullup && pullupMode === 'band' ? (
+          <input type="text" value={set.band || ''} onChange={e => onUpdate('band', e.target.value)}
+            style={{ ...st.inp, fontSize: 11 }} placeholder="band" />
+        ) : isPullup && pullupMode === 'neg' ? (
+          <input type="number" inputMode="numeric" value={set.duration || ''} onChange={e => onUpdate('duration', e.target.value)}
             style={{ ...st.inp }} placeholder="sec" />
         ) : isBW ? (
           <div style={{ ...st.inp, color: C.muted, fontSize: 10, lineHeight: '34px', border: `1px solid ${C.border}` }}>{loadLabel}</div>
@@ -867,10 +902,22 @@ function SetRow({ num, set, def, onUpdate, onDone }) {
           <div/>
         </div>
       )}
-      {(isTimed || isBW) && (
+      {(isTimed || isBW) && !isPullup && (
         <div style={{ display: 'grid', gridTemplateColumns: gridCols, gap: 5, marginTop: 3 }}>
           <div/><div style={{ ...st.label, fontSize: 9, textAlign: 'center' }}>{isTimed ? 'secs' : loadLabel.toLowerCase()}</div>
           {isBW && <div style={{ ...st.label, fontSize: 9, textAlign: 'center' }}>reps</div>}
+          <div style={{ ...st.label, fontSize: 9, textAlign: 'center' }}>rpe</div>
+          <div style={{ ...st.label, fontSize: 9, textAlign: 'center' }}>pain</div>
+          <div/>
+        </div>
+      )}
+      {isPullup && (
+        <div style={{ display: 'grid', gridTemplateColumns: gridCols, gap: 5, marginTop: 3 }}>
+          <div/>
+          <div style={{ ...st.label, fontSize: 9, textAlign: 'center' }}>
+            {pullupMode === 'band' ? 'band' : pullupMode === 'neg' ? 'sec/rep' : 'bw'}
+          </div>
+          <div style={{ ...st.label, fontSize: 9, textAlign: 'center' }}>reps</div>
           <div style={{ ...st.label, fontSize: 9, textAlign: 'center' }}>rpe</div>
           <div style={{ ...st.label, fontSize: 9, textAlign: 'center' }}>pain</div>
           <div/>
@@ -1171,6 +1218,38 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
           />
         </div>
 
+        {/* Pull-up progress card */}
+        {def.pullupTracking && (() => {
+          const allSets = sessions.flatMap(s => (s.exercises || []).find(e => e.id === exId)?.sets || []);
+          const unassistedSets = allSets.filter(s => s.done && (!s.mode || s.mode === 'bw') && Number(s.reps) > 0);
+          const bestReps = unassistedSets.length > 0 ? Math.max(...unassistedSets.map(s => Number(s.reps))) : 0;
+          const totalSessions = sessions.filter(s => (s.exercises || []).some(e => e.id === exId)).length;
+          return (
+            <div style={{ ...st.card(), padding: '10px 14px', borderLeft: `2px solid ${C.blue}`, marginBottom: 14 }}>
+              <div style={{ ...st.label, fontSize: 9, color: C.blue, marginBottom: 6 }}>PULL-UP PROGRESS</div>
+              <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontFamily: C.fMono, fontSize: 22, color: bestReps > 0 ? C.green : C.muted, lineHeight: 1 }}>{bestReps}</div>
+                  <div style={{ ...st.label, fontSize: 9, marginTop: 2 }}>best unassisted</div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontFamily: C.fMono, fontSize: 22, color: C.muted, lineHeight: 1 }}>{totalSessions}</div>
+                  <div style={{ ...st.label, fontSize: 9, marginTop: 2 }}>sessions logged</div>
+                </div>
+                <div style={{ flex: 1, fontSize: 11, color: C.muted, lineHeight: 1.4 }}>
+                  {bestReps === 0
+                    ? 'No unassisted reps yet — band assist or negatives to build strength.'
+                    : bestReps < 3
+                    ? 'Getting there — keep adding reps before dropping the band.'
+                    : bestReps < 6
+                    ? 'Good base — try adding one more rep each session.'
+                    : '💪 Strong — work toward sets of 8+ unassisted.'}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Caution banner */}
         {def.caution && (
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: C.amber + '18', border: `1px solid ${C.amber}66`, borderRadius: 10, padding: '10px 14px', marginBottom: 14 }}>
@@ -1428,7 +1507,13 @@ function History({ sessions, allExercises = EXERCISES }) {
                       <div style={{ ...st.label, marginBottom: 4 }}>{def?.name}</div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                         {ex.sets.map((s, i) => {
-                          const display = def?.isTimed ? `${s.duration}s` : def?.unit === 'bw' || def?.unit === 'band' ? `${s.reps} reps` : `${s.weight}kg × ${s.reps}`;
+                          const display = def?.isTimed ? `${s.duration}s`
+                            : def?.pullupTracking
+                              ? s.mode === 'band' ? `${s.reps}r (${s.band || 'band'})`
+                                : s.mode === 'neg' ? `${s.reps}×${s.duration||'?'}s neg`
+                                : `${s.reps} reps`
+                            : def?.unit === 'bw' || def?.unit === 'band' ? `${s.reps} reps`
+                            : `${s.weight}kg × ${s.reps}`;
                           return (
                             <span key={i} style={{ ...st.pill(s.done ? C.text : C.muted), fontSize: 11 }}>
                               {display}{s.rpe ? ` r${s.rpe}` : ''}
@@ -1801,7 +1886,7 @@ const PRESET_LIBRARY = {
   p_chest_dip:          { name: 'Chest Dip',                  muscle: 'Push',      unit: 'bw',   defaultSets: 3, defaultReps: 8,  repMax: 12, cue: 'Lean slightly forward. Elbows flare to target chest.',          demo: YT('chest+dip+form+tutorial'), caution: 'Shoulder bursitis — stop immediately if you feel any shoulder impingement.' },
   p_cable_fly:          { name: 'Cable Fly',                  muscle: 'Push',      unit: 'kg',   defaultSets: 3, defaultReps: 12, repMax: 15, cue: 'Arms arc in a hugging motion. Squeeze at the midpoint.',        demo: YT('cable+fly+chest+form+tutorial'), gymOnly: true },
   // ── Pull: Back ────────────────────────────────────────────────────
-  p_pull_up:            { name: 'Pull-Up',                    muscle: 'Pull',      unit: 'bw',   defaultSets: 3, defaultReps: 4,  repMax: 8,  cue: 'Shoulder-width or narrower grip only — no wide grip (aggravates shoulder bursitis). Overhand. Start band-assisted or negatives only. Full hang, chin over bar.', demo: YT('pull+up+form+narrow+grip+band+assisted+beginners'), caution: 'Shoulder bursitis — narrow grip only. No wide grip. Stop if you feel shoulder impingement.' },
+  p_pull_up:            { name: 'Pull-Up',                    muscle: 'Pull',      unit: 'bw',   defaultSets: 3, defaultReps: 4,  repMax: 8,  cue: 'Shoulder-width or narrower grip only — no wide grip (aggravates shoulder bursitis). Overhand. Start band-assisted or negatives only. Full hang, chin over bar.', pullupTracking: true, demo: YT('pull+up+form+narrow+grip+band+assisted+beginners'), caution: 'Shoulder bursitis — narrow grip only. No wide grip. Stop if you feel shoulder impingement.' },
   p_lat_pulldown:       { name: 'Lat Pulldown',               muscle: 'Pull',      unit: 'kg',   defaultSets: 3, defaultReps: 10, repMax: 12, cue: 'Pull bar to upper chest. Lean back slightly, lead with elbows.', demo: YT('lat+pulldown+proper+form+tutorial'), gymOnly: true },
   p_seated_cable_row:   { name: 'Seated Cable Row',           muscle: 'Pull',      unit: 'kg',   defaultSets: 3, defaultReps: 10, repMax: 12, cue: 'Sit tall. Pull to lower chest. Squeeze shoulder blades together.', demo: YT('seated+cable+row+form+tutorial'), gymOnly: true },
   p_t_bar_row:          { name: 'T-Bar Row',                  muscle: 'Pull',      unit: 'kg',   defaultSets: 3, defaultReps: 8,  repMax: 10, cue: 'Neutral spine, hinge at hips. Pull to lower chest.',            demo: YT('t+bar+row+form+tutorial'), gymOnly: true },
