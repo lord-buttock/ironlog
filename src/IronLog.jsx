@@ -288,12 +288,12 @@ const WORKOUTS = {
     title: 'Pull — Back · Biceps · Hinge',
     exercises: [
       'kb_deadlift',        // Hinge / Glutes — raised height
-      'chin_up',            // Back / Biceps — narrow underhand grip only
       'cs_db_row',          // Back / Biceps — chest supported
       'reverse_fly',        // Back / Shoulders — rear delt, posterior chain
       'face_pull',          // Shoulders / Back — band, door anchor, shoulder health
       'p_straight_arm_pd',  // Back / Shoulders — lat isolation, door anchor high hook
       'p_db_bicep_curl',    // Biceps / Forearms
+      'p_hammer_curl',      // Biceps / Forearms — neutral grip
     ],
     finisher: [
       { id: 'fin_ham_floss',   text: 'Hamstring floss (band, lying) — 45 sec each side' },
