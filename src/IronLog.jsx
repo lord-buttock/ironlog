@@ -720,6 +720,7 @@ function Nav({ view, setView, hasActive }) {
 // DASHBOARD
 // ═══════════════════════════════════════════════════════════════════════
 function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, setSelectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, driveSync, onCloudSync, updateAvailable, onWarmupOpen, onDemoOpen }) {
+  const [showExercises, setShowExercises] = useState(false);
   const [showWarmup, setShowWarmup] = useState(false);
   const [showCooldown, setShowCooldown] = useState(false);
   const suggested = nextWorkout(sessions);
@@ -768,7 +769,7 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
               {['A', 'B', 'C'].map(key => {
                 const active = selectedWorkout === key;
                 return (
-                  <button key={key} onClick={() => setSelectedWorkout(key)} style={{
+                  <button key={key} onClick={() => { setSelectedWorkout(key); setShowExercises(false); }} style={{
                     background: active ? C.amber : C.dim,
                     color: active ? '#fff' : C.muted,
                     border: 'none',
@@ -786,86 +787,88 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
           )}
         </div>
 
-        <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 18 }}>
-          <div style={{ fontSize: 64, fontFamily: C.fDisplay, fontWeight: 700, color: C.amber, lineHeight: 1 }}>
-            {selectedWorkout}
-          </div>
-          <div style={{ minWidth: 0, paddingTop: 4 }}>
-            <div style={{ fontSize: 22, fontWeight: 700, fontFamily: C.fDisplay, textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 1.1 }}>
-              {wkt.title}
+        {/* Compact summary row — always visible */}
+        <button onClick={() => setShowExercises(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, width: '100%', textAlign: 'left', marginBottom: showExercises ? 0 : 14 }}>
+          <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+            <div style={{ fontSize: 56, fontFamily: C.fDisplay, fontWeight: 700, color: C.amber, lineHeight: 1, flexShrink: 0 }}>
+              {selectedWorkout}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
-              {(selectedWorkout === suggested || activeSession) && (
-                <span style={{ background: C.amberDim, color: C.amber, fontSize: 10, borderRadius: 4, padding: '2px 6px', fontFamily: C.fMono, textTransform: 'uppercase' }}>
-                  {activeSession ? 'active' : 'next'}
-                </span>
-              )}
-              <span style={{ fontSize: 12, color: C.muted, fontFamily: C.fMono }}>
-                {activeSession ? 'Session in progress' : `${allWorkoutExIds.length} exercises`}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div style={{ marginBottom: 16 }}>
-          {allWorkoutExIds.map(id => {
-            const ex = allExercises[id] || EXERCISES[id];
-            const isExtra = extraIds.includes(id);
-            return (
-              <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: `1px solid ${C.border}` }}>
-                <div onClick={() => onDemoOpen && onDemoOpen(id)} style={{ cursor: 'pointer', flexShrink: 0 }}>
-                  <ExerciseIcon id={id} size={36} />
-                </div>
-                <span style={{ flex: 1, minWidth: 0, fontSize: 15, color: C.text }}>{ex?.name || id}</span>
-                <span style={{
-                  border: `1px solid ${C.border}`,
-                  borderRadius: 20,
-                  padding: '2px 9px',
-                  fontSize: 11,
-                  color: isExtra ? C.amber : C.muted,
-                  fontFamily: C.fMono,
-                  whiteSpace: 'nowrap',
-                }}>
-                  {isExtra ? '+ Added' : ex?.primaryMuscle || ex?.muscle}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 20, fontWeight: 700, fontFamily: C.fDisplay, textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 1.1 }}>
+                {wkt.title}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
+                {(selectedWorkout === suggested || activeSession) && (
+                  <span style={{ background: C.amberDim, color: C.amber, fontSize: 10, borderRadius: 4, padding: '2px 6px', fontFamily: C.fMono, textTransform: 'uppercase' }}>
+                    {activeSession ? 'active' : 'next'}
+                  </span>
+                )}
+                <span style={{ fontSize: 12, color: C.muted, fontFamily: C.fMono }}>
+                  {activeSession ? 'Session in progress' : `${allWorkoutExIds.length} exercises`}
                 </span>
               </div>
-            );
-          })}
-        </div>
-        <div style={{ borderTop: '1px solid ' + C.border, marginBottom: 10, paddingTop: 10 }}>
-          <button onClick={() => setShowWarmup(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
-            <span style={{ ...st.label, fontSize: 10, color: C.muted }}>Warm-Up Routine</span>
-            <span style={{ color: C.muted, fontSize: 11, marginLeft: 'auto' }}>{showWarmup ? '▲' : '▼'}</span>
-          </button>
-          {showWarmup && (
-            <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {WARMUP.map((item, i) => (
-                <div key={i} style={{ display: 'flex', gap: 10, fontSize: 12, color: C.muted, lineHeight: 1.4, alignItems: 'center' }}>
-                  <img src={`assets/icons/warmup/${item.id}.png`} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#EEF3FF', marginRight: 12, flexShrink: 0, cursor: 'pointer' }} onError={e => { e.target.style.display = 'none'; }} onClick={() => onWarmupOpen && onWarmupOpen(item)} />
-                  <span style={{ color: C.amber, fontFamily: C.fMono, minWidth: 16 }}>{i + 1}</span>
-                  <span>{item.text}</span>
-                </div>
-              ))}
             </div>
-          )}
-        </div>
-        <div style={{ borderTop: '1px solid ' + C.border, marginBottom: 14, paddingTop: 10 }}>
-          <button onClick={() => setShowCooldown(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
-            <span style={{ ...st.label, fontSize: 10, color: C.muted }}>Cool-Down / Finisher</span>
-            <span style={{ color: C.muted, fontSize: 11, marginLeft: 'auto' }}>{showCooldown ? '▲' : '▼'}</span>
-          </button>
-          {showCooldown && (
-            <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {wkt.finisher.map((item, i) => (
-                <div key={i} style={{ display: 'flex', gap: 10, fontSize: 12, color: C.muted, lineHeight: 1.4, alignItems: 'center' }}>
-                  <img src={`assets/icons/warmup/${item.id}.png`} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#EEF3FF', marginRight: 12, flexShrink: 0, cursor: 'pointer' }} onError={e => { e.target.style.display = 'none'; }} onClick={() => onWarmupOpen && onWarmupOpen(item)} />
-                  <span style={{ color: C.green, fontFamily: C.fMono, minWidth: 16 }}>{i + 1}</span>
-                  <span>{item.text}</span>
-                </div>
-              ))}
+            <span style={{ color: C.muted, fontSize: 13, flexShrink: 0, paddingRight: 2 }}>{showExercises ? '▲' : '▼'}</span>
+          </div>
+        </button>
+
+        {/* Expanded: exercise list + warmup + cooldown */}
+        {showExercises && (
+          <div style={{ marginTop: 14 }}>
+            <div style={{ marginBottom: 8 }}>
+              {allWorkoutExIds.map(id => {
+                const ex = allExercises[id] || EXERCISES[id];
+                const isExtra = extraIds.includes(id);
+                return (
+                  <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: `1px solid ${C.border}` }}>
+                    <div onClick={() => onDemoOpen && onDemoOpen(id)} style={{ cursor: 'pointer', flexShrink: 0 }}>
+                      <ExerciseIcon id={id} size={36} />
+                    </div>
+                    <span style={{ flex: 1, minWidth: 0, fontSize: 15, color: C.text }}>{ex?.name || id}</span>
+                    <span style={{ border: `1px solid ${C.border}`, borderRadius: 20, padding: '2px 9px', fontSize: 11, color: isExtra ? C.amber : C.muted, fontFamily: C.fMono, whiteSpace: 'nowrap' }}>
+                      {isExtra ? '+ Added' : ex?.primaryMuscle || ex?.muscle}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
-          )}
-        </div>
+            <div style={{ borderTop: '1px solid ' + C.border, paddingTop: 10, marginBottom: 10 }}>
+              <button onClick={() => setShowWarmup(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
+                <span style={{ ...st.label, fontSize: 10, color: C.muted }}>Warm-Up Routine</span>
+                <span style={{ color: C.muted, fontSize: 11, marginLeft: 'auto' }}>{showWarmup ? '▲' : '▼'}</span>
+              </button>
+              {showWarmup && (
+                <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {WARMUP.map((item, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 10, fontSize: 12, color: C.muted, lineHeight: 1.4, alignItems: 'center' }}>
+                      <img src={`assets/icons/warmup/${item.id}.png`} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#EEF3FF', marginRight: 12, flexShrink: 0, cursor: 'pointer' }} onError={e => { e.target.style.display = 'none'; }} onClick={() => onWarmupOpen && onWarmupOpen(item)} />
+                      <span style={{ color: C.amber, fontFamily: C.fMono, minWidth: 16 }}>{i + 1}</span>
+                      <span>{item.text}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div style={{ borderTop: '1px solid ' + C.border, paddingTop: 10, marginBottom: 14 }}>
+              <button onClick={() => setShowCooldown(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
+                <span style={{ ...st.label, fontSize: 10, color: C.muted }}>Cool-Down / Finisher</span>
+                <span style={{ color: C.muted, fontSize: 11, marginLeft: 'auto' }}>{showCooldown ? '▲' : '▼'}</span>
+              </button>
+              {showCooldown && (
+                <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {wkt.finisher.map((item, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 10, fontSize: 12, color: C.muted, lineHeight: 1.4, alignItems: 'center' }}>
+                      <img src={`assets/icons/warmup/${item.id}.png`} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#EEF3FF', marginRight: 12, flexShrink: 0, cursor: 'pointer' }} onError={e => { e.target.style.display = 'none'; }} onClick={() => onWarmupOpen && onWarmupOpen(item)} />
+                      <span style={{ color: C.green, fontFamily: C.fMono, minWidth: 16 }}>{i + 1}</span>
+                      <span>{item.text}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         <button style={{ ...st.btn(), display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }} onClick={() => setView('workout')}>
           <Icon name="play" size={16} /> {activeSession ? 'Resume Workout' : `Start Workout ${selectedWorkout}`}
         </button>
