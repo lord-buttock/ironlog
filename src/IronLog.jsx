@@ -237,6 +237,106 @@ const WARMUP = [
   { id: 'wu_glute_bridge',      text: '1 min · Glute bridge — 10–12 reps bodyweight · Full hip extension at top' },
 ];
 
+// ─── STRETCH ROUTINE DATA ───────────────────────────────────────────────────
+const STRETCHES = [
+  {
+    id: 'str_neck',
+    name: 'Neck Side Stretch',
+    targets: 'Upper traps · Neck',
+    cue: 'Sit or stand tall. Place one hand gently over your head and draw your ear toward your shoulder. Keep your face forward — no rotation. Breathe slowly and hold.',
+    bilateral: true,
+    suggestedSecs: 30,
+  },
+  {
+    id: 'str_cross_shoulder',
+    name: 'Cross-Body Shoulder Stretch',
+    targets: 'Posterior shoulder · Rotator cuff',
+    cue: 'Bring one arm across your chest at shoulder height. Use your other hand to gently pull it closer to your body. Keep your shoulder down, not shrugging. Good for shoulder bursitis recovery.',
+    bilateral: true,
+    suggestedSecs: 30,
+  },
+  {
+    id: 'str_pec_roller',
+    name: 'Pec Stretch on Foam Roller',
+    targets: 'Chest · Anterior shoulder',
+    cue: 'Lie lengthways along the foam roller so it supports your entire spine. Let arms fall to the sides — first in a T (arms level with shoulders), then a W (elbows bent, arms raised). Let gravity open the chest. Don\'t force your hands to the floor.',
+    bilateral: false,
+    suggestedSecs: 60,
+  },
+  {
+    id: 'str_upper_back_roller',
+    name: 'Upper Back Foam Roller',
+    targets: 'Thoracic spine · Upper back',
+    cue: 'Place the foam roller perpendicular to your spine across your upper back, hips on the floor. Clasp hands behind your head to support your neck. Slowly allow your upper back to extend backwards over the roller. Shift position to find tight spots.',
+    bilateral: false,
+    suggestedSecs: 60,
+  },
+  {
+    id: 'str_cat_cow',
+    name: 'Cat-Cow',
+    targets: 'Spine · Lower back · Core',
+    cue: 'On hands and knees, wrists under shoulders. Inhale — drop belly, lift head and tailbone (cow). Exhale — round spine toward ceiling, tuck chin and pelvis (cat). Move slowly through 10 full breaths, one breath per rep.',
+    bilateral: false,
+    suggestedSecs: 60,
+  },
+  {
+    id: 'str_childs_pose',
+    name: "Child's Pose",
+    targets: 'Lower back · Lats · Hips',
+    cue: 'Kneel and sit back toward your heels. Reach arms forward along the floor and let your lower back lengthen and relax. For a lat stretch, walk both hands to one side, hold, then the other side.',
+    bilateral: false,
+    suggestedSecs: 60,
+  },
+  {
+    id: 'str_spinal_rotation',
+    name: 'Seated Spinal Rotation',
+    targets: 'Thoracic spine · Obliques',
+    cue: 'Sit upright with legs crossed or extended. Place hands behind your head or cross arms over your chest. Rotate your torso to one side as far as comfortable, keeping hips facing forward. Hold, then switch sides.',
+    bilateral: true,
+    suggestedSecs: 30,
+  },
+  {
+    id: 'str_hip_flexor',
+    name: 'Kneeling Hip Flexor Stretch',
+    targets: 'Hip flexors · Quads',
+    cue: 'Kneel with one knee on the floor, other foot forward in a lunge. Tuck your pelvis under — bring your hips forward without arching your lower back. Feel the stretch at the front of the rear hip. Hold without leaning forward excessively.',
+    bilateral: true,
+    suggestedSecs: 45,
+  },
+  {
+    id: 'str_figure_four',
+    name: 'Figure-4 Glute Stretch',
+    targets: 'Glutes · Piriformis · Hip',
+    cue: 'Lie on your back, knees bent, feet flat. Cross one ankle over the opposite knee to form a figure-4. Pull the uncrossed leg gently toward your chest until you feel the stretch deep in the crossed-leg glute. Hold, then switch sides.',
+    bilateral: true,
+    suggestedSecs: 45,
+  },
+  {
+    id: 'str_hamstring',
+    name: 'Lying Hamstring Stretch',
+    targets: 'Hamstrings · Lower back',
+    cue: 'Lie on your back, both legs flat. Loop a towel or resistance band around one foot and slowly lift that leg toward the ceiling. Keep the opposite leg flat on the floor. Stop when you feel a gentle stretch down the back of the raised leg. Breathe slowly.',
+    bilateral: true,
+    suggestedSecs: 45,
+  },
+  {
+    id: 'str_it_band',
+    name: 'IT Band / Lateral Hip Stretch',
+    targets: 'IT band · Outer hip · Glutes',
+    cue: 'Stand near a wall for balance. Cross one leg behind the other and lean your hips away from the crossed leg — you should feel a stretch along the outside of the front hip and thigh. Keep both feet flat on the floor.',
+    bilateral: true,
+    suggestedSecs: 30,
+  },
+  {
+    id: 'str_calf',
+    name: 'Calf Stretch',
+    targets: 'Gastrocnemius · Soleus',
+    cue: 'Stand in a lunge, hands on a wall. Back leg straight, push heel to floor for the upper calf. Then slightly bend the back knee to stretch the lower calf (soleus). Hold each variation before switching sides.',
+    bilateral: true,
+    suggestedSecs: 30,
+  },
+];
+
 const YT = q => `https://www.youtube.com/results?search_query=${q}`;
 
 const EXERCISES = {
@@ -741,6 +841,21 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
         </div>
         <button style={{ ...st.btn(), display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }} onClick={() => setView('workout')}>
           <Icon name="play" size={16} /> {activeSession ? 'Resume Workout' : `Start Workout ${selectedWorkout}`}
+        </button>
+      </div>
+
+      {/* Stretch Routine card */}
+      <div style={{ ...st.card(), marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <div>
+            <div style={{ ...st.label, marginBottom: 4 }}>Stretch Routine</div>
+            <div style={{ fontSize: 16, fontWeight: 700, fontFamily: C.fDisplay, textTransform: 'uppercase' }}>Full-Body Flexibility</div>
+            <div style={{ fontSize: 12, color: C.muted, fontFamily: C.fMono, marginTop: 3 }}>12 stretches · ~15–20 min</div>
+          </div>
+          <Icon name="activity" size={28} color={C.amber} />
+        </div>
+        <button style={{ ...st.ghost }} onClick={() => setView('stretch')}>
+          Start Stretching
         </button>
       </div>
 
@@ -2513,6 +2628,141 @@ function ExerciseDemoModal({ exerciseId, onClose }) {
 // ═══════════════════════════════════════════════════════════════════════
 // WARMUP / FINISHER ICON MODAL
 // ═══════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
+// ACTIVE STRETCH
+// ═══════════════════════════════════════════════════════════════════════
+function ActiveStretch({ onDone }) {
+  const [idx, setIdx] = useState(0);
+  const [side, setSide] = useState(() => STRETCHES[0].bilateral ? 'left' : null);
+  const [elapsed, setElapsed] = useState(0);
+  const [demoOpen, setDemoOpen] = useState(false);
+
+  // Reset and restart timer whenever stretch or side changes
+  useEffect(() => {
+    setElapsed(0);
+    const t = setInterval(() => setElapsed(e => e + 1), 1000);
+    return () => clearInterval(t);
+  }, [idx, side]);
+
+  const stretch = STRETCHES[idx];
+  const isLastStretch = idx === STRETCHES.length - 1;
+  const isLastSide = !stretch.bilateral || side === 'right';
+
+  const advance = () => {
+    if (stretch.bilateral && side === 'left') {
+      setSide('right');
+    } else if (isLastStretch) {
+      onDone();
+    } else {
+      const next = STRETCHES[idx + 1];
+      setIdx(idx + 1);
+      setSide(next.bilateral ? 'left' : null);
+    }
+  };
+
+  const fmtTime = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  const nextLabel = stretch.bilateral && side === 'left' ? 'Switch Sides' : isLastStretch ? 'Finish' : 'Next Stretch';
+  const hintLabel = stretch.bilateral ? `~${stretch.suggestedSecs}s each side` : `~${stretch.suggestedSecs}s`;
+
+  return (
+    <div style={{ padding: '20px 16px 100px', minHeight: '100vh' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
+        <button onClick={onDone} style={{ background: 'none', border: 'none', color: C.muted, cursor: 'pointer', fontSize: 13, fontFamily: C.fMono, padding: 0 }}>
+          ← back
+        </button>
+        <span style={{ ...st.label, fontSize: 11 }}>{idx + 1} / {STRETCHES.length}</span>
+      </div>
+
+      {/* Name + targets */}
+      <div style={{ fontSize: 26, fontWeight: 700, fontFamily: C.fDisplay, textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 1.1, marginBottom: 6 }}>
+        {stretch.name}
+      </div>
+      <div style={{ fontSize: 12, color: C.muted, fontFamily: C.fMono, marginBottom: 24 }}>
+        {stretch.targets}
+      </div>
+
+      {/* Image */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
+        <img
+          src={`assets/icons/stretches/${stretch.id}.png`}
+          style={{ width: 180, height: 180, objectFit: 'contain', borderRadius: 20, background: '#EEF3FF', cursor: 'pointer', display: 'block' }}
+          onError={e => { e.target.style.opacity = 0.15; }}
+          onClick={() => setDemoOpen(true)}
+          alt={stretch.name}
+        />
+      </div>
+
+      {/* Side indicator */}
+      {stretch.bilateral && (
+        <div style={{ textAlign: 'center', marginBottom: 16 }}>
+          <span style={{
+            background: C.amberDim, color: C.amber, fontSize: 11,
+            borderRadius: 4, padding: '3px 12px', fontFamily: C.fMono,
+            textTransform: 'uppercase', letterSpacing: 1,
+          }}>
+            {side === 'left' ? 'Left Side' : 'Right Side'}
+          </span>
+        </div>
+      )}
+
+      {/* Timer */}
+      <div style={{ textAlign: 'center', marginBottom: 2 }}>
+        <span style={{ fontSize: 68, fontFamily: C.fDisplay, fontWeight: 700, color: C.amber, lineHeight: 1 }}>
+          {fmtTime(elapsed)}
+        </span>
+      </div>
+      <div style={{ textAlign: 'center', fontSize: 11, color: C.muted, fontFamily: C.fMono, marginBottom: 24 }}>
+        {hintLabel}
+      </div>
+
+      {/* Cue card */}
+      <div style={{ ...st.card(), marginBottom: 20, fontSize: 14, color: C.muted, lineHeight: 1.65 }}>
+        {stretch.cue}
+      </div>
+
+      {/* Action buttons */}
+      <button style={{ ...st.btn(), marginBottom: 10 }} onClick={advance}>
+        {nextLabel} →
+      </button>
+      {!(isLastStretch && isLastSide) && (
+        <button style={{ ...st.ghost }} onClick={advance}>Skip</button>
+      )}
+
+      {/* Lightbox */}
+      {demoOpen && (
+        <div onClick={() => setDemoOpen(false)} style={{
+          position: 'fixed', inset: 0, zIndex: 500,
+          background: 'rgba(10,15,40,0.92)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexDirection: 'column', gap: 16,
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: '#EEF3FF', borderRadius: 28, padding: 20,
+            boxShadow: '0 8px 48px rgba(0,0,0,0.5)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
+            maxWidth: 320, margin: 24,
+          }}>
+            <img
+              src={`assets/icons/stretches/${stretch.id}.png`}
+              style={{ width: 260, height: 260, objectFit: 'contain', display: 'block' }}
+              onError={e => { e.target.style.opacity = 0.15; }}
+              alt={stretch.name}
+            />
+            <div style={{ fontSize: 15, fontWeight: 700, fontFamily: C.fDisplay, textTransform: 'uppercase', color: '#1a2a4a', textAlign: 'center' }}>
+              {stretch.name}
+            </div>
+            <div style={{ fontSize: 13, lineHeight: 1.55, color: '#1a2a4a', textAlign: 'center', fontFamily: C.fMono }}>
+              {stretch.cue}
+            </div>
+          </div>
+          <div style={{ position: 'absolute', top: 24, right: 24, color: 'rgba(255,255,255,0.5)', fontSize: 28, lineHeight: 1, cursor: 'pointer' }}>✕</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function WarmupDemoModal({ item, onClose }) {
   return (
     <div
@@ -2712,6 +2962,7 @@ export default function App() {
             onWarmupOpen={setWarmupDemoItem}
           />
         )}
+        {view === 'stretch' && <ActiveStretch onDone={() => setView('dashboard')} />}
         {view === 'history' && <History sessions={sessions} allExercises={allExercises} />}
         {view === 'progress' && <Progress sessions={sessions} allExercises={allExercises} />}
         {view === 'rides' && <Rides rides={rides} setRides={setRides} />}
