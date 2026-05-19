@@ -4,6 +4,18 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-05-19 — AI Coach & Home Screen Redesign
+
+- Added `computeCoachRecommendation(sessions, rides, override)` rules engine
+- Reads last 7 days: pain ≥ 3, avg RPE ≥ 8, ride within 48h, days since last session ≥ 4
+- New `'preStart'` view — review modifications and optionally swap exercises before session begins
+- Safe swaps: rdl → hip_thrust, kb_deadlift → hip_thrust, p_bb_row → cs_db_row, chin_up → band_row, goblet_squat → reverse_lunge
+- Coach modification notes rendered ephemerally via props in ActiveWorkout — not stored in sessions
+- Dashboard unified card: coach note panel (🤖), flag pills, Why? expand, Safe Swaps link
+- New 7-day week strip (Mon–Sun) below unified card
+- `buildSession()` updated: accepts preStartSwaps, deduplicates exercise list, returns phase:'energy'
+- `startSession()` updated: preserves pre-built session from pre-start screen
+
 ## 2026-05-16
 
 - [Codex] Added and verified PNG exercise icons for ten missing/default workout exercise IDs.

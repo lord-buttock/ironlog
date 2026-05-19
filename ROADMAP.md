@@ -40,6 +40,20 @@ Additional non-bug technical items:
 
 ---
 
+## Completed — AI Coach & Home Screen Redesign
+
+**Status:** ✅ Done — 2026-05-19
+
+Implemented a rules-based coach layer and home screen redesign:
+- `computeCoachRecommendation(sessions, rides, override)` reads pain, RPE, recent rides, and days since last session.
+- Dashboard now shows a coach note panel, flag pills, Why? expansion, Safe Swaps link, and a Mon–Sun week strip.
+- New pre-start review screen lets flagged exercises be reviewed or swapped before the energy check.
+- Coach modification notes render during workouts via props only and are not stored in completed sessions.
+- `buildSession()` accepts pre-start swaps, deduplicates exercise IDs, and returns `phase: 'energy'`.
+- `startSession()` preserves pre-built sessions from the pre-start screen.
+
+---
+
 ## Priority 1 — Exercise Library Expansion
 
 **Status:** Planned — not yet started  
