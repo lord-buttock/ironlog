@@ -1336,7 +1336,7 @@ function SetRow({ num, set, def, onUpdate, onDone }) {
 // ═══════════════════════════════════════════════════════════════════════
 // ACTIVE WORKOUT
 // ═══════════════════════════════════════════════════════════════════════
-function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, setView, selectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, onDemoOpen, onWarmupOpen }) {
+function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, setView, selectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, onDemoOpen, onWarmupOpen, coachRec }) {
   const nextWkt = selectedWorkout;
   const [session, setSession] = useState(activeSession || null);
   const [phase, setPhase] = useState(activeSession?.phase || (activeSession ? 'workout' : 'energy'));
@@ -1658,6 +1658,15 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: C.amber + '18', border: `1px solid ${C.amber}66`, borderRadius: 10, padding: '10px 14px', marginBottom: 14 }}>
             <span style={{ fontSize: 16, lineHeight: 1.4, flexShrink: 0 }}>⚠️</span>
             <div style={{ fontSize: 12, color: C.amber, lineHeight: 1.5, fontFamily: C.fMono }}>{def.caution}</div>
+          </div>
+        )}
+        {/* Coach modification note (ephemeral — from coachRec props, not stored in session) */}
+        {coachRec?.flags?.find(f => f.exerciseId === exId)?.modification && (
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: C.amber + '18', border: `1px solid ${C.amber}66`, borderRadius: 10, padding: '10px 14px', marginBottom: 14 }}>
+            <span style={{ fontSize: 16, lineHeight: 1.4, flexShrink: 0 }}>🤖</span>
+            <div style={{ fontSize: 12, color: C.amber, lineHeight: 1.5, fontFamily: C.fMono }}>
+              Coach: {coachRec.flags.find(f => f.exerciseId === exId).modification}
+            </div>
           </div>
         )}
 
