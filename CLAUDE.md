@@ -1,196 +1,248 @@
-# IronLog — Claude Code Project Handover
+# IronLog — Agent Session Guide
+*Read this first, every session, without exception.*
 
-## Start here — before touching any code
+---
 
-This project is worked on by multiple AI agents (Claude, Codex) and Phill. Follow these rules every session to avoid conflicts and duplicated work.
+## STOP — Verify you are in the right directory
 
-1. `git pull --ff-only origin main` then `git status` — do not start code work unless the tree is clean.
-2. Read **CHANGELOG.md** — what has already been done.
-3. Read **BUGS.md** — what is open and what is fixed. Do not re-fix closed bugs.
-4. Read **ROADMAP.md** — what is planned and what is in progress. Check for claimed tasks.
-5. For medium/large tasks, mark your task `in progress — [Claude/Codex]` in ROADMAP.md or BUGS.md and commit that claim before writing code.
-6. Edit only `src/IronLog.jsx`. Run `npm run build` after every change. Commit `src/IronLog.jsx`, `index.html`, and `version.json` together — never one without the others.
-7. If a push is rejected, do not force push. Pull, rebuild from the merged source, then push.
-8. Before pushing: run `git status` and `git log --oneline -3` to confirm what is going up.
-9. After completing work: add a line to **CHANGELOG.md** and update **BUGS.md** / **ROADMAP.md** as appropriate.
+The canonical project location is:
+
+```
+/Users/phillcantone/Library/Mobile Documents/com~apple~CloudDocs/Family/Phill/AI Coding/Ironlog/
+```
+
+**There is a stale copy at `/Users/phillcantone/Documents/New project 3/` — do not use it.** It is outdated and missing months of work. If your file links or line numbers point there, you are in the wrong place.
+
+Before doing anything, confirm your working directory:
+```bash
+pwd
+# Must output: /Users/phillcantone/Library/Mobile Documents/com~apple~CloudDocs/Family/Phill/AI Coding/Ironlog
+```
+
+Then sync with GitHub:
+```bash
+git pull --ff-only origin main
+git status
+# Must be clean before any code work
+```
 
 ---
 
 ## What this is
-A personal fitness tracking web app for Phill (age 51, male, returning to training after ~5 years off).
-Built as a single HTML file deployed to GitHub Pages. No backend, no build server, no framework beyond React.
 
-The app is called **IronLog**.
+A personal fitness tracking PWA for Phill (age 51, male, returning to training after ~5 years off). Single React 18 file, deployed to GitHub Pages. No backend beyond Supabase for cloud sync.
+
+- **GitHub repo:** `https://github.com/lord-buttock/ironlog`
+- **Live app:** deployed via GitHub Pages from `dist/index.html`
+- **The only file you ever edit:** `src/IronLog.jsx`
 
 ---
 
-## Live deployment
-- **GitHub Pages URL:** `https://<phill-username>.github.io/ironlog`
-- **Repo:** `github.com/<phill-username>/ironlog`
-- **Branch:** `main` — the file `dist/index.html` is what gets deployed
+## Document map — what to read and when
 
-To deploy an update: build the project (see below), then push `dist/index.html` to GitHub.
-GitHub Pages auto-deploys within ~30 seconds of a push.
+| Document | Purpose | When to read |
+|---|---|---|
+| **CLAUDE.md** (this file) | Canonical session guide — paths, rules, working protocol | First, every session |
+| **CHANGELOG.md** | Every change ever made, reverse-chronological | Before starting any work |
+| **BUGS.md** | Open and closed bugs with IDs | Before starting any work |
+| **ROADMAP.md** | Planned features, priorities, agent notes | Before starting any work |
+| **README.md** | Detailed architecture, user profile, medical constraints | When you need deeper context |
+| **DECISIONS.md** | Technical decisions and why they were made | When making architectural choices |
+| `docs/superpowers/specs/` | Feature design specs (Claude-authored, Phill-approved) | When implementing a feature — read the relevant spec |
+| `CODEX_COACH_BRIEF_R2.md` | Current brief for the AI Coach feature | When implementing the AI Coach |
+
+**Do not rely on memory of previous sessions.** Always read CHANGELOG.md, BUGS.md, and ROADMAP.md fresh — they are the ground truth for what has and hasn't been done.
+
+---
+
+## Multi-agent working rules
+
+This project is worked on by **Claude Code** (design, spec, review) and **Codex** (implementation, icon generation) and **Phill** (decisions, testing). Follow these rules to avoid conflicts.
+
+1. **Claim your task first.** For any medium or large task, mark it `in progress — [Claude/Codex]` in ROADMAP.md or BUGS.md and commit that claim before writing code.
+2. **Edit only `src/IronLog.jsx`.** Never edit `dist/index.html` directly — it is overwritten on every build.
+3. **Build after every change.** Run `npm run build` — this compiles JSX and generates `dist/index.html`.
+4. **Commit these three files together:** `src/IronLog.jsx`, `dist/index.html`, `version.json`. Never one without the others.
+5. **Always push after committing.** Run `git push origin main` immediately after every commit.
+6. **Never force push.** If a push is rejected, pull, rebuild from the merged source, then push.
+7. **Before pushing:** run `git status` and `git log --oneline -3` to confirm what is going up.
+8. **After completing work:** add a line to CHANGELOG.md and update BUGS.md / ROADMAP.md as appropriate.
+
+### Claude ↔ Codex handoff workflow
+
+- **Claude** designs features, writes specs to `docs/superpowers/specs/`, and writes Codex briefs.
+- **Codex** reads the brief, reviews the spec, gives feedback, then implements.
+- **Claude** incorporates Codex feedback before implementation begins.
+- Phill carries feedback between Claude and Codex sessions — neither agent talks directly to the other.
 
 ---
 
 ## Tech stack
 
-| Layer | Choice | Why |
+| Layer | Choice | Notes |
 |---|---|---|
-| UI | React 18 (UMD from cdnjs) | Loaded via `<script>` tag — no bundler needed |
-| Language | JSX compiled to plain JS | Pre-compiled with Babel CLI at build time |
-| Charts | Custom SVG (`MiniLineChart` component) | Recharts was blocked by GitHub Pages CSP |
-| Styling | Inline styles (React style objects) | Keeps everything in one file |
-| Storage | `localStorage` | Per-device persistence, no server |
-| Data backup | JSON export/import | User downloads/uploads a `.json` file |
+| UI | React 18 (UMD from cdnjs) | Loaded via `<script>` tag — no bundler |
+| Language | JSX → plain JS | Pre-compiled with Babel CLI at build time |
+| Charts | Custom SVG (`MiniLineChart`) | Recharts blocked by GitHub Pages CSP |
+| Styling | Inline styles (React style objects) | All in one file |
+| Storage | `localStorage` | Per-device persistence |
+| Cloud sync | Supabase REST API | Count-based restore; blocked during active session |
+| Hosting | GitHub Pages | Auto-deploys on push to main |
 | Fonts | Google Fonts CDN | Barlow Condensed, Barlow, JetBrains Mono |
-| Hosting | GitHub Pages | Free, reliable, single-file deployment |
 
 **What was tried and abandoned:**
-- Google Apps Script — file too large (116KB), `doGet` failed with "something went wrong"
-- Recharts CDN — `Recharts is not defined` error in some environments; replaced with custom SVG
-- Client-side Babel (`text/babel`) — blocked by CSP; now pre-compiled at build time
+- Google Apps Script — file too large (116KB), `doGet` failed
+- Recharts CDN — `Recharts is not defined` error; replaced with custom SVG
+- Client-side Babel (`text/babel`) — blocked by CSP; pre-compiled at build time
 
 ---
 
 ## Build process
 
-### Install dependencies (first time only)
 ```bash
-npm install
+npm install          # first time only
+npm run build        # every time src/IronLog.jsx changes
 ```
 
-### Build (every time you change src/IronLog.jsx)
-```bash
-npm run build
-```
-
-This does three things:
-1. Strips React/Recharts imports (they come from CDN globals)
-2. Compiles JSX → plain JS using Babel
-3. Wraps the output in `dist/index.html` with the CDN script tags, fonts, icon, and PWA meta tags
-
-### Deploy to GitHub Pages
-```bash
-git add dist/index.html
-git commit -m "Update app"
-git push
-```
+Build does three things:
+1. Strips React imports (they come from CDN globals)
+2. Compiles JSX → plain JS via Babel
+3. Wraps output in `dist/index.html` with CDN tags, fonts, icon, and PWA meta
 
 ---
 
-## Source file: src/IronLog.jsx
+## Source file structure: `src/IronLog.jsx`
 
-This is the **only file you edit**. Never edit `dist/index.html` directly — it gets overwritten on every build.
+Key sections in order:
+1. **THEME** — `C` object, all colours and font names
+2. **EXERCISE ICONS** — SVG line-art icon components keyed by exercise ID
+3. **WORKOUT DATA** — `WARMUP`, `STRETCHES`, `EXERCISES`, `WORKOUTS`, `PRESET_LIBRARY`
+4. **MUSCLE META** — `MUSCLE_META` mapping exercise IDs to primary/secondary muscle arrays
+5. **STORAGE** — `load()` / `save()` using `localStorage`
+6. **SUPABASE SYNC** — cloud push/restore functions
+7. **UTILITIES** — date formatting, timer helpers, `nextWorkout()`, `buildSession()`
+8. **SVG CHART** — `MiniLineChart` component
+9. **Components** — `Dashboard`, `ActiveWorkout`, `SetRow`, `MuscleDiagram`, `History`, `Progress`, `Rides`, `Manage`, `ActiveStretch`
+10. **App root** — `App()` — state, localStorage persistence, renders all screens
 
-### Key sections in order:
-1. **THEME** (`C` object) — all colours and font names
-2. **WORKOUT DATA** — `WARMUP`, `EXERCISES`, `WORKOUTS`, `PRESET_LIBRARY`
-3. **STORAGE** — `load()` / `save()` using `localStorage`
-4. **GOOGLE DRIVE SYNC** — `exportData()` / `importData()` (JSON file download/upload)
-5. **UTILITIES** — date formatting, timer helpers
-6. **SVG CHART** — `MiniLineChart` component (no external library)
-7. **Components** — `Nav`, `Dashboard`, `ActiveWorkout`, `SetRow`, `History`, `Progress`, `Rides`, `Manage`
-8. **App root** — `App()` — state, persistence, renders all screens
-
-### Globals available at runtime (from CDN, not imported):
+Globals available at runtime (from CDN — do not import):
 ```js
 const { useState, useEffect, useRef, useCallback } = React;
-// Recharts is NOT used — custom SVG charts instead
 ```
 
 ---
 
-## App structure
-
-### Navigation (bottom tab bar)
-| Tab | Screen | Key state |
-|---|---|---|
-| Home | Dashboard | Next workout, Drive sync card, recent sessions |
-| Train | ActiveWorkout | Session flow: energy → warmup → exercises → finisher → done |
-| Log | History | Expandable session cards with sets, notes |
-| Stats | Progress | SVG line charts per exercise (weight, volume, RPE) |
-| Rides | Rides | Cycling log with programme guide |
-| Manage | Manage | Exercise library + workout builder |
-
-### Session flow
-Energy check → Warm-up checklist → Exercises (with sets, RPE, pain, notes) → Finisher → Complete
-
-### Data shape (localStorage keys)
-```
-il_sessions       → array of completed session objects
-il_rides          → array of ride log objects
-il_active         → current in-progress session (or null)
-il_custom_exercises → user-created exercise objects
-il_workout_custom → { A: [...extraIds], B: [...], C: [...] }
-```
-
----
-
-## Current workouts (Push / Pull / Legs split)
+## Current workouts (A/B/C split) — as of 2026-05-13
 
 ### Workout A — Push (Chest · Shoulders · Triceps)
-`db_bench` → `p_db_shoulder_press` → `p_lateral_raise` → `db_floor_press` → `p_overhead_ext` → `p_tricep_pushdown`
+`bb_flat_bench` → `p_db_shoulder_press` → `p_lateral_raise` → `p_close_grip_bench` → `p_skull_crushers` → `p_tricep_pushdown`
 
 ### Workout B — Pull (Back · Biceps · Hinge)
-`kb_deadlift` → `db_row_1arm` → `cs_db_row` → `p_db_bicep_curl` → `p_hammer_curl`
+`kb_deadlift` → `chin_up` → `cs_db_row` → `face_pull` → `p_db_bicep_curl` → `p_hammer_curl`
 
 ### Workout C — Legs + Core
-`goblet_squat` → `split_squat` → `hip_thrust` → `sb_ham_curl` → `pallof_press` → `calf_raises` → `single_leg_bal`
+`goblet_squat` → `rdl` → `hip_thrust` → `reverse_lunge` → `sb_ham_curl` → `pallof_press` → `farmers_walk`
 
-Exercise IDs prefixed `p_` are in `PRESET_LIBRARY`. All others are in `EXERCISES`.
-Both are merged into `allExercises` at runtime: `{ ...EXERCISES, ...PRESET_LIBRARY, ...customExercises }`.
+Exercise IDs prefixed `p_` are in `PRESET_LIBRARY`. All others are in `EXERCISES`. Both merge into `allExercises` at runtime: `{ ...EXERCISES, ...PRESET_LIBRARY, ...customExercises }`.
+
+---
+
+## Data shape (localStorage keys)
+
+```
+il_sessions          → array of completed session objects
+il_rides             → array of ride log objects
+il_active            → current in-progress session (or null)
+il_custom_exercises  → user-created exercise objects
+il_workout_custom    → { A: [...extraIds], B: [...], C: [...] }
+il_workout_hidden    → { A: [...hiddenIds], B: [...], C: [...] }
+```
+
+---
+
+## App navigation and session flow
+
+| Tab | Screen | Purpose |
+|---|---|---|
+| Home | Dashboard | Next workout, coach note, week strip, stretch routine |
+| Workout | ActiveWorkout | Session flow (see below) |
+| Log | History | Expandable session cards |
+| Stats | Progress | SVG line charts per exercise |
+| Rides | Rides | Cycling log with programme guide |
+| Manage | Manage | Exercise library, workout builder, backup |
+
+**Session flow:**
+Energy check → Warm-up checklist → Exercises (weight/reps/RPE/pain per set) → Finisher → Complete
+
+**Phase state** (inside `ActiveWorkout`):
+`'energy'` → `'warmup'` → `'workout'` → `'finisher'` → complete
 
 ---
 
 ## User's medical constraints — ALWAYS respect these
 
-These must be honoured whenever suggesting or modifying exercises:
-
-| Condition | Constraint |
+| Condition | Hard constraint |
 |---|---|
-| Bilateral shoulder bursitis | No overhead barbell pressing. DB shoulder press seated is OK. Emphasise scapular control. |
+| Bilateral shoulder bursitis | No overhead barbell. DB shoulder press (seated) OK. No wide-grip pull-ups. Scapular control always. |
 | Slipped disc / lower back pain | No loaded spinal flexion or rotation. Conservative hinge range. KB deadlift from raised height only. |
 | Tight hamstrings | Raised deadlift height. Small range on hamstring curls. |
-| Limited shoulder flexibility | Cannot back-rack a barbell. No back squat. Front-loaded or goblet only. |
+| Limited shoulder flexibility | Cannot back-rack barbell. No back squat or front squat. Front-loaded or goblet only. |
 | Returning after 5 years off | Conservative progression. RPE 6–7 early weeks. 3–4 reps in reserve. |
 
-**Equipment available:** Dumbbells + plates, kettlebells (4–12kg), barbell, bench press rack,
-weight plates (5kg, 10kg), Swiss ball, stepper, resistance bands, small trampoline, sturdy step, 5m carry space.
+**Equipment:** Dumbbells + plates, kettlebells (4–12kg), barbell + flat/incline/decline bench + rack, weight plates (5kg, 10kg), Swiss ball, stepper, resistance bands, small trampoline, sturdy step, 5m carry space, doorframe chin-up bar.
 
 ---
 
-## iOS home screen / PWA
-The app is configured as a PWA (add to home screen on iPhone via Safari):
-- `apple-mobile-web-app-capable` — launches full screen, no browser chrome
-- `apple-mobile-web-app-title` — shows "IronLog" under the icon
-- `apple-mobile-web-app-status-bar-style: black` — dark status bar
-- Home screen icon is a 180×180 PNG (dumbbell on dark background) embedded as base64 in the HTML
+## Key completed features (do not re-implement)
 
-The icon base64 string is stored in `build.js` so it survives rebuilds.
+- ✅ 3-day Push/Pull/Legs split (A/B/C) with full session flow
+- ✅ Per-set logging: weight, reps/duration, RPE, pain
+- ✅ Pain ≥ 3 warning banner; `caution` field on exercises renders amber banner in `SetRow`
+- ✅ Pre-fill from last session
+- ✅ Rest timer (30/60/120s shortcuts, auto-starts at 30s)
+- ✅ Session clock (wall-clock based)
+- ✅ PR detection (completed sets only — BUG-001 fixed)
+- ✅ Progressive overload nudge
+- ✅ Custom SVG progress charts (weight, volume, RPE)
+- ✅ Session history (expandable)
+- ✅ Stretch routine (Dashboard accordion + `ActiveStretch` guided flow)
+- ✅ Ride log with programme phases
+- ✅ Exercise library with form cues, YouTube demo links, muscle diagrams
+- ✅ `MuscleDiagram` — anatomical SVG front/rear with primary (blue) / secondary (purple) highlighting
+- ✅ `MUSCLE_META` — all exercises mapped to anatomical muscle arrays (ExRx-verified)
+- ✅ Exercise icons — 108×108px transparent PNGs in `assets/icons/`
+- ✅ Warmup/finisher icons in `assets/icons/warmup/`
+- ✅ Custom exercise creator
+- ✅ Workout builder (add/remove/hide exercises per A/B/C)
+- ✅ Mid-session exercise addition
+- ✅ Supabase auto-sync (count-based restore, blocked during active session)
+- ✅ Auto-update indicator (↺ pulses amber when newer version deployed)
+- ✅ JSON export/import in Manage → Backup
+- ✅ PWA / iPhone home screen
 
 ---
 
-## Features summary
-- 3 workouts (A/B/C) in rotation, selectable manually
-- Warm-up checklist + finisher checklist per workout
-- Per-set logging: weight, reps/duration, RPE (1–10), pain (0–10)
-- Pain ≥ 3/10 shows a warning banner
-- Pre-filled from last session automatically
-- Rest timer (60/90/120s shortcuts)
-- Session clock
-- Energy level check-in (😴 to 🔥) before each session
-- Per-exercise notes (free text, shown in history)
-- Session notes at finisher stage
-- PR detection on session completion
-- Progressive overload nudge when all sets hit top of rep range
-- Progress charts: top weight, volume, RPE per exercise over time
-- Session history (expandable, shows all sets + notes)
-- Ride log with programme phases
-- Exercise library (50+ preset exercises with form cues + YouTube demo links)
-- Custom exercise creator
-- Workout builder (add/remove exercises from A/B/C)
-- Mid-session exercise addition
-- JSON export / import for cross-device data transfer
-- GitHub Pages deployment (single `dist/index.html`)
+## Do not touch
+
+- `assets/anatomy/` — annotated SVGs, fully complete, do not modify or regenerate
+- `MuscleDiagram` component — complete
+- `MUSCLE_META` — complete, ExRx-verified
+- `dist/index.html` — never edit directly, always rebuild
+- `.superpowers/` — brainstorming session files, ignore
+
+---
+
+## iOS / PWA
+
+- `apple-mobile-web-app-capable` — full screen, no browser chrome
+- `apple-mobile-web-app-title` — "IronLog"
+- Home screen icon: 180×180 PNG, base64 in `build.js` (survives rebuilds)
+
+---
+
+## Amendments log
+
+| Date | Change |
+|---|---|
+| 2026-05-19 | Full rewrite — added canonical path, stale copy warning, document map, multi-agent workflow, updated workout lists to current A/B/C, added completed features list |
+| 2026-05-01 | Original handover document created |
