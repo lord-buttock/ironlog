@@ -542,11 +542,15 @@ function getLastLogged(sessions, exId) {
   return null;
 }
 
-function buildSession(workoutKey, prevSessions, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}) {
+function buildSession(workoutKey, prevSessions, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, preStartSwaps = {}) {
   const wkt = WORKOUTS[workoutKey];
   const extraIds = workoutCustom[workoutKey] || [];
   const hiddenIds = new Set(workoutHidden[workoutKey] || []);
-  const exerciseIds = [...wkt.exercises, ...extraIds].filter(id => !hiddenIds.has(id));
+  // Apply swaps: replace flagged IDs with their chosen replacements
+  const rawIds = [...wkt.exercises, ...extraIds].filter(id => !hiddenIds.has(id));
+  const swappedIds = rawIds.map(id => preStartSwaps[id] || id);
+  // Deduplicate (swap target may already appear in custom extras)
+  const exerciseIds = [...new Set(swappedIds)];
   const exercises = exerciseIds.map(exId => {
     const def = allExercises[exId] || EXERCISES[exId];
     if (!def) return null;
@@ -577,6 +581,7 @@ function buildSession(workoutKey, prevSessions, allExercises = EXERCISES, workou
     exercises,
     notes: '',
     completed: false,
+    phase: 'energy',
   };
 }
 
