@@ -33,7 +33,7 @@ git status
 A personal fitness tracking PWA for Phill (age 51, male, returning to training after ~5 years off). Single React 18 file, deployed to GitHub Pages. No backend beyond Supabase for cloud sync.
 
 - **GitHub repo:** `https://github.com/lord-buttock/ironlog`
-- **Live app:** deployed via GitHub Pages from `dist/index.html`
+- **Live app:** deployed via GitHub Pages from root `index.html` (and mirrored to `dist/index.html`)
 - **The only file you ever edit:** `src/IronLog.jsx`
 
 ---
@@ -49,7 +49,7 @@ A personal fitness tracking PWA for Phill (age 51, male, returning to training a
 | **README.md** | Detailed architecture, user profile, medical constraints | When you need deeper context |
 | **DECISIONS.md** | Technical decisions and why they were made | When making architectural choices |
 | `docs/superpowers/specs/` | Feature design specs (Claude-authored, Phill-approved) | When implementing a feature — read the relevant spec |
-| `CODEX_COACH_BRIEF_R2.md` | Current brief for the AI Coach feature | When implementing the AI Coach |
+| `CODEX_COACH_BRIEF_R4.md` | AI Coach debug brief — feature now complete and deployed | Historical reference only |
 
 **Do not rely on memory of previous sessions.** Always read CHANGELOG.md, BUGS.md, and ROADMAP.md fresh — they are the ground truth for what has and hasn't been done.
 
@@ -60,9 +60,9 @@ A personal fitness tracking PWA for Phill (age 51, male, returning to training a
 This project is worked on by **Claude Code** (design, spec, review) and **Codex** (implementation, icon generation) and **Phill** (decisions, testing). Follow these rules to avoid conflicts.
 
 1. **Claim your task first.** For any medium or large task, mark it `in progress — [Claude/Codex]` in ROADMAP.md or BUGS.md and commit that claim before writing code.
-2. **Edit only `src/IronLog.jsx`.** Never edit `dist/index.html` directly — it is overwritten on every build.
-3. **Build after every change.** Run `npm run build` — this compiles JSX and generates `dist/index.html`.
-4. **Commit these three files together:** `src/IronLog.jsx`, `dist/index.html`, `version.json`. Never one without the others.
+2. **Edit only `src/IronLog.jsx`.** Never edit `dist/index.html` or root `index.html` directly — both are overwritten on every build.
+3. **Build after every change.** Run `node build.js` — this compiles JSX and writes the output to **both** `dist/index.html` and root `index.html`. GitHub Pages serves from root `index.html`.
+4. **Commit these four files together:** `src/IronLog.jsx`, `dist/index.html`, `index.html`, `version.json`. Never one without the others.
 5. **Always push after committing.** Run `git push origin main` immediately after every commit.
 6. **Never force push.** If a push is rejected, pull, rebuild from the merged source, then push.
 7. **Before pushing:** run `git status` and `git log --oneline -3` to confirm what is going up.
@@ -104,10 +104,13 @@ npm install          # first time only
 npm run build        # every time src/IronLog.jsx changes
 ```
 
-Build does three things:
+Build does four things:
 1. Strips React imports (they come from CDN globals)
 2. Compiles JSX → plain JS via Babel
-3. Wraps output in `dist/index.html` with CDN tags, fonts, icon, and PWA meta
+3. Wraps output with CDN tags, fonts, icon, and PWA meta
+4. Writes the result to **both** `dist/index.html` and root `index.html`
+
+GitHub Pages serves root `index.html`. `.nojekyll` is present in the repo root so Pages publishes the prebuilt file as-is (no Jekyll processing).
 
 ---
 
@@ -227,7 +230,7 @@ Energy check → Warm-up checklist → Exercises (weight/reps/RPE/pain per set) 
 - `assets/anatomy/` — annotated SVGs, fully complete, do not modify or regenerate
 - `MuscleDiagram` component — complete
 - `MUSCLE_META` — complete, ExRx-verified
-- `dist/index.html` — never edit directly, always rebuild
+- `dist/index.html` and root `index.html` — never edit directly, always rebuild via `node build.js`
 - `.superpowers/` — brainstorming session files, ignore
 
 ---
@@ -244,5 +247,6 @@ Energy check → Warm-up checklist → Exercises (weight/reps/RPE/pain per set) 
 
 | Date | Change |
 |---|---|
+| 2026-05-20 | Build/deploy fix — `build.js` now writes to both `dist/index.html` and root `index.html`; `.nojekyll` added; GitHub Pages serves from root. Updated multi-agent rules and build docs accordingly. |
 | 2026-05-19 | Full rewrite — added canonical path, stale copy warning, document map, multi-agent workflow, updated workout lists to current A/B/C, added completed features list |
 | 2026-05-01 | Original handover document created |
