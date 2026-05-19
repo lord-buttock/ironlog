@@ -624,6 +624,114 @@ function weekStart() {
   return d;
 }
 
+function weekMondayStart() {
+  const d = new Date(); d.setHours(0,0,0,0);
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d;
+}
+
+function computeCoachRecommendation(sessions, rides, override = null) {
+  const SWAP_MAP = {
+    rdl:           { name: 'Hip Thrust',              id: 'hip_thrust' },
+    kb_deadlift:   { name: 'Hip Thrust',              id: 'hip_thrust' },
+    p_bb_row:      { name: 'Chest-Supported DB Row',  id: 'cs_db_row' },
+    chin_up:       { name: 'Band Row',                id: 'band_row' },
+    goblet_squat:  { name: 'Reverse Lunge',           id: 'reverse_lunge' },
+  };
+  const HINGE_IDS = new Set(['rdl', 'kb_deadlift']);
+
+  const completed = [...sessions]
+    .filter(s => s.completed)
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+  const last = completed[completed.length - 1] || null;
+
+  // Determine workout
+  const workout = override || (last ? ({ A: 'B', B: 'C', C: 'A' }[last.workout] || 'A') : 'A');
+  const wkt = WORKOUTS[workout];
+
+  const reasons = [];
+  const noteFragments = [];
+  const flags = [];
+
+  // Signal: days since last session
+  if (last) {
+    const daysSince = Math.floor((Date.now() - new Date(last.date)) / 86400000);
+    if (daysSince >= 4) {
+      noteFragments.push(`${daysSince} days since your last session.`);
+      reasons.push(`Last session was ${daysSince} days ago — ease in, RPE 6 max for first two exercises.`);
+    }
+  }
+
+  // Signal: average RPE last session
+  if (last) {
+    const doneSets = (last.exercises || []).flatMap(ex => (ex.sets || []).filter(s => s.done));
+    const rpeVals = doneSets.map(s => Number(s.rpe)).filter(v => !isNaN(v) && v > 0);
+    if (rpeVals.length > 0) {
+      const avg = rpeVals.reduce((a, b) => a + b, 0) / rpeVals.length;
+      if (avg >= 8) {
+        noteFragments.push('High effort last session.');
+        reasons.push(`Average RPE was ${avg.toFixed(1)} last session — train at RPE 6–7 today.`);
+      }
+    }
+  }
+
+  // Signal: ride within last 48 hours
+  const now = Date.now();
+  const recentRide = rides.some(r => (now - new Date(r.date).getTime()) < 48 * 3600000);
+  if (recentRide) {
+    reasons.push('Rode in the last 48 hours — keep hinge movements light.');
+    wkt.exercises.forEach(exId => {
+      if (!HINGE_IDS.has(exId)) return;
+      if (flags.some(f => f.exerciseId === exId)) return;
+      const def = EXERCISES[exId] || PRESET_LIBRARY[exId];
+      const sw = SWAP_MAP[exId];
+      flags.push({
+        exerciseId: exId,
+        exerciseName: def?.name || exId,
+        modification: 'Rode recently — keep weight raised and light. Prioritise pull movements.',
+        swap: sw?.name || null,
+        swapId: sw?.id || null,
+      });
+    });
+  }
+
+  // Signal: pain >= 3 on any workout exercise last session
+  if (last) {
+    (last.exercises || []).forEach(ex => {
+      if (!wkt.exercises.includes(ex.id)) return;
+      if (flags.some(f => f.exerciseId === ex.id)) return;
+      const hasPain = (ex.sets || []).some(s => Number(s.pain) >= 3);
+      if (!hasPain) return;
+      const def = EXERCISES[ex.id] || PRESET_LIBRARY[ex.id];
+      const sw = SWAP_MAP[ex.id];
+      flags.push({
+        exerciseId: ex.id,
+        exerciseName: def?.name || ex.id,
+        modification: 'Pain logged last session — keep weight conservative, increase range only if pain-free.',
+        swap: sw?.name || null,
+        swapId: sw?.id || null,
+      });
+      reasons.push(`Pain ≥ 3 logged on ${def?.name || ex.id} last session.`);
+    });
+  }
+
+  // Compose note
+  let note;
+  if (noteFragments.length === 0 && flags.length === 0) {
+    note = 'Good recovery. Train at your planned intensity today.';
+  } else if (noteFragments.length > 0 && flags.length > 0) {
+    note = noteFragments.join(' ') + ' Some exercises flagged — see adjustments below.';
+  } else if (noteFragments.length > 0) {
+    note = noteFragments.join(' ') + ' Take it steady today.';
+  } else {
+    note = 'All signals normal. Some exercises flagged below — review before starting.';
+  }
+
+  if (reasons.length === 0) reasons.push('No flags from the last 7 days. Good to go.');
+
+  return { workout, headline: wkt.title, note, reasons, flags };
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // STYLE HELPERS
 // ═══════════════════════════════════════════════════════════════════════
