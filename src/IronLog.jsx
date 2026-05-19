@@ -934,7 +934,7 @@ function PreStartScreen({ selectedWorkout, coachRec, preStartSwaps, setPreStartS
 // ═══════════════════════════════════════════════════════════════════════
 // DASHBOARD
 // ═══════════════════════════════════════════════════════════════════════
-function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, setSelectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, driveSync, onCloudSync, updateAvailable, onWarmupOpen, onDemoOpen }) {
+function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, setSelectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, driveSync, onCloudSync, updateAvailable, onWarmupOpen, onDemoOpen, coachRec, showWhy, setShowWhy }) {
   const [showExercises, setShowExercises] = useState(false);
   const [showStretches, setShowStretches] = useState(false);
   const [showWarmup, setShowWarmup] = useState(false);
@@ -948,6 +948,17 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
   const ws = weekStart();
   const weekSessions = sessions.filter(s => new Date(s.date) >= ws);
   const weekRides = rides.filter(r => new Date(r.date) >= ws);
+  // Week strip: Mon–Sun cells
+  const mondayStart = weekMondayStart();
+  const weekDays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(mondayStart);
+    d.setDate(mondayStart.getDate() + i);
+    const dateStr = d.toISOString().slice(0, 10);
+    const sess = sessions.find(s => s.completed && s.date?.slice(0, 10) === dateStr);
+    const ride = rides.find(r => r.date?.slice(0, 10) === dateStr);
+    const isToday = dateStr === new Date().toISOString().slice(0, 10);
+    return { d, dateStr, sess, ride, isToday, dayLetter: ['M','T','W','T','F','S','S'][i] };
+  });
   const recent = [...sessions].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 4);
   const lastSyncTime = driveSync?.lastCloudSync
     ? new Date(driveSync.lastCloudSync).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })
@@ -1086,9 +1097,73 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
           </div>
         )}
 
-        <button style={{ ...st.btn(), display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }} onClick={() => setView('workout')}>
+        {/* Flag pills */}
+        {!activeSession && coachRec?.flags?.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+            {coachRec.flags.map(flag => (
+              <span key={flag.exerciseId} style={{ background: C.amber + '18', color: C.amber, border: `1px solid ${C.amber}44`, borderRadius: 20, padding: '3px 10px', fontSize: 11, fontFamily: C.fMono }}>
+                ⚠ {flag.exerciseName}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Coach note panel */}
+        {!activeSession && coachRec && (
+          <div style={{ background: '#F0F4FF', borderRadius: 8, padding: '12px 14px', marginBottom: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: showWhy ? 8 : 0 }}>
+              <span style={{ fontSize: 15, flexShrink: 0 }}>🤖</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, color: '#2a3f6f', lineHeight: 1.5 }}>{coachRec.note}</div>
+                <div style={{ display: 'flex', gap: 12, marginTop: 6 }}>
+                  <button onClick={() => setShowWhy(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 12, color: '#4A82E8', fontFamily: C.fMono }}>
+                    {showWhy ? '✕ Hide' : 'Why? ›'}
+                  </button>
+                  {coachRec.flags.length > 0 && (
+                    <button onClick={() => setView('preStart')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 12, color: C.amber, fontFamily: C.fMono }}>
+                      Safe swaps ›
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+            {showWhy && (
+              <div style={{ borderTop: '1px solid #d0daff', paddingTop: 10, marginTop: 2 }}>
+                {coachRec.reasons.map((r, i) => (
+                  <div key={i} style={{ fontSize: 12, color: '#4a5a7a', lineHeight: 1.5, marginBottom: 4, paddingLeft: 8 }}>• {r}</div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        <button style={{ ...st.btn(), display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}
+          onClick={() => activeSession ? setView('workout') : setView('preStart')}>
           <Icon name="play" size={16} /> {activeSession ? 'Resume Workout' : `Start Workout ${selectedWorkout}`}
         </button>
+      </div>
+
+      {/* 7-day week strip */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 12 }}>
+        {weekDays.map(({ dayLetter, sess, ride, isToday, dateStr }) => (
+          <div key={dateStr} style={{
+            ...st.card(),
+            padding: '8px 4px',
+            textAlign: 'center',
+            borderColor: isToday ? C.amber : C.border,
+            background: isToday ? C.amberDim : C.card,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+          }}>
+            <div style={{ ...st.label, fontSize: 9 }}>{dayLetter}</div>
+            {sess ? (
+              <div style={{ fontSize: 11, fontFamily: C.fDisplay, color: C.amber, lineHeight: 1 }}>{sess.workout}✓</div>
+            ) : ride ? (
+              <div style={{ fontSize: 12, lineHeight: 1 }}>🚴</div>
+            ) : (
+              <div style={{ fontSize: 11, color: C.muted, lineHeight: 1 }}>–</div>
+            )}
+          </div>
+        ))}
       </div>
 
       {/* Stretch Routine card */}
