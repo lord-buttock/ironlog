@@ -3,6 +3,16 @@
 
 ---
 
+## Before anything else — read CLAUDE.md
+
+```
+/Users/phillcantone/Library/Mobile Documents/com~apple~CloudDocs/Family/Phill/AI Coding/Ironlog/CLAUDE.md
+```
+
+This is the canonical session guide for all agents working on this project. It contains the correct file paths, the document map, multi-agent working rules, and the build process. **Read it first, every session, without exception.**
+
+---
+
 ## Your task for this session: REVIEW ONLY — no code
 
 Read the spec below and the relevant parts of `src/IronLog.jsx`, then provide written feedback on:

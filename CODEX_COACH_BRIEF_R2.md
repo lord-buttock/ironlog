@@ -3,6 +3,16 @@
 
 ---
 
+## Before anything else — read CLAUDE.md
+
+```
+/Users/phillcantone/Library/Mobile Documents/com~apple~CloudDocs/Family/Phill/AI Coding/Ironlog/CLAUDE.md
+```
+
+This is the canonical session guide for all agents working on this project. It contains the correct file paths, the document map, multi-agent working rules, and the build process. **Read it first, every session, without exception.** It will also tell you about the stale copy of this project on disk and why you must not use it.
+
+---
+
 ## File path issue — you were reading the wrong copy
 
 Your review linked to `/Users/phillcantone/Documents/New project 3/src/IronLog.jsx`. The correct file is:
