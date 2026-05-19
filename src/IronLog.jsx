@@ -3188,11 +3188,14 @@ export default function App() {
   const [ready, setReady] = useState(false);
   const [driveSync, setDriveSync] = useState({ status: 'idle', lastSync: null, error: null });
   const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [showWhy, setShowWhy] = useState(false);
+  const [preStartSwaps, setPreStartSwaps] = useState({});
 
   // Keep a ref to current data so export always uses the latest state
   const dataRef = useRef({});
 
   const allExercises = { ...EXERCISES, ...PRESET_LIBRARY, ...customExercises };
+  const coachRec = computeCoachRecommendation(sessions, rides, selectedWorkout);
 
   useEffect(() => {
     dataRef.current = { sessions, rides, customExercises, workoutCustom };
@@ -3307,6 +3310,20 @@ export default function App() {
         ::placeholder{color:${C.muted};}
       `}</style>
       <div style={st.screen}>
+        {view === 'preStart' && (
+          <PreStartScreen
+            selectedWorkout={selectedWorkout}
+            coachRec={coachRec}
+            preStartSwaps={preStartSwaps}
+            setPreStartSwaps={setPreStartSwaps}
+            allExercises={allExercises}
+            sessions={sessions}
+            workoutCustom={workoutCustom}
+            workoutHidden={workoutHidden}
+            setActiveSession={setActiveSession}
+            setView={setView}
+          />
+        )}
         {view === 'dashboard' && (
           <Dashboard sessions={sessions} rides={rides} setView={setView} activeSession={activeSession}
             selectedWorkout={selectedWorkout} setSelectedWorkout={setSelectedWorkout}
@@ -3314,7 +3331,8 @@ export default function App() {
             workoutHidden={workoutHidden} setWorkoutHidden={setWorkoutHidden}
             driveSync={driveSync} onCloudSync={handleCloudSync}
             updateAvailable={updateAvailable} onWarmupOpen={setWarmupDemoItem}
-            onDemoOpen={setDemoExId} />
+            onDemoOpen={setDemoExId}
+            coachRec={coachRec} showWhy={showWhy} setShowWhy={setShowWhy} />
         )}
         {view === 'workout' && (
           <ActiveWorkout
@@ -3330,6 +3348,7 @@ export default function App() {
             setWorkoutHidden={setWorkoutHidden}
             onDemoOpen={setDemoExId}
             onWarmupOpen={setWarmupDemoItem}
+            coachRec={coachRec}
           />
         )}
         {view === 'stretch' && <ActiveStretch onDone={() => setView('dashboard')} />}
