@@ -1279,12 +1279,15 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
   function stopRest() { setRestActive(false); setRestSecs(30); }
 
   function startSession(energy) {
-    const s = buildSession(nextWkt, sessions, allExercises, workoutCustom, workoutHidden);
-    s.energy = energy;
+    // If activeSession was pre-built by the pre-start screen (has exercises), preserve it.
+    // Only add the energy level and advance to warmup — do not rebuild.
+    const base = (activeSession?.exercises?.length > 0)
+      ? activeSession
+      : buildSession(nextWkt, sessions, allExercises, workoutCustom, workoutHidden);
+    const s = { ...base, energy, phase: 'warmup' };
     setSession(s);
     setActiveSession(s);
     setPhase('warmup');
-    setActiveSession(s => s ? { ...s, phase: 'warmup' } : s);
   }
 
   function cancelSession() {
