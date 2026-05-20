@@ -14,7 +14,6 @@ const C = {
 
 const EXERCISE_ICONS = {
   db_bench: <><line x1="6" y1="23" x2="26" y2="23" /><circle cx="12" cy="18" r="2" /><line x1="14" y1="18" x2="21" y2="18" /><line x1="17" y1="17" x2="17" y2="10" /><line x1="22" y1="17" x2="22" y2="10" /><line x1="14" y1="10" x2="25" y2="10" /><line x1="14" y1="23" x2="10" y2="27" /><line x1="20" y1="23" x2="24" y2="27" /></>,
-  db_incline: <><line x1="7" y1="25" x2="22" y2="14" /><circle cx="12" cy="19" r="2" /><line x1="14" y1="18" x2="20" y2="15" /><line x1="18" y1="15" x2="16" y2="8" /><line x1="21" y1="14" x2="24" y2="8" /><line x1="15" y1="8" x2="25" y2="8" /><line x1="19" y1="17" x2="25" y2="24" /></>,
   bb_flat_bench: <><line x1="5" y1="23" x2="27" y2="23" /><circle cx="12" cy="18" r="2" /><line x1="14" y1="18" x2="21" y2="18" /><line x1="17" y1="17" x2="17" y2="10" /><line x1="22" y1="17" x2="22" y2="10" /><line x1="8" y1="9" x2="28" y2="9" /><line x1="8" y1="7" x2="8" y2="11" /><line x1="28" y1="7" x2="28" y2="11" /></>,
   bb_incline_bench: <><line x1="6" y1="25" x2="22" y2="14" /><circle cx="12" cy="19" r="2" /><line x1="14" y1="18" x2="20" y2="15" /><line x1="18" y1="15" x2="16" y2="9" /><line x1="21" y1="14" x2="24" y2="9" /><line x1="11" y1="8" x2="29" y2="8" /><line x1="11" y1="6" x2="11" y2="10" /><line x1="29" y1="6" x2="29" y2="10" /></>,
   db_floor_press: <><line x1="5" y1="25" x2="27" y2="25" /><circle cx="11" cy="20" r="2" /><line x1="13" y1="20" x2="21" y2="20" /><line x1="16" y1="19" x2="16" y2="11" /><line x1="22" y1="19" x2="22" y2="11" /><line x1="14" y1="11" x2="24" y2="11" /><line x1="20" y1="20" x2="25" y2="25" /></>,
@@ -26,8 +25,6 @@ const EXERCISE_ICONS = {
   p_chest_dip: <><line x1="9" y1="10" x2="9" y2="26" /><line x1="23" y1="10" x2="23" y2="26" /><line x1="7" y1="12" x2="13" y2="12" /><line x1="19" y1="12" x2="25" y2="12" /><circle cx="16" cy="9" r="2" /><line x1="16" y1="11" x2="16" y2="18" /><line x1="16" y1="13" x2="11" y2="15" /><line x1="16" y1="13" x2="21" y2="15" /><line x1="16" y1="18" x2="13" y2="25" /><line x1="16" y1="18" x2="20" y2="25" /></>,
   p_cable_fly: <><line x1="4" y1="4" x2="4" y2="26" /><line x1="28" y1="4" x2="28" y2="26" /><circle cx="16" cy="7" r="2" /><line x1="16" y1="9" x2="16" y2="19" /><path d="M16 12c-5 1-8 3-10 7" /><path d="M16 12c5 1 8 3 10 7" /><line x1="16" y1="19" x2="12" y2="27" /><line x1="16" y1="19" x2="20" y2="27" /></>,
   p_close_grip_bench: <><line x1="5" y1="23" x2="27" y2="23" /><circle cx="12" cy="18" r="2" /><line x1="14" y1="18" x2="21" y2="18" /><line x1="18" y1="17" x2="18" y2="10" /><line x1="20" y1="17" x2="20" y2="10" /><line x1="10" y1="9" x2="28" y2="9" /><line x1="10" y1="7" x2="10" y2="11" /><line x1="28" y1="7" x2="28" y2="11" /></>,
-  db_shoulder: <><line x1="11" y1="25" x2="21" y2="25" /><circle cx="16" cy="6" r="2.2" /><line x1="16" y1="8" x2="16" y2="17" /><line x1="12" y1="24" x2="20" y2="24" /><line x1="16" y1="11" x2="12" y2="5" /><line x1="16" y1="11" x2="20" y2="5" /><line x1="10" y1="4" x2="14" y2="4" /><line x1="18" y1="4" x2="22" y2="4" /><line x1="16" y1="17" x2="13" y2="24" /><line x1="16" y1="17" x2="19" y2="24" /></>,
-  db_lateral: <><circle cx="16" cy="5" r="2.2" /><line x1="16" y1="7" x2="16" y2="18" /><line x1="16" y1="11" x2="7" y2="11" /><line x1="16" y1="11" x2="25" y2="11" /><line x1="6" y1="10" x2="6" y2="13" /><line x1="26" y1="10" x2="26" y2="13" /><line x1="16" y1="18" x2="12" y2="27" /><line x1="16" y1="18" x2="20" y2="27" /></>,
   p_lateral_raise: <><circle cx="16" cy="5" r="2.2" /><line x1="16" y1="7" x2="16" y2="18" /><line x1="16" y1="11" x2="7" y2="11" /><line x1="16" y1="11" x2="25" y2="11" /><line x1="6" y1="10" x2="6" y2="13" /><line x1="26" y1="10" x2="26" y2="13" /><line x1="16" y1="18" x2="12" y2="27" /><line x1="16" y1="18" x2="20" y2="27" /></>,
   p_front_raise: <><circle cx="16" cy="5" r="2.2" /><line x1="16" y1="7" x2="16" y2="18" /><line x1="16" y1="11" x2="16" y2="4" /><line x1="16" y1="11" x2="23" y2="14" /><line x1="15" y1="3" x2="18" y2="3" /><line x1="24" y1="13" x2="24" y2="16" /><line x1="16" y1="18" x2="12" y2="27" /><line x1="16" y1="18" x2="20" y2="27" /></>,
   p_db_shoulder_press: <><line x1="11" y1="25" x2="21" y2="25" /><circle cx="16" cy="6" r="2.2" /><line x1="16" y1="8" x2="16" y2="17" /><line x1="16" y1="11" x2="12" y2="7" /><line x1="16" y1="11" x2="20" y2="7" /><line x1="12" y1="7" x2="12" y2="3" /><line x1="20" y1="7" x2="20" y2="3" /><line x1="10" y1="3" x2="14" y2="3" /><line x1="18" y1="3" x2="22" y2="3" /></>,
@@ -37,8 +34,6 @@ const EXERCISE_ICONS = {
   p_shrugs: <><circle cx="16" cy="5" r="2.2" /><path d="M12 10c1-2 7-2 8 0" /><line x1="16" y1="8" x2="16" y2="18" /><line x1="16" y1="11" x2="11" y2="18" /><line x1="16" y1="11" x2="21" y2="18" /><line x1="10" y1="18" x2="10" y2="22" /><line x1="22" y1="18" x2="22" y2="22" /><line x1="16" y1="18" x2="12" y2="27" /><line x1="16" y1="18" x2="20" y2="27" /></>,
   face_pull: <><line x1="28" y1="7" x2="28" y2="25" /><circle cx="14" cy="8" r="2.2" /><line x1="14" y1="10" x2="14" y2="20" /><line x1="14" y1="13" x2="20" y2="9" /><line x1="14" y1="13" x2="20" y2="15" /><line x1="20" y1="9" x2="28" y2="10" /><line x1="20" y1="15" x2="28" y2="12" /><line x1="14" y1="20" x2="10" y2="28" /><line x1="14" y1="20" x2="18" y2="28" /></>,
   reverse_fly: <><circle cx="12" cy="9" r="2" /><line x1="14" y1="10" x2="21" y2="16" /><line x1="20" y1="16" x2="13" y2="16" /><line x1="20" y1="16" x2="27" y2="16" /><line x1="12" y1="16" x2="10" y2="19" /><line x1="28" y1="16" x2="30" y2="19" /><line x1="21" y1="16" x2="16" y2="25" /><line x1="21" y1="16" x2="24" y2="25" /></>,
-  db_tricep: <><circle cx="16" cy="5" r="2.2" /><line x1="16" y1="7" x2="16" y2="18" /><line x1="16" y1="10" x2="20" y2="5" /><line x1="20" y1="5" x2="18" y2="12" /><line x1="18" y1="12" x2="20" y2="14" /><line x1="16" y1="18" x2="12" y2="27" /><line x1="16" y1="18" x2="20" y2="27" /></>,
-  tricep_pushdown: <><line x1="24" y1="4" x2="24" y2="13" /><circle cx="14" cy="7" r="2.2" /><line x1="14" y1="9" x2="14" y2="20" /><line x1="14" y1="12" x2="20" y2="12" /><line x1="20" y1="12" x2="24" y2="10" /><line x1="19" y1="12" x2="19" y2="21" /><line x1="14" y1="20" x2="10" y2="28" /><line x1="14" y1="20" x2="18" y2="28" /></>,
   p_tricep_pushdown: <><line x1="24" y1="4" x2="24" y2="13" /><circle cx="14" cy="7" r="2.2" /><line x1="14" y1="9" x2="14" y2="20" /><line x1="14" y1="12" x2="20" y2="12" /><line x1="20" y1="12" x2="24" y2="10" /><line x1="19" y1="12" x2="19" y2="21" /><line x1="14" y1="20" x2="10" y2="28" /><line x1="14" y1="20" x2="18" y2="28" /></>,
   p_overhead_ext: <><circle cx="16" cy="5" r="2.2" /><line x1="16" y1="7" x2="16" y2="18" /><line x1="16" y1="10" x2="12" y2="4" /><line x1="16" y1="10" x2="20" y2="4" /><line x1="12" y1="4" x2="16" y2="13" /><line x1="20" y1="4" x2="16" y2="13" /><line x1="16" y1="18" x2="12" y2="27" /><line x1="16" y1="18" x2="20" y2="27" /></>,
   p_skull_crushers: <><line x1="6" y1="23" x2="26" y2="23" /><circle cx="12" cy="18" r="2" /><line x1="14" y1="18" x2="21" y2="18" /><line x1="17" y1="17" x2="15" y2="12" /><line x1="22" y1="17" x2="24" y2="12" /><line x1="14" y1="12" x2="25" y2="12" /><line x1="20" y1="23" x2="24" y2="27" /></>,
@@ -52,8 +47,6 @@ const EXERCISE_ICONS = {
   p_seated_cable_row: <><line x1="27" y1="7" x2="27" y2="24" /><circle cx="10" cy="12" r="2" /><line x1="10" y1="14" x2="13" y2="22" /><line x1="13" y1="17" x2="21" y2="17" /><line x1="21" y1="17" x2="27" y2="14" /><line x1="13" y1="22" x2="8" y2="26" /><line x1="13" y1="22" x2="20" y2="26" /></>,
   p_t_bar_row: <><circle cx="12" cy="9" r="2" /><line x1="14" y1="10" x2="22" y2="16" /><line x1="22" y1="16" x2="16" y2="24" /><line x1="22" y1="16" x2="26" y2="24" /><line x1="18" y1="13" x2="23" y2="18" /><line x1="12" y1="24" x2="30" y2="17" /><line x1="29" y1="15" x2="31" y2="19" /></>,
   p_straight_arm_pd: <><line x1="25" y1="4" x2="25" y2="15" /><circle cx="14" cy="7" r="2.2" /><line x1="14" y1="9" x2="14" y2="20" /><line x1="14" y1="12" x2="22" y2="8" /><line x1="22" y1="8" x2="25" y2="6" /><line x1="14" y1="15" x2="22" y2="21" /><line x1="14" y1="20" x2="10" y2="28" /><line x1="14" y1="20" x2="18" y2="28" /></>,
-  db_curl: <><circle cx="16" cy="5" r="2.2" /><line x1="16" y1="7" x2="16" y2="18" /><line x1="16" y1="11" x2="11" y2="16" /><line x1="11" y1="16" x2="13" y2="10" /><line x1="13" y1="10" x2="15" y2="10" /><line x1="16" y1="11" x2="21" y2="18" /><line x1="16" y1="18" x2="12" y2="27" /><line x1="16" y1="18" x2="20" y2="27" /></>,
-  db_hammer: <><circle cx="16" cy="5" r="2.2" /><line x1="16" y1="7" x2="16" y2="18" /><line x1="16" y1="11" x2="11" y2="17" /><line x1="11" y1="17" x2="13" y2="12" /><line x1="13" y1="11" x2="13" y2="14" /><line x1="16" y1="11" x2="21" y2="18" /><line x1="16" y1="18" x2="12" y2="27" /><line x1="16" y1="18" x2="20" y2="27" /></>,
   p_db_bicep_curl: <><circle cx="16" cy="5" r="2.2" /><line x1="16" y1="7" x2="16" y2="18" /><line x1="16" y1="11" x2="11" y2="16" /><line x1="11" y1="16" x2="13" y2="10" /><line x1="13" y1="10" x2="15" y2="10" /><line x1="16" y1="11" x2="21" y2="18" /><line x1="16" y1="18" x2="12" y2="27" /><line x1="16" y1="18" x2="20" y2="27" /></>,
   p_barbell_curl: <><circle cx="16" cy="5" r="2.2" /><line x1="16" y1="7" x2="16" y2="18" /><line x1="16" y1="11" x2="12" y2="17" /><line x1="16" y1="11" x2="20" y2="17" /><line x1="10" y1="15" x2="22" y2="15" /><line x1="10" y1="13" x2="10" y2="17" /><line x1="22" y1="13" x2="22" y2="17" /><line x1="16" y1="18" x2="12" y2="27" /><line x1="16" y1="18" x2="20" y2="27" /></>,
   p_hammer_curl: <><circle cx="16" cy="5" r="2.2" /><line x1="16" y1="7" x2="16" y2="18" /><line x1="16" y1="11" x2="11" y2="17" /><line x1="11" y1="17" x2="13" y2="12" /><line x1="13" y1="11" x2="13" y2="14" /><line x1="16" y1="11" x2="21" y2="18" /><line x1="16" y1="18" x2="12" y2="27" /><line x1="16" y1="18" x2="20" y2="27" /></>,
@@ -196,11 +189,10 @@ function MuscleDiagram({ primary = [], secondary = [], size = 'medium' }) {
 const PNG_EXERCISE_ICON_IDS = new Set([
   // Default workout exercises
   'band_row', 'bb_flat_bench', 'bb_incline_bench', 'calf_raises', 'chin_up',
-  'cs_db_row', 'db_bench', 'db_curl', 'db_floor_press', 'db_hammer', 'db_lateral',
-  'db_row_1arm', 'db_shoulder', 'db_tricep', 'face_pull', 'farmers_walk',
-  'goblet_squat', 'hip_thrust', 'incline_pushups', 'kb_deadlift', 'lateral_raise',
+  'cs_db_row', 'db_bench', 'db_floor_press', 'db_row_1arm', 'face_pull', 'farmers_walk',
+  'goblet_squat', 'hip_thrust', 'incline_pushups', 'kb_deadlift',
   'pallof_press', 'rdl', 'reverse_fly', 'reverse_lunge', 'sb_ham_curl',
-  'single_leg_bal', 'split_squat', 'step_ups', 'suitcase_carry', 'tricep_pushdown',
+  'single_leg_bal', 'split_squat', 'step_ups', 'suitcase_carry',
   // Preset library exercises
   'p_ab_wheel', 'p_arnold_press', 'p_band_ext_rot', 'p_band_face_pull',
   'p_barbell_curl', 'p_bb_decline_bench', 'p_bb_hip_thrust', 'p_bb_row',
@@ -2502,7 +2494,6 @@ const MUSCLE_META = {
   db_bench:        ['Chest',           'Triceps'],
   db_floor_press:  ['Chest',           'Triceps'],
   bb_incline_bench:['Chest',           'Front Delts'],
-  db_shoulder:     ['Front Delts',     'Triceps'],  // shoulder press — ExRx: anterior deltoid is primary mover in overhead press
   // ── Workout B — Pull / Hinge ────────────────────────────────────────
   kb_deadlift:     ['Glutes',          'Hamstrings'],
   chin_up:         ['Lats',            'Biceps'],
@@ -2518,14 +2509,6 @@ const MUSCLE_META = {
   split_squat:     ['Quads',           'Glutes'],
   calf_raises:     ['Calves',          null],
   single_leg_bal:  [null,              null],       // balance drill — no primary muscle highlight
-  // ── Tricep pushdown (band, Workout A) ───────────────────────────────
-  tricep_pushdown: ['Triceps',         null],
-  // ── Lateral raise (Workout A) ───────────────────────────────────────
-  lateral_raise:   ['Side Delts',      null],
-  db_lateral:      ['Side Delts',      null],
-  db_tricep:       ['Triceps',         null],
-  db_curl:         ['Biceps',          'Forearms'],
-  db_hammer:       ['Forearms',        'Biceps'],   // ExRx: brachioradialis (forearms) is the target; biceps is synergist
   // ── Preset library — Arms ───────────────────────────────────────────
   p_db_bicep_curl:      ['Biceps',      'Forearms'],
   p_barbell_curl:       ['Biceps',      'Forearms'],
