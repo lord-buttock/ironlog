@@ -4,6 +4,11 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-05-20 — Exercise View Improvements
+
+- Previous session notes reminder: if notes were written for an exercise in the last session, shown as a read-only 📝 banner above the set rows
+- Muscle diagram collapsed by default: tap MUSCLES ▼ to expand, resets to collapsed on each exercise
+
 ## 2026-05-19 — AI Coach & Home Screen Redesign
 
 - Added `computeCoachRecommendation(sessions, rides, override)` rules engine
