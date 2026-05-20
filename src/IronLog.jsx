@@ -1431,6 +1431,7 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
   const [nudges, setNudges] = useState([]);
   const [showAddEx, setShowAddEx] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [showDiagram, setShowDiagram] = useState(false);
 
   const elapsedRef = useRef(null);
   const restRef = useRef(null);
@@ -1449,6 +1450,8 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
     restRef.current = setTimeout(() => setRestSecs(s => s - 1), 1000);
     return () => clearTimeout(restRef.current);
   }, [restActive, restSecs]);
+
+  useEffect(() => { setShowDiagram(false); }, [exIdx]);
 
   function startRest(s = 30) { setRestSecs(s); setRestActive(true); }
   function stopRest() { setRestActive(false); setRestSecs(30); }
@@ -1687,13 +1690,29 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
           </div>
         </div>
 
-        {/* Muscle diagram */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
-          <MuscleDiagram
-            primary={def.primary || []}
-            secondary={def.secondary || []}
-            size="medium"
-          />
+        {/* Muscle diagram (collapsible) */}
+        <div style={{ marginBottom: 14 }}>
+          <button
+            onClick={() => setShowDiagram(v => !v)}
+            style={{ background: 'none', border: 'none', padding: '4px 0', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}
+          >
+            <span style={{ ...st.label, fontSize: 9 }}>MUSCLES</span>
+            {!showDiagram && primaryMuscle && (
+              <span style={{ fontFamily: C.fMono, fontSize: 11, color: C.muted }}>{primaryMuscle}</span>
+            )}
+            <span style={{ fontFamily: C.fMono, fontSize: 11, color: C.muted, marginLeft: 'auto' }}>
+              {showDiagram ? '▲ Hide' : '▼ Show'}
+            </span>
+          </button>
+          {showDiagram && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 8 }}>
+              <MuscleDiagram
+                primary={def.primary || []}
+                secondary={def.secondary || []}
+                size="medium"
+              />
+            </div>
+          )}
         </div>
 
         {/* Pull-up progress card */}
@@ -1744,6 +1763,17 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
             </div>
           </div>
         )}
+
+        {/* Previous session notes reminder */}
+        {(() => {
+          const lastNotes = getLastLogged(sessions, exId)?.notes;
+          return lastNotes ? (
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: C.dim, border: `1px solid ${C.border}`, borderLeft: `3px solid ${C.muted}`, borderRadius: 10, padding: '10px 14px', marginBottom: 14 }}>
+              <span style={{ fontSize: 16, lineHeight: 1.4, flexShrink: 0 }}>📝</span>
+              <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5, fontFamily: C.fMono }}>{lastNotes}</div>
+            </div>
+          ) : null;
+        })()}
 
         {/* Sets */}
         <div style={{ ...st.col(6), marginBottom: 10 }}>
