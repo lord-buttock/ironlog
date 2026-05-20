@@ -6,21 +6,27 @@ Read README.md first for full project context, user profile, medical constraints
 
 ---
 
-## Current State (as of May 2026)
+## Current State (as of 2026-05-20)
 
 The app is functional and in active daily use. Core features are complete:
 - 3-day Push/Pull/Legs split (A/B/C) with full session flow
 - Per-set logging: weight, reps/duration, RPE, pain
-- Pre-fill from last session
+- Pre-fill from last session (weight, reps)
+- Previous session notes shown as read-only 📝 reminder during workout
 - Rest timer, session clock
 - PR detection and progressive overload nudges
 - Progress charts (custom SVG)
 - Session history
-- Ride log
-- Exercise library with form cues and YouTube links
+- Ride log with programme phases
+- Exercise library with form cues, muscle diagrams, and YouTube links
+- Muscle diagram collapsible by default in workout view
 - Custom exercise creator and workout builder
 - JSON export/import backup
 - PWA — works on iPhone home screen
+- AI Coach layer: rules-based recommendations, flag pills, pre-start review screen, safe swaps
+- 7-day week strip on home screen
+- Supabase auto-sync (count-based restore, blocked during active session)
+- Auto-update indicator (↺ pulses amber when newer version deployed)
 
 ---
 
@@ -51,6 +57,16 @@ Implemented a rules-based coach layer and home screen redesign:
 - Coach modification notes render during workouts via props only and are not stored in completed sessions.
 - `buildSession()` accepts pre-start swaps, deduplicates exercise IDs, and returns `phase: 'energy'`.
 - `startSession()` preserves pre-built sessions from the pre-start screen.
+
+---
+
+## Completed — Exercise View Improvements
+
+**Status:** ✅ Done — 2026-05-20
+
+Two additive improvements to the in-workout exercise view:
+- **Previous session notes reminder:** if notes were written for an exercise in the last session, a read-only 📝 banner appears above the set rows as a reminder. Sourced from `getLastLogged(sessions, exId)?.notes` — no new state or storage.
+- **Muscle diagram collapsed by default:** diagram starts collapsed on every exercise; a tappable row shows the primary muscle name and a ▼ Show / ▲ Hide toggle. Resets to collapsed on exercise navigation. `showDiagram` state in `ActiveWorkout`, reset via `useEffect` on `exIdx` change.
 
 ---
 
@@ -307,6 +323,18 @@ Currently the user manually selects which workout to do. The app suggests the ne
 ## Agent Notes & Feedback Log
 
 *Append notes here after any significant agent session — what was changed, what was decided, what was left for next time.*
+
+### 2026-05-20 — Claude Sonnet 4.6 + Codex (exercise view improvements + build/deploy fix)
+
+**Build/deploy fix:**
+- Diagnosed: GitHub Pages was serving a stale bundle because `build.js` was only writing to root `index.html`, and Jekyll was blocking the publish step. Fixed in commits 4f8eb75 and 25a89d8.
+- `build.js` now writes the compiled bundle to both `dist/index.html` AND root `index.html`.
+- `.nojekyll` added to repo root — Pages now publishes the prebuilt file as-is.
+- CLAUDE.md updated with correct build/deploy setup.
+
+**Exercise view improvements (commit 2203174):**
+- Previous session notes reminder: 📝 banner above set rows if `getLastLogged(sessions, exId)?.notes` is non-empty.
+- Muscle diagram collapsed by default: `showDiagram` state added to `ActiveWorkout`, reset via `useEffect` on `exIdx` change. Tappable MUSCLES ▼/▲ toggle.
 
 ### 2026-05-16 — Codex (Task 4 — MuscleDiagram component rewrite)
 
