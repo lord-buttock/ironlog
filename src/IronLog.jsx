@@ -356,6 +356,68 @@ const STRETCHES = [
   },
 ];
 
+// ─── STRETCH LIBRARY (exercises + warm-up + finisher stretches) ────────────
+// STRETCHES items are shallow-cloned so applyStretchMeta does not mutate
+// the originals used by ActiveStretch and Dashboard.
+const STRETCH_LIBRARY = [
+  ...STRETCHES.map(s => ({ ...s })),
+  // ── Warm-up mobility stretches ────────────────────────────────────────────
+  { id: 'wu_cat_cow',           imageDir: 'warmup', bilateral: false, suggestedSecs: 60,
+    name: 'Cat-Cow',
+    targets: 'Spine · Lower back · Core',
+    cue: '10 slow reps on hands and knees. Inhale — drop belly, lift head and tailbone (cow). Exhale — round spine toward ceiling, tuck chin and pelvis (cat). Move slowly, pain-free range.' },
+  { id: 'wu_prone_cobra',       imageDir: 'warmup', bilateral: false, suggestedSecs: 30,
+    name: 'Prone Cobra',
+    targets: 'Lower back · Spinal extension',
+    cue: 'Lie face down, hands beside chest. Gently lift chest off the floor. 6 × 5 sec holds. Back extension and disc health — lift only as high as is comfortable, no pain.' },
+  { id: 'wu_hamstring_stretch', imageDir: 'warmup', bilateral: true,  suggestedSecs: 30,
+    name: 'Lying Hamstring Stretch',
+    targets: 'Hamstrings · Lower back',
+    cue: 'Lie on your back. Loop a resistance band or towel around one foot and lift the leg slowly toward the ceiling. Keep the opposite leg flat. Stop at first gentle resistance — no bouncing. 30 sec each side.' },
+  { id: 'wu_chest_opener',      imageDir: 'warmup', bilateral: false, suggestedSecs: 60,
+    name: 'Doorframe Chest & Shoulder Opener',
+    targets: 'Chest · Anterior shoulder',
+    cue: 'Stand in a doorframe, arms at 90° on the frame. Lean your body gently forward until you feel a stretch across the chest and front of the shoulders. Keep shoulders down, not shrugging.' },
+  { id: 'wu_pendulum',          imageDir: 'warmup', bilateral: true,  suggestedSecs: 30,
+    name: 'Pendulum Swings',
+    targets: 'Shoulder · Rotator cuff',
+    cue: 'Lean on a bench with one hand for support. Let the opposite arm hang loose and make small, gentle circles — gravity does the work. No forced movement. Important for shoulder bursitis recovery. 30 sec each side.' },
+  // ── Workout finisher stretches ────────────────────────────────────────────
+  { id: 'fin_ham_floss',   imageDir: 'warmup', bilateral: true,  suggestedSecs: 45,
+    name: 'Hamstring Floss',
+    targets: 'Hamstrings · Neural',
+    cue: 'Lie on your back with a band around one foot. Gently pump the leg toward the ceiling and back — slow, rhythmic neural flossing, not a held stretch. 45 sec each side.' },
+  { id: 'fin_childs_pose', imageDir: 'warmup', bilateral: false, suggestedSecs: 60,
+    name: "Child's Pose Breathing",
+    targets: 'Lower back · Lats · Hips',
+    cue: 'Kneel and sit back toward your heels. Reach arms forward along the floor. Breathe slowly and let your lower back lengthen with each exhale. For a lat stretch, walk both hands to one side and hold.' },
+];
+
+// Muscle highlight mapping for MuscleDiagram.
+// "primary" = main anatomical area being stretched / mobilised (not activation).
+// Only names from DISPLAY_TO_SVG_IDS are valid here.
+const STRETCH_MUSCLE_META = {
+  str_neck:             ['Upper Traps',     null],
+  str_cross_shoulder:   ['Rear Delts',      'Mid Traps'],
+  str_pec_roller_t:     ['Chest',           'Front Delts'],
+  str_upper_back_roller:['Mid Traps',       'Spinal Erectors'],
+  str_cat_cow_cow:      ['Spinal Erectors', 'Abs'],
+  str_childs_pose:      ['Lats',            'Spinal Erectors'],
+  str_spinal_rotation:  ['Obliques',        'Spinal Erectors'],
+  str_hip_flexor:       ['Quads',           null],
+  str_figure_four:      ['Glutes',          null],
+  str_hamstring:        ['Hamstrings',      'Spinal Erectors'],
+  str_it_band:          ['Glutes',          null],
+  str_calf_straight:    ['Calves',          null],
+  wu_cat_cow:           ['Spinal Erectors', 'Abs'],
+  wu_prone_cobra:       ['Spinal Erectors', 'Abs'],
+  wu_hamstring_stretch: ['Hamstrings',      'Spinal Erectors'],
+  wu_chest_opener:      ['Chest',           'Front Delts'],
+  wu_pendulum:          ['Rear Delts',      null],
+  fin_ham_floss:        ['Hamstrings',      'Spinal Erectors'],
+  fin_childs_pose:      ['Lats',            'Spinal Erectors'],
+};
+
 const YT = q => `https://www.youtube.com/results?search_query=${q}`;
 
 const EXERCISES = {
@@ -2588,6 +2650,15 @@ function applyMuscleMeta(library) {
 
 applyMuscleMeta(EXERCISES);
 applyMuscleMeta(PRESET_LIBRARY);
+
+function applyStretchMeta() {
+  STRETCH_LIBRARY.forEach(s => {
+    const [p, sec] = STRETCH_MUSCLE_META[s.id] || [null, null];
+    s.primary   = p   ? [p]   : [];
+    s.secondary = sec ? [sec] : [];
+  });
+}
+applyStretchMeta();
 
 // ═══════════════════════════════════════════════════════════════════════
 // MANAGE (Exercise Library + Workout Builder)
