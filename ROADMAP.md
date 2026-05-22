@@ -34,10 +34,7 @@ The app is functional and in active daily use. Core features are complete:
 
 See **BUGS.md** for the canonical tracker with stable IDs, details, and fix descriptions.
 
-**Open (medium):** BUG-008 (finisher notes), BUG-009 (EXERCISES not browseable)
-**Fixed:** BUG-001 ✅, BUG-002 ✅, BUG-003 ✅, BUG-004 ✅, BUG-005 ✅, BUG-006 ✅, BUG-007 ✅
-**Open (low):** BUG-010 (equipment-incompatible exercises in picker)
-**Fixed:** BUG-001 (false PR detection ✅), BUG-006 (contraindicated exercises ✅), BUG-007 (p_pull_up cue ✅)
+**All bugs fixed:** BUG-001 ✅, BUG-002 ✅, BUG-003 ✅, BUG-004 ✅, BUG-005 ✅, BUG-006 ✅, BUG-007 ✅, BUG-008 ✅, BUG-009 ✅, BUG-010 ✅
 
 Additional non-bug technical items:
 - Replace all 66 YouTube search URLs with curated specific video IDs (`IronLog.jsx` lines 26, 29–44, 1237–1293) — Medium

@@ -3,3 +3,4 @@ node_modules/
 dist/
 IronLog-backup-*.json
 src/_compiled.js
+.superpowers/
