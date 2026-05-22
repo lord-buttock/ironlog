@@ -362,10 +362,7 @@ const STRETCHES = [
 const STRETCH_LIBRARY = [
   ...STRETCHES.map(s => ({ ...s })),
   // ── Warm-up mobility stretches ────────────────────────────────────────────
-  { id: 'wu_cat_cow',           imageDir: 'warmup', bilateral: false, suggestedSecs: 60,
-    name: 'Cat-Cow',
-    targets: 'Spine · Lower back · Core',
-    cue: '10 slow reps on hands and knees. Inhale — drop belly, lift head and tailbone (cow). Exhale — round spine toward ceiling, tuck chin and pelvis (cat). Move slowly, pain-free range.' },
+  // wu_cat_cow excluded — duplicate of str_cat_cow_cow above
   { id: 'wu_prone_cobra',       imageDir: 'warmup', bilateral: false, suggestedSecs: 30,
     name: 'Prone Cobra',
     targets: 'Lower back · Spinal extension',
@@ -382,15 +379,8 @@ const STRETCH_LIBRARY = [
     name: 'Pendulum Swings',
     targets: 'Shoulder · Rotator cuff',
     cue: 'Lean on a bench with one hand for support. Let the opposite arm hang loose and make small, gentle circles — gravity does the work. No forced movement. Important for shoulder bursitis recovery. 30 sec each side.' },
-  // ── Workout finisher stretches ────────────────────────────────────────────
-  { id: 'fin_ham_floss',   imageDir: 'warmup', bilateral: true,  suggestedSecs: 45,
-    name: 'Hamstring Floss',
-    targets: 'Hamstrings · Neural',
-    cue: 'Lie on your back with a band around one foot. Gently pump the leg toward the ceiling and back — slow, rhythmic neural flossing, not a held stretch. 45 sec each side.' },
-  { id: 'fin_childs_pose', imageDir: 'warmup', bilateral: false, suggestedSecs: 60,
-    name: "Child's Pose Breathing",
-    targets: 'Lower back · Lats · Hips',
-    cue: 'Kneel and sit back toward your heels. Reach arms forward along the floor. Breathe slowly and let your lower back lengthen with each exhale. For a lat stretch, walk both hands to one side and hold.' },
+  // fin_ham_floss excluded — duplicate of str_hamstring above
+  // fin_childs_pose excluded — duplicate of str_childs_pose above
 ];
 
 // Muscle highlight mapping for MuscleDiagram.
@@ -409,13 +399,13 @@ const STRETCH_MUSCLE_META = {
   str_hamstring:        ['Hamstrings',      'Spinal Erectors'],
   str_it_band:          ['Glutes',          null],
   str_calf_straight:    ['Calves',          null],
-  wu_cat_cow:           ['Spinal Erectors', 'Abs'],
+  // wu_cat_cow excluded — duplicate of str_cat_cow_cow
   wu_prone_cobra:       ['Spinal Erectors', 'Abs'],
   wu_hamstring_stretch: ['Hamstrings',      'Spinal Erectors'],
   wu_chest_opener:      ['Chest',           'Front Delts'],
   wu_pendulum:          ['Rear Delts',      null],
-  fin_ham_floss:        ['Hamstrings',      'Spinal Erectors'],
-  fin_childs_pose:      ['Lats',            'Spinal Erectors'],
+  // fin_ham_floss excluded — duplicate of str_hamstring
+  // fin_childs_pose excluded — duplicate of str_childs_pose
 };
 
 const YT = q => `https://www.youtube.com/results?search_query=${q}`;
