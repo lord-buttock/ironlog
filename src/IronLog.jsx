@@ -2677,6 +2677,8 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
   const [wktTab, setWktTab] = useState('A');
   const [addingTo, setAddingTo] = useState(null);
   const [wktSearch, setWktSearch] = useState('');
+  const [librarySubTab, setLibrarySubTab]   = useState('exercises');
+  const [expandedStretch, setExpandedStretch] = useState(null);
 
   // All exercises that can be browsed/added (workout exercises + presets + user-created custom)
   const libraryEntries = [
@@ -2748,6 +2750,24 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
       {/* ── Library tab ── */}
       {tab === 'library' && (
         <div>
+          {/* Exercises / Stretches sub-tabs */}
+          <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+            {[['exercises','Exercises'],['stretches','Stretches']].map(([id, label]) => (
+              <button key={id}
+                onClick={() => { setLibrarySubTab(id); setExpandedStretch(null); setExpandedLib(null); }}
+                style={{
+                  background: librarySubTab === id ? C.amber : C.dim,
+                  color: librarySubTab === id ? '#fff' : C.muted,
+                  border: `1px solid ${librarySubTab === id ? C.amber : C.border}`,
+                  borderRadius: 20, padding: '6px 16px', fontSize: 12, fontFamily: C.fDisplay,
+                  fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, cursor: 'pointer',
+                }}>{label}</button>
+            ))}
+          </div>
+
+          {/* ── Exercises sub-tab ── */}
+          {librarySubTab === 'exercises' && (
+          <div>
           {/* Search */}
           <input value={search} onChange={e => setSearch(e.target.value)}
             style={{ ...st.inp, textAlign: 'left', padding: '10px 12px', marginBottom: 10 }}
@@ -2928,6 +2948,94 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
               </div>
             )}
           </div>
+          </div>
+          )}
+
+          {/* ── Stretches sub-tab ── */}
+          {librarySubTab === 'stretches' && (
+            <div style={{ ...st.col(8) }}>
+              {STRETCH_LIBRARY.map((s) => {
+                const isExp    = expandedStretch === s.id;
+                const imgDir   = s.imageDir || 'stretches';
+                const holdLabel = s.suggestedSecs
+                  ? (s.bilateral ? `${s.suggestedSecs}s each side` : `${s.suggestedSecs}s`)
+                  : null;
+                return (
+                  <div key={s.id} style={{ ...st.card(), display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {/* Collapsed header — tappable */}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer' }}
+                      onClick={() => setExpandedStretch(isExp ? null : s.id)}>
+                      <img
+                        src={`assets/icons/${imgDir}/${s.id}.png`}
+                        style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#EEF3FF', flexShrink: 0 }}
+                        onError={e => { e.target.style.display = 'none'; }}
+                        alt={s.name}
+                      />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
+                          <span style={{ fontFamily: C.fDisplay, fontSize: 16, textTransform: 'uppercase', letterSpacing: 0.5 }}>{s.name}</span>
+                          <span style={{ marginLeft: 'auto', color: C.muted, fontSize: 11, flexShrink: 0 }}>{isExp ? '▲' : '▼'}</span>
+                        </div>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                          <span style={{ ...st.mono(11, C.muted) }}>{s.targets}</span>
+                          {s.bilateral && <span style={{ ...st.pill(C.amber), fontSize: 9 }}>Both sides</span>}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Expanded detail */}
+                    {isExp && (
+                      <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
+                        {/* Image(s) — dual side-by-side for stretches with id2 */}
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 14 }}>
+                          {[s.id, s.id2].filter(Boolean).map(imgId => {
+                            const sz = s.id2 ? 140 : 180;
+                            return (
+                              <img key={imgId}
+                                src={`assets/icons/${imgDir}/${imgId}.png`}
+                                style={{ width: sz, height: sz, objectFit: 'contain', display: 'block' }}
+                                onError={e => { e.target.style.opacity = 0.2; }}
+                                alt={s.name}
+                              />
+                            );
+                          })}
+                        </div>
+                        {/* Muscle diagram */}
+                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
+                          <MuscleDiagram primary={s.primary || []} secondary={s.secondary || []} size="medium" />
+                        </div>
+                        {/* Muscle pills */}
+                        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
+                          {s.primary && s.primary[0] && (
+                            <span style={{ background: C.amberDim, color: C.amber, fontSize: 11, borderRadius: 20, padding: '3px 10px', fontFamily: C.fMono }}>
+                              ● {s.primary[0]}
+                            </span>
+                          )}
+                          {s.secondary && s.secondary[0] && (
+                            <span style={{ background: '#e8f0ff', color: '#5b8fdc', fontSize: 11, borderRadius: 20, padding: '3px 10px', fontFamily: C.fMono }}>
+                              ○ {s.secondary[0]}
+                            </span>
+                          )}
+                        </div>
+                        {/* Hold time */}
+                        {holdLabel && (
+                          <div style={{ textAlign: 'center', fontSize: 11, color: C.amber, fontFamily: C.fMono, marginBottom: s.cue ? 8 : 0 }}>
+                            ⏱ {holdLabel}
+                          </div>
+                        )}
+                        {/* Cue text */}
+                        {s.cue && (
+                          <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5, padding: '8px 0' }}>
+                            {s.cue}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

@@ -4,6 +4,10 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-05-23 — Stretch Library Tab
+
+- Manage → Library now has Exercises / Stretches sub-tabs. Stretches tab shows 19 curated items (12 full-body flexibility, 5 warm-up mobility, 2 workout finishers) with expandable cards: stretch image, MuscleDiagram with target-area highlights, hold time, and cue text.
+
 ## 2026-05-20 — Exercise View Improvements
 
 - Previous session notes reminder: if notes were written for an exercise in the last session, shown as a read-only 📝 banner above the set rows
