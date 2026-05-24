@@ -492,6 +492,82 @@ const STRETCH_LIBRARY = [
     cue: 'Sit on the floor with legs extended wide apart and arms out to the sides at shoulder height. Sit as tall as possible — do not slouch. Inhale to prepare, then exhale as you rotate your torso toward one leg and reach the opposite hand past the outside of that foot (the "saw" motion). Keep both hips grounded. Inhale back to centre. 4–5 reps each side, holding each reach for 2–3 breaths.' },
 ];
 
+// ─── WARMUP GROUPS — 8 fixed muscle-group slots ────────────────────────────
+// options: curated list of STRETCH_LIBRARY IDs suitable for this group.
+// defaultId: used when no saved config exists.
+const WARMUP_GROUPS = [
+  {
+    id: 'neck', label: 'Neck', emoji: '🧠',
+    defaultId: 'str_neck_rotation',
+    options: ['str_neck_rotation', 'str_neck'],
+  },
+  {
+    id: 'shoulders', label: 'Shoulders', emoji: '💪',
+    defaultId: 'wu_pendulum',
+    options: ['wu_pendulum', 'str_cross_shoulder', 'str_overhead_triceps'],
+  },
+  {
+    id: 'chest', label: 'Chest', emoji: '🫁',
+    defaultId: 'wu_chest_opener',
+    options: ['wu_chest_opener', 'str_upward_dog', 'str_biceps_wall'],
+  },
+  {
+    id: 'trunk', label: 'Trunk', emoji: '🔄',
+    defaultId: 'str_cat_cow_cow',
+    options: ['str_cat_cow_cow', 'str_sideways_bend', 'str_spinal_rotation', 'str_pilates_saw'],
+  },
+  {
+    id: 'lowerback', label: 'Lower Back', emoji: '🔻',
+    defaultId: 'wu_prone_cobra',
+    options: ['wu_prone_cobra', 'str_knee_to_chest', 'str_double_knee_chest', 'str_childs_pose'],
+  },
+  {
+    id: 'hips', label: 'Hips', emoji: '🦋',
+    defaultId: 'str_figure_four',
+    options: ['str_figure_four', 'str_pigeon', 'str_90_90_hip', 'str_piriformis_seated', 'str_butterfly', 'str_hip_flexor', 'str_knee_opp_shoulder'],
+  },
+  {
+    id: 'legs', label: 'Legs', emoji: '🦵',
+    defaultId: 'wu_hamstring_stretch',
+    options: ['wu_hamstring_stretch', 'str_hamstring', 'str_quad_standing', 'str_forward_fold', 'str_it_band', 'str_lateral_lunge'],
+  },
+  {
+    id: 'ankles', label: 'Ankles', emoji: '🦶',
+    defaultId: 'str_ankle_circles',
+    options: ['str_ankle_circles', 'str_ankle_dorsiflexion', 'str_calf_straight'],
+  },
+];
+
+// Returns the 8-element stretch-ID array for a given workout ('A', 'B', or 'C').
+// Falls back to the group default if a slot has no saved value.
+function getWarmupConfig(workout) {
+  const raw = JSON.parse(localStorage.getItem('il_warmup_config') || '{}');
+  const saved = raw[workout] || [];
+  return WARMUP_GROUPS.map((group, i) => saved[i] || group.defaultId);
+}
+
+// Saves a single slot choice.
+function saveWarmupChoice(workout, slotIndex, stretchId) {
+  const raw = JSON.parse(localStorage.getItem('il_warmup_config') || '{}');
+  const saved = raw[workout] ? [...raw[workout]] : WARMUP_GROUPS.map(g => g.defaultId);
+  saved[slotIndex] = stretchId;
+  raw[workout] = saved;
+  localStorage.setItem('il_warmup_config', JSON.stringify(raw));
+}
+
+// Resets one workout's warm-up config to all defaults.
+function resetWarmupConfig(workout) {
+  const raw = JSON.parse(localStorage.getItem('il_warmup_config') || '{}');
+  delete raw[workout];
+  localStorage.setItem('il_warmup_config', JSON.stringify(raw));
+}
+
+// Returns a human-readable duration string for a stretch.
+function fmtStretchDur(s) {
+  if (!s) return '';
+  return s.bilateral ? `${s.suggestedSecs}s each side` : `${s.suggestedSecs}s`;
+}
+
 // Muscle highlight mapping for MuscleDiagram.
 // "primary" = main anatomical area being stretched / mobilised (not activation).
 // Only names from DISPLAY_TO_SVG_IDS are valid here.
