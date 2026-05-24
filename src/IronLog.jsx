@@ -381,6 +381,70 @@ const STRETCH_LIBRARY = [
     cue: 'Lean on a bench with one hand for support. Let the opposite arm hang loose and make small, gentle circles — gravity does the work. No forced movement. Important for shoulder bursitis recovery. 30 sec each side.' },
   // fin_ham_floss excluded — duplicate of str_hamstring above
   // fin_childs_pose excluded — duplicate of str_childs_pose above
+
+  // ── Additional stretches — full muscle-tendon coverage ─────────────────────
+  // Neck
+  { id: 'str_neck_rotation',      imageDir: 'stretches', bilateral: true,  suggestedSecs: 30,
+    name: 'Neck Rotation',
+    targets: 'Neck · Upper traps',
+    cue: 'Sit or stand tall with shoulders relaxed. Slowly turn your head to look over one shoulder — go only as far as comfortable, no forcing. Hold 5 sec, return to centre, repeat the other side. Stop if any dizziness or pinching.' },
+  // Shoulders
+  { id: 'str_overhead_triceps',   imageDir: 'stretches', bilateral: true,  suggestedSecs: 30,
+    name: 'Overhead Triceps Stretch',
+    targets: 'Triceps · Shoulder',
+    cue: 'Raise one arm overhead and bend the elbow so your hand reaches toward your upper back. Use the opposite hand to gently press the elbow backward. Keep your torso upright — do not arch the lower back. 30 sec each side.' },
+  // Chest
+  { id: 'str_upward_dog',         imageDir: 'stretches', bilateral: false, suggestedSecs: 30,
+    name: 'Upward Facing Dog',
+    targets: 'Chest · Abs · Anterior shoulder',
+    cue: 'Lie face down, hands flat beside your lower chest. Press up through your arms, lifting your chest off the floor. Keep legs and feet flat. Open the chest and look forward or slightly upward. Stop if any lower-back discomfort.' },
+  { id: 'str_biceps_wall',        imageDir: 'stretches', bilateral: true,  suggestedSecs: 30,
+    name: 'Biceps Wall Stretch',
+    targets: 'Biceps · Chest · Anterior shoulder',
+    cue: 'Stand facing a wall. Extend one arm and place your palm flat against the surface with fingers pointing backward. Gently rotate your body away until you feel a stretch along the front of your arm and chest. Keep your shoulder down. 30 sec each side.' },
+  // Trunk
+  { id: 'str_sideways_bend',      imageDir: 'stretches', bilateral: true,  suggestedSecs: 30,
+    name: 'Standing Side Bend',
+    targets: 'Obliques · Lats · Trunk',
+    cue: 'Stand tall with feet hip-width apart. Raise one arm overhead and lean slowly to the opposite side — feel the stretch along the side of your trunk and lat. Support with the other hand on your hip. Do not twist. Return upright slowly. 30 sec each side.' },
+  // Lower back
+  { id: 'str_knee_to_chest',      imageDir: 'stretches', bilateral: true,  suggestedSecs: 30,
+    name: 'Knee to Chest',
+    targets: 'Lower back · Glutes',
+    cue: 'Lie on your back with knees bent. Draw one knee gently toward your chest, holding behind the thigh (not the knee). Keep the other foot flat on the floor. Feel the stretch in your lower back and glute. 30 sec each side.' },
+  { id: 'str_spine_twist',        imageDir: 'stretches', bilateral: true,  suggestedSecs: 30,
+    name: 'Lying Spine Twist',
+    targets: 'Thoracic spine · Obliques',
+    caution: 'Slipped disc — rotate from your upper back (thoracic) only. Stop immediately if any lower-back pain or sensation down your legs.',
+    cue: 'Lie on your back with knees bent. Let both knees fall slowly to one side — go only as far as comfortable, hips stacked. Focus on rotating from your upper back (thoracic), not your lower back. ⚠️ Stop immediately if any lower-back pain or sensation down your legs. 30 sec each side.' },
+  // Hips
+  { id: 'str_90_90_hip',          imageDir: 'stretches', bilateral: true,  suggestedSecs: 45,
+    name: '90/90 Hip Stretch',
+    targets: 'Hip flexors · Glutes · Hip rotators',
+    cue: 'Sit on the floor with both legs bent at 90°: front leg across in front, back leg out to the side. Sit tall and lean gently forward over the front shin. Feel the stretch deep in the outer glute and hip. 45 sec each side.' },
+  { id: 'str_pigeon',             imageDir: 'stretches', bilateral: true,  suggestedSecs: 45,
+    name: 'Pigeon Pose',
+    targets: 'Glutes · Hip rotators · Hip flexors',
+    caution: 'Skip if you feel any pain in your knee — this is a deep stretch and must never be forced.',
+    cue: 'From all-fours, bring one knee forward toward your wrist and let the shin angle across the mat. Extend the back leg straight behind. Sit tall first — if hips are level and comfortable, fold forward gently. Do not force the hip toward the floor. ⚠️ Stop if you feel knee pain. 45 sec each side.' },
+  // Legs
+  { id: 'str_quad_standing',      imageDir: 'stretches', bilateral: true,  suggestedSecs: 30,
+    name: 'Standing Quad Stretch',
+    targets: 'Quadriceps · Hip flexors',
+    cue: 'Stand near a wall for balance. Bend one knee and hold your ankle behind you — draw the heel toward your glute. Keep knees together and stand tall. Squeeze the glute of the stretching leg for a deeper hip flexor stretch. 30 sec each side.' },
+  { id: 'str_forward_fold',       imageDir: 'stretches', bilateral: false, suggestedSecs: 45,
+    name: 'Seated Forward Fold',
+    targets: 'Hamstrings · Lower back',
+    cue: 'Sit on the floor with both legs extended straight. Hinge from your hips and reach forward along your legs — do not round your lower back. Feel the stretch in your hamstrings. If very tight, sit on a folded towel to tilt the pelvis forward. Hold 45 sec.' },
+  // Ankles
+  { id: 'str_ankle_circles',      imageDir: 'stretches', bilateral: true,  suggestedSecs: 30,
+    name: 'Ankle Circles',
+    targets: 'Ankle · Lower leg',
+    cue: 'Sit or lie down. Lift one foot and draw slow, full circles with your toes — 10 clockwise then 10 anti-clockwise. Move through the full comfortable range of the ankle joint. Repeat on the other foot.' },
+  { id: 'str_ankle_dorsiflexion', imageDir: 'stretches', bilateral: true,  suggestedSecs: 30,
+    name: 'Wall Ankle Dorsiflexion',
+    targets: 'Ankle · Calves',
+    cue: 'Stand facing a wall, about 10–15 cm away. Place one foot forward with toes near the wall. Bend your knee and push it toward the wall — heel must stay flat on the floor. If your knee reaches the wall easily, step slightly farther back. 30 sec each side.' },
 ];
 
 // Muscle highlight mapping for MuscleDiagram.
@@ -406,6 +470,20 @@ const STRETCH_MUSCLE_META = {
   wu_pendulum:          ['Rear Delts',      null],
   // fin_ham_floss excluded — duplicate of str_hamstring
   // fin_childs_pose excluded — duplicate of str_childs_pose
+  // Additional stretches — full muscle-tendon coverage
+  str_neck_rotation:      ['Upper Traps',     null],
+  str_overhead_triceps:   ['Triceps',         null],
+  str_upward_dog:         ['Abs',             'Chest'],
+  str_biceps_wall:        ['Biceps',          'Chest'],
+  str_sideways_bend:      ['Obliques',        'Lats'],
+  str_knee_to_chest:      ['Spinal Erectors', 'Glutes'],
+  str_spine_twist:        ['Obliques',        'Spinal Erectors'],
+  str_90_90_hip:          ['Glutes',          null],
+  str_pigeon:             ['Glutes',          null],
+  str_quad_standing:      ['Quads',           null],
+  str_forward_fold:       ['Hamstrings',      'Spinal Erectors'],
+  str_ankle_circles:      ['Calves',          null],
+  str_ankle_dorsiflexion: ['Calves',          null],
 };
 
 const YT = q => `https://www.youtube.com/results?search_query=${q}`;
@@ -3011,6 +3089,13 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
                         {holdLabel && (
                           <div style={{ textAlign: 'center', fontSize: 11, color: C.amber, fontFamily: C.fMono, marginBottom: s.cue ? 8 : 0 }}>
                             ⏱ {holdLabel}
+                          </div>
+                        )}
+                        {/* Caution banner */}
+                        {s.caution && (
+                          <div style={{ background: '#3a2800', border: `1px solid ${C.amber}`, borderRadius: 6, padding: '8px 10px', marginBottom: 8 }}>
+                            <div style={{ fontSize: 11, fontFamily: C.fMono, color: C.amber, fontWeight: 700, marginBottom: 2 }}>⚠ CAUTION</div>
+                            <div style={{ fontSize: 12, color: C.amber, lineHeight: 1.5, fontFamily: C.fMono }}>{s.caution}</div>
                           </div>
                         )}
                         {/* Cue text */}
