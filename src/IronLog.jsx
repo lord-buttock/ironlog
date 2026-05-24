@@ -1785,6 +1785,81 @@ function WarmupSetup({ workout, onChangeSlot, onBegin, onSkip, onReset }) {
   );
 }
 
+// Screen 2: full-screen overlay showing all options for one muscle group.
+// slotIndex — which WARMUP_GROUPS slot is being edited (0–7)
+// onSelect(stretchId) — user picked a stretch; saves and returns to setup
+// onBack() — user pressed ← without selecting; returns to setup
+function WarmupPicker({ workout, slotIndex, onSelect, onBack }) {
+  const group = WARMUP_GROUPS[slotIndex];
+  const config = getWarmupConfig(workout);
+  const selectedId = config[slotIndex];
+
+  const options = group.options
+    .map(id => STRETCH_LIBRARY.find(s => s.id === id))
+    .filter(Boolean);
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: C.bg, zIndex: 200, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderBottom: `1px solid ${C.border}`, position: 'sticky', top: 0, background: C.bg, zIndex: 1 }}>
+        <button
+          onClick={onBack}
+          style={{ background: 'none', border: 'none', color: C.amber, fontSize: 22, cursor: 'pointer', padding: '0 4px 0 0', lineHeight: 1 }}
+        >
+          ←
+        </button>
+        <div>
+          <div style={st.label}>Choose stretch · {group.label}</div>
+          <div style={{ ...st.h2, fontSize: 20, marginTop: 1 }}>{group.label}</div>
+        </div>
+      </div>
+
+      {/* Option cards */}
+      <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {options.map(s => {
+          const isSelected = s.id === selectedId;
+          return (
+            <button
+              key={s.id}
+              onClick={() => { saveWarmupChoice(workout, slotIndex, s.id); onSelect(s.id); }}
+              style={{
+                background: isSelected ? C.amberDim : C.card,
+                border: `1px solid ${isSelected ? C.amber : C.border}`,
+                borderRadius: 10,
+                padding: '10px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                cursor: 'pointer',
+                textAlign: 'left',
+                width: '100%',
+              }}
+            >
+              <StretchThumb stretch={s} group={group} size={40} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, fontFamily: C.fDisplay, textTransform: 'uppercase', color: C.text }}>
+                  {s.name}
+                </div>
+                <div style={{ fontSize: 10, color: C.muted, fontFamily: C.fBody, marginTop: 1 }}>
+                  {fmtStretchDur(s)}
+                </div>
+                {(s.sciatica || s.cross_legged || s.caution) && (
+                  <div style={{ display: 'flex', gap: 4, marginTop: 4, flexWrap: 'wrap' }}>
+                    {s.sciatica     && <span style={st.pill(C.purple)}>Sciatica</span>}
+                    {s.cross_legged && <span style={st.pill(C.green)}>Cross-legged</span>}
+                    {s.caution      && <span style={st.pill(C.red)}>⚠ Caution</span>}
+                  </div>
+                )}
+              </div>
+              {isSelected && <span style={{ color: C.amber, fontSize: 18, fontWeight: 700, flexShrink: 0 }}>✓</span>}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // ACTIVE WORKOUT
 // ═══════════════════════════════════════════════════════════════════════
