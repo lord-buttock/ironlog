@@ -4,6 +4,10 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-05-24 — Stretch Library Expanded (13 new stretches)
+
+- Added 13 new stretches to STRETCH_LIBRARY covering all 8 major muscle-tendon groups: neck (Neck Rotation), shoulders (Overhead Triceps Stretch), chest (Upward Facing Dog, Biceps Wall Stretch), trunk (Standing Side Bend), lower back (Knee to Chest, Lying Spine Twist ⚠️), hips (90/90 Hip Stretch, Pigeon Pose ⚠️), legs (Standing Quad Stretch, Seated Forward Fold), ankles (Ankle Circles, Wall Ankle Dorsiflexion). Caution banners added for Lying Spine Twist and Pigeon Pose. Redrawn icons for str_pec_roller_t, str_pec_roller_w, str_it_band committed. Library now shows 29 stretch cards total.
+
 ## 2026-05-23 — Stretch Library Tab
 
 - Manage → Library now has Exercises / Stretches sub-tabs. Stretches tab shows 19 curated items (12 full-body flexibility, 5 warm-up mobility, 2 workout finishers) with expandable cards: stretch image, MuscleDiagram with target-area highlights, hold time, and cue text.
