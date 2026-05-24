@@ -2036,7 +2036,11 @@ function WarmupActive({ workout, onComplete }) {
 function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, setView, selectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, onDemoOpen, onWarmupOpen, coachRec }) {
   const nextWkt = selectedWorkout;
   const [session, setSession] = useState(activeSession || null);
-  const [phase, setPhase] = useState(activeSession?.phase || (activeSession ? 'workout' : 'energy'));
+  const [phase, setPhase] = useState(() => {
+    const p = activeSession?.phase || (activeSession ? 'workout' : 'energy');
+    // Backward compat: sessions stored before this feature used phase:'warmup'
+    return p === 'warmup' ? 'warmup_setup' : p;
+  });
   const [exIdx, setExIdx] = useState(() => {
     if (!activeSession?.exercises) return 0;
     const firstIncomplete = activeSession.exercises.findIndex(
@@ -2054,6 +2058,7 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
   const [showAddEx, setShowAddEx] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [showDiagram, setShowDiagram] = useState(false);
+  const [pickerSlot, setPickerSlot] = useState(null); // null = no picker; 0–7 = slot being edited
 
   const elapsedRef = useRef(null);
   const restRef = useRef(null);
@@ -2084,10 +2089,10 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
     const base = (activeSession?.exercises?.length > 0)
       ? activeSession
       : buildSession(nextWkt, sessions, allExercises, workoutCustom, workoutHidden);
-    const s = { ...base, energy, phase: 'warmup' };
+    const s = { ...base, energy, phase: 'warmup_setup' };
     setSession(s);
     setActiveSession(s);
-    setPhase('warmup');
+    setPhase('warmup_setup');
   }
 
   function cancelSession() {
@@ -2188,39 +2193,49 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
     );
   }
 
-  // ── Warmup ──────────────────────────────────────────────────────────
-  if (phase === 'warmup') {
+  // ── Warmup setup ──────────────────────────────────────────────────
+  if (phase === 'warmup_setup' && pickerSlot !== null) {
     return (
-      <div style={{ padding: 16 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <div style={st.h2}>Warm-Up</div>
-          <div style={{ ...st.mono(20, C.amber) }}>{fmtTimer(elapsed)}</div>
-        </div>
-        <div style={{ ...st.label, marginBottom: 12 }}>~10 minutes · complete all eight items</div>
-        <div style={{ ...st.col(), marginBottom: 24 }}>
-          {WARMUP.map((item, i) => (
-            <div key={i} style={{ ...st.card(), display: 'flex', gap: 12, alignItems: 'center', padding: '12px 14px' }}>
-              <img src={`assets/icons/warmup/${item.id}.png`} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#EEF3FF', flexShrink: 0, cursor: 'pointer' }} onError={e => { e.target.style.display = 'none'; }} onClick={() => onWarmupOpen && onWarmupOpen(item)} />
-              <div style={{ fontFamily: C.fMono, color: C.amber, fontSize: 14, minWidth: 20 }}>{i + 1}</div>
-              <div style={{ fontSize: 13, lineHeight: 1.4 }}>{item.text}</div>
-            </div>
-          ))}
-        </div>
-        <button style={{ ...st.btn() }} onClick={() => { setPhase('workout'); setActiveSession(s => s ? { ...s, phase: 'workout' } : s); }}>Begin Workout ›</button>
-        <button style={{ ...st.ghost, marginTop: 8 }} onClick={() => setConfirmCancel(true)}>Cancel Session</button>
-        {confirmCancel && (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300 }}>
-            <div style={{ ...st.card(), margin: 24, padding: 24, maxWidth: 320 }}>
-              <div style={{ fontFamily: C.fDisplay, fontSize: 18, textTransform: 'uppercase', marginBottom: 8 }}>Cancel Session?</div>
-              <div style={{ fontSize: 13, color: C.muted, marginBottom: 20 }}>Progress will not be saved.</div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button style={{ ...st.btn(C.red), flex: 1 }} onClick={cancelSession}>Yes, Cancel</button>
-                <button style={{ ...st.ghost, flex: 1 }} onClick={() => setConfirmCancel(false)}>Keep Going</button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+      <WarmupPicker
+        workout={session?.workout || nextWkt}
+        slotIndex={pickerSlot}
+        onSelect={() => setPickerSlot(null)}
+        onBack={() => setPickerSlot(null)}
+      />
+    );
+  }
+
+  if (phase === 'warmup_setup') {
+    return (
+      <WarmupSetup
+        workout={session?.workout || nextWkt}
+        onChangeSlot={i => setPickerSlot(i)}
+        onBegin={() => {
+          setPhase('warmup_active');
+          setActiveSession(s => s ? { ...s, phase: 'warmup_active' } : s);
+        }}
+        onSkip={() => {
+          setPhase('workout');
+          setActiveSession(s => s ? { ...s, phase: 'workout' } : s);
+        }}
+        onReset={() => {
+          resetWarmupConfig(session?.workout || nextWkt);
+          setPickerSlot(null); // force re-render — WarmupSetup re-reads config on each render
+        }}
+      />
+    );
+  }
+
+  // ── Warmup active ─────────────────────────────────────────────────
+  if (phase === 'warmup_active') {
+    return (
+      <WarmupActive
+        workout={session?.workout || nextWkt}
+        onComplete={() => {
+          setPhase('workout');
+          setActiveSession(s => s ? { ...s, phase: 'workout' } : s);
+        }}
+      />
     );
   }
 
