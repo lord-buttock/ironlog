@@ -4,6 +4,12 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-05-24 — Sciatica Stretches + Filter
+
+- Added 2 new sciatica-specific stretches: Sciatic Nerve Floss (neural mobilisation), Seated Piriformis Stretch. Both appear in the Stretches tab.
+- 11 stretches now flagged `sciatica: true` via `STRETCH_SCIATICA_IDS` set — includes Figure Four, Pigeon, Child's Pose, Knee to Chest, both hamstring stretches, Prone Cobra, 90/90 Hip, Seated Forward Fold, and both new ones.
+- Purple "Sciatica" pill shown on flagged cards. "All stretches / ◈ Sciatica only" toggle added to the Stretches tab header.
+
 ## 2026-05-24 — Stretch Library Expanded (13 new stretches)
 
 - Added 13 new stretches to STRETCH_LIBRARY covering all 8 major muscle-tendon groups: neck (Neck Rotation), shoulders (Overhead Triceps Stretch), chest (Upward Facing Dog, Biceps Wall Stretch), trunk (Standing Side Bend), lower back (Knee to Chest, Lying Spine Twist ⚠️), hips (90/90 Hip Stretch, Pigeon Pose ⚠️), legs (Standing Quad Stretch, Seated Forward Fold), ankles (Ankle Circles, Wall Ankle Dorsiflexion). Caution banners added for Lying Spine Twist and Pigeon Pose. Redrawn icons for str_pec_roller_t, str_pec_roller_w, str_it_band committed. Library now shows 29 stretch cards total.
