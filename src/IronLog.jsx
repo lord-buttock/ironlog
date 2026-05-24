@@ -1707,6 +1707,85 @@ function SetRow({ num, set, def, onUpdate, onDone }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
+// WARMUP SETUP COMPONENTS
+// ═══════════════════════════════════════════════════════════════════════
+
+// Small thumbnail used in setup rows and picker cards.
+// Shows the PNG icon if available, falls back to group emoji.
+function StretchThumb({ stretch, group, size }) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const src = stretch?.imageDir ? `assets/icons/${stretch.imageDir}/${stretch.id}.png` : null;
+  return (
+    <div style={{ width: size, height: size, borderRadius: '50%', background: C.dim, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+      {src && !imgFailed
+        ? <img src={src} style={{ width: size, height: size, objectFit: 'contain' }} onError={() => setImgFailed(true)} alt="" />
+        : <span style={{ fontSize: size * 0.45 }}>{group?.emoji || '🧘'}</span>
+      }
+    </div>
+  );
+}
+
+// Screen 1: compact rows showing the 8 selected stretches.
+// onChangeSlot(i) — user tapped Change on row i
+// onBegin() — user tapped Begin Warm-Up
+// onSkip() — user tapped Skip Warm-Up
+// onReset() — user tapped Reset to defaults
+function WarmupSetup({ workout, onChangeSlot, onBegin, onSkip, onReset }) {
+  const config = getWarmupConfig(workout);
+  const stretches = config.map(id => STRETCH_LIBRARY.find(s => s.id === id)).filter(Boolean);
+
+  const totalSecs = WARMUP_GROUPS.reduce((acc, group, i) => {
+    const s = stretches[i];
+    if (!s) return acc;
+    return acc + s.suggestedSecs * (s.bilateral ? 2 : 1);
+  }, 0);
+  const estMin = Math.max(1, Math.round(totalSecs / 60));
+
+  return (
+    <div style={{ minHeight: '100vh', background: C.bg, color: C.text, paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}>
+      {/* Header */}
+      <div style={{ padding: '8px 16px 12px', borderBottom: `1px solid ${C.border}` }}>
+        <div style={st.label}>Workout {workout}</div>
+        <div style={{ ...st.h2, marginTop: 2 }}>Warm-Up Stretches</div>
+        <div style={{ fontSize: 11, color: C.muted, fontFamily: C.fBody, marginTop: 2 }}>Tap Change to swap any stretch</div>
+      </div>
+
+      {/* Rows */}
+      {WARMUP_GROUPS.map((group, i) => {
+        const stretch = stretches[i] || STRETCH_LIBRARY.find(s => s.id === group.defaultId);
+        return (
+          <div key={group.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', borderBottom: `1px solid ${C.border}` }}>
+            <StretchThumb stretch={stretch} group={group} size={36} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={st.label}>{group.label}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, fontFamily: C.fDisplay, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: C.text }}>
+                {stretch?.name || group.label}
+              </div>
+              <div style={{ fontSize: 10, color: C.muted, fontFamily: C.fBody }}>{fmtStretchDur(stretch)}</div>
+            </div>
+            <button
+              onClick={() => onChangeSlot(i)}
+              style={{ fontSize: 10, background: C.dim, border: `1px solid ${C.border}`, color: C.muted, borderRadius: 4, padding: '4px 8px', cursor: 'pointer', flexShrink: 0, fontFamily: C.fMono, letterSpacing: 0.5 }}
+            >
+              Change
+            </button>
+          </div>
+        );
+      })}
+
+      {/* Footer */}
+      <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <button style={st.btn()} onClick={onBegin}>▶ Begin Warm-Up (≈{estMin} min)</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button style={{ ...st.ghost, flex: 1 }} onClick={onReset}>Reset to defaults</button>
+          <button style={{ ...st.ghost, flex: 1 }} onClick={onSkip}>Skip Warm-Up</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 // ACTIVE WORKOUT
 // ═══════════════════════════════════════════════════════════════════════
 function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, setView, selectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, onDemoOpen, onWarmupOpen, coachRec }) {
