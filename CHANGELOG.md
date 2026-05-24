@@ -4,6 +4,13 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-05-24 — 8 new stretches + three-way filter (Sciatica / Cross-legged)
+
+- **Sciatica additions** (from OAH clinical PDF + Healthline): Knee to Opposite Shoulder, Double Knee to Chest, Supine Sciatic Nerve Glide, Lower Trunk Rotations (Wig Wags ⚠️ disc caution). SCIATICA_IDS now covers 15 stretches.
+- **Cross-legged sitting additions**: Butterfly Stretch (adductors — the key missing piece), Deep Squat Hold (⚠️ disc caution), Lateral Lunge Stretch, Pilates Saw (posture/thoracic). CROSS_LEGGED_IDS covers 14 stretches.
+- Stretches tab filter upgraded from 2-way to 3-way: **All / ◈ Sciatica / ⊕ Cross-legged**. Purple pill = Sciatica, Green pill = Cross-legged. Both flags independent (a stretch can carry both).
+- Total stretch library: 39 cards.
+
 ## 2026-05-24 — Sciatica Stretches + Filter
 
 - Added 2 new sciatica-specific stretches: Sciatic Nerve Floss (neural mobilisation), Seated Piriformis Stretch. Both appear in the Stretches tab.
