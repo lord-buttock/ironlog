@@ -4,6 +4,16 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-05-24 — Customisable Warm-Up
+
+- Replaced static warm-up checklist with a three-screen flow: **Setup → Picker → Guided execution**
+- Setup screen: 8 compact rows (one per muscle-tendon group — Neck, Shoulders, Chest, Trunk, Lower Back, Hips, Legs, Ankles), each with a Change button
+- Picker: full-screen overlay per group showing curated stretch options with Sciatica / Cross-legged / Caution pills so you can pick based on your goal
+- Guided execution: one stretch at a time, SVG countdown ring, cue text, bilateral switch-sides pulse at halfway, auto-advances when timer ends
+- Per-workout config (A, B, C each store independent choices) persisted in `il_warmup_config` localStorage key
+- Skip Warm-Up and Reset to defaults available from the setup screen; Skip all → and Skip this stretch available during execution
+- Backward compatible: sessions stored with old `phase:'warmup'` resume at the setup screen
+
 ## 2026-05-24 — 8 new stretches + three-way filter (Sciatica / Cross-legged)
 
 - **Sciatica additions** (from OAH clinical PDF + Healthline): Knee to Opposite Shoulder, Double Knee to Chest, Supine Sciatic Nerve Glide, Lower Trunk Rotations (Wig Wags ⚠️ disc caution). SCIATICA_IDS now covers 15 stretches.
