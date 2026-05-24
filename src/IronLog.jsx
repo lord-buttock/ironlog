@@ -454,6 +454,42 @@ const STRETCH_LIBRARY = [
     name: 'Seated Piriformis Stretch',
     targets: 'Piriformis · Glutes · Hip rotators',
     cue: 'Sit tall on a chair with feet flat on the floor. Cross one ankle over the opposite knee — keep your foot flexed to protect the knee. Gently lean forward from the hips (not the waist) until you feel a deep stretch in the outer glute and hip. Keep your back straight. 45 sec each side.' },
+  // ── Additional sciatica stretches (from clinical sources) ─────────────────
+  { id: 'str_knee_opp_shoulder', imageDir: 'stretches', bilateral: true,  suggestedSecs: 20,
+    name: 'Knee to Opposite Shoulder',
+    targets: 'Piriformis · Glutes · Sciatic nerve',
+    cue: 'Lie on your back with both legs extended. Bend one knee and use both hands to gently pull it diagonally across your body toward the opposite shoulder. Keep your other leg flat and your lower back in contact with the floor. Feel the deep stretch in the outer glute and hip. 20 sec each side, 3 reps.' },
+  { id: 'str_double_knee_chest', imageDir: 'stretches', bilateral: false, suggestedSecs: 30,
+    name: 'Double Knee to Chest',
+    targets: 'Lower back · Glutes · Lumbar decompression',
+    cue: 'Lie on your back. Bend both knees and draw them toward your chest together, holding behind your thighs (not your knees). Gently rock side to side if comfortable. Feel the stretch across the lower back. 30 sec.' },
+  { id: 'str_nerve_glide_supine', imageDir: 'stretches', bilateral: true, suggestedSecs: 30,
+    name: 'Supine Sciatic Nerve Glide',
+    targets: 'Sciatic nerve · Neural mobility · Hamstrings',
+    cue: 'Lie on your back. Bend one knee and hold the back of that thigh with both hands. Gently straighten the knee until you feel a pull in the back of the leg. From there, slowly pump your ankle — toes toward you, then away — without bending the knee. Keep the movement controlled. You should feel a gentle sliding sensation along the back of the leg, not sharp pain. 10 reps × 3 sec, 2 sets each side.' },
+  { id: 'str_trunk_rotations',   imageDir: 'stretches', bilateral: false, suggestedSecs: 60,
+    name: 'Lower Trunk Rotations',
+    targets: 'Lower back · Lumbar mobility · Hip rotators',
+    caution: 'Slipped disc — use only a pain-free range. Stop immediately if any lower-back pain or sensation down your legs. This is gentle rhythmic mobilisation, not a forced rotation.',
+    cue: 'Lie on your back with knees bent and feet flat. Keeping your shoulders on the floor, gently let both knees rock to one side — go only as far as comfortable. Return to centre and rock to the other side. Slow, rhythmic motion — not a stretch, just a gentle roll. 20 reps total (10 each side).' },
+  // ── Cross-legged sitting stretches ───────────────────────────────────────
+  { id: 'str_butterfly',         imageDir: 'stretches', bilateral: false, suggestedSecs: 45,
+    name: 'Butterfly Stretch',
+    targets: 'Inner thigh · Adductors · Hip external rotators',
+    cue: 'Sit tall on the floor with the soles of your feet together and your heels drawn in toward your body. Let your knees fall gently toward the floor — do not force them down. To deepen, hinge slightly forward from the hips with a straight back. If very tight, sit on a folded blanket to tilt your pelvis forward. 45 sec.' },
+  { id: 'str_deep_squat',        imageDir: 'stretches', bilateral: false, suggestedSecs: 45,
+    name: 'Deep Squat Hold',
+    targets: 'Hips · Adductors · Hip flexors · Ankles',
+    caution: 'Slipped disc — keep your spine absolutely neutral. No rounding of the lower back. Use a doorframe or chair for support and stop immediately if any lower-back pain or leg sensation.',
+    cue: 'Stand with feet slightly wider than shoulder-width, toes turned out 30–45°. Hold a doorframe or chair for support. Slowly lower into a squat, keeping heels on the floor if possible. Keep your chest up and spine neutral — do not round your lower back. Breathe slowly and let your hips sink deeper with each exhale. If heels rise, place a folded mat under them. 45 sec.' },
+  { id: 'str_lateral_lunge',     imageDir: 'stretches', bilateral: true,  suggestedSecs: 30,
+    name: 'Lateral Lunge Stretch',
+    targets: 'Inner thigh · Adductors · Hip flexors',
+    cue: 'Stand with feet roughly twice shoulder-width apart, toes pointing forward. Keeping both feet flat on the floor, slowly bend one knee and shift your weight to that side — lower until you feel a deep stretch in the inner thigh of the straight leg. Keep your bent knee tracking over your toes and your chest upright. 30 sec each side.' },
+  { id: 'str_pilates_saw',       imageDir: 'stretches', bilateral: true,  suggestedSecs: 30,
+    name: 'Pilates Saw',
+    targets: 'Hamstrings · Inner thigh · Thoracic rotation · Posture',
+    cue: 'Sit on the floor with legs extended wide apart and arms out to the sides at shoulder height. Sit as tall as possible — do not slouch. Inhale to prepare, then exhale as you rotate your torso toward one leg and reach the opposite hand past the outside of that foot (the "saw" motion). Keep both hips grounded. Inhale back to centre. 4–5 reps each side, holding each reach for 2–3 breaths.' },
 ];
 
 // Muscle highlight mapping for MuscleDiagram.
@@ -494,25 +530,60 @@ const STRETCH_MUSCLE_META = {
   str_ankle_circles:      ['Calves',          null],
   str_ankle_dorsiflexion: ['Calves',          null],
   // Sciatica-specific
-  str_nerve_floss:        ['Hamstrings',      null],
-  str_piriformis_seated:  ['Glutes',          null],
+  str_nerve_floss:          ['Hamstrings',      null],
+  str_piriformis_seated:    ['Glutes',          null],
+  // Additional sciatica (clinical sources)
+  str_knee_opp_shoulder:    ['Glutes',          null],
+  str_double_knee_chest:    ['Spinal Erectors', 'Glutes'],
+  str_nerve_glide_supine:   ['Hamstrings',      null],
+  str_trunk_rotations:      ['Spinal Erectors', 'Obliques'],
+  // Cross-legged sitting
+  str_butterfly:            ['Glutes',          null],   // adductors not in SVG — glutes closest
+  str_deep_squat:           ['Glutes',          'Quads'],
+  str_lateral_lunge:        ['Glutes',          'Quads'], // adductors not in SVG
+  str_pilates_saw:          ['Hamstrings',      'Obliques'],
 };
 
 // IDs of stretches that directly address sciatica nerve pain.
 // This set drives the s.sciatica flag (applied in applyStretchMeta)
 // and the Sciatica filter toggle in the Stretches tab.
 const STRETCH_SCIATICA_IDS = new Set([
-  'str_figure_four',      // piriformis — compresses sciatic nerve
-  'str_childs_pose',      // lumbar decompression
-  'str_hamstring',        // tight hamstrings contribute to sciatica
-  'wu_hamstring_stretch', // same
-  'wu_prone_cobra',       // lumbar extension (McKenzie method)
-  'str_knee_to_chest',    // lumbar decompression
-  'str_pigeon',           // deep piriformis
-  'str_90_90_hip',        // piriformis / hip external rotators
-  'str_forward_fold',     // hamstring + neural tension
-  'str_nerve_floss',      // direct sciatic nerve mobilisation
-  'str_piriformis_seated',// piriformis
+  'str_figure_four',       // piriformis — compresses sciatic nerve
+  'str_childs_pose',       // lumbar decompression
+  'str_hamstring',         // tight hamstrings contribute to sciatica
+  'wu_hamstring_stretch',  // same
+  'wu_prone_cobra',        // lumbar extension (McKenzie method)
+  'str_knee_to_chest',     // lumbar decompression
+  'str_pigeon',            // deep piriformis
+  'str_90_90_hip',         // piriformis / hip external rotators
+  'str_forward_fold',      // hamstring + neural tension
+  'str_nerve_floss',       // direct sciatic nerve mobilisation (seated)
+  'str_piriformis_seated', // piriformis
+  // Clinical additions (OAH PDF + Healthline):
+  'str_knee_opp_shoulder', // piriformis pull toward opposite shoulder
+  'str_double_knee_chest', // bilateral lumbar decompression
+  'str_nerve_glide_supine',// supine sciatic nerve glide (pump ankle)
+  'str_trunk_rotations',   // gentle lumbar mobilisation (wig wags)
+]);
+
+// IDs of stretches that help achieve comfortable cross-legged floor sitting.
+// Covers adductors, hip external rotation, hip flexors, hamstrings (pelvic tilt),
+// and thoracic extension (to prevent slouching).
+const STRETCH_CROSS_LEGGED_IDS = new Set([
+  'str_figure_four',       // piriformis / hip external rotation
+  'str_piriformis_seated', // piriformis / hip external rotation
+  'str_pigeon',            // deep hip external rotation
+  'str_90_90_hip',         // hip external rotation
+  'str_hip_flexor',        // hip flexors
+  'str_hamstring',         // hamstrings → tight = posterior pelvic tilt = slouch
+  'wu_hamstring_stretch',  // same
+  'str_forward_fold',      // hamstrings
+  'str_childs_pose',       // general hip / lower back mobility
+  'str_knee_to_chest',     // hip flexor / back decompression
+  'str_butterfly',         // adductors — the primary missing ingredient
+  'str_deep_squat',        // comprehensive hip joint opener
+  'str_lateral_lunge',     // adductors from standing angle
+  'str_pilates_saw',       // seated wide-leg reach — trains upright posture
 ]);
 
 const YT = q => `https://www.youtube.com/results?search_query=${q}`;
@@ -2751,9 +2822,10 @@ applyMuscleMeta(PRESET_LIBRARY);
 function applyStretchMeta() {
   STRETCH_LIBRARY.forEach(s => {
     const [p, sec] = STRETCH_MUSCLE_META[s.id] || [null, null];
-    s.primary   = p   ? [p]   : [];
-    s.secondary = sec ? [sec] : [];
-    s.sciatica  = STRETCH_SCIATICA_IDS.has(s.id);
+    s.primary      = p   ? [p]   : [];
+    s.secondary    = sec ? [sec] : [];
+    s.sciatica     = STRETCH_SCIATICA_IDS.has(s.id);
+    s.cross_legged = STRETCH_CROSS_LEGGED_IDS.has(s.id);
   });
 }
 applyStretchMeta();
@@ -2777,7 +2849,7 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
   const [wktSearch, setWktSearch] = useState('');
   const [librarySubTab, setLibrarySubTab]   = useState('exercises');
   const [expandedStretch, setExpandedStretch] = useState(null);
-  const [sciFilter, setSciFilter]            = useState(false);
+  const [strFilter, setStrFilter]            = useState('all'); // 'all' | 'sciatica' | 'crosslegged'
 
   // All exercises that can be browsed/added (workout exercises + presets + user-created custom)
   const libraryEntries = [
@@ -3053,23 +3125,39 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
           {/* ── Stretches sub-tab ── */}
           {librarySubTab === 'stretches' && (
             <div style={{ ...st.col(8) }}>
-              {/* Sciatica filter toggle */}
-              <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-                <button onClick={() => { setSciFilter(false); }}
-                  style={{ flex: 1, padding: '7px 0', borderRadius: 8, border: `1px solid ${!sciFilter ? C.border : C.dim}`,
-                    background: !sciFilter ? C.dim : 'transparent', color: !sciFilter ? '#fff' : C.muted,
-                    fontFamily: C.fDisplay, fontSize: 12, cursor: 'pointer' }}>
-                  All stretches
+              {/* Filter toggle — All / Sciatica / Cross-legged */}
+              <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+                <button onClick={() => setStrFilter('all')}
+                  style={{ flex: 1, padding: '7px 4px', borderRadius: 8,
+                    border: `1px solid ${strFilter === 'all' ? C.border : C.dim}`,
+                    background: strFilter === 'all' ? C.dim : 'transparent',
+                    color: strFilter === 'all' ? '#fff' : C.muted,
+                    fontFamily: C.fDisplay, fontSize: 11, cursor: 'pointer' }}>
+                  All
                 </button>
-                <button onClick={() => { setSciFilter(true); }}
-                  style={{ flex: 1, padding: '7px 0', borderRadius: 8, border: `1px solid ${sciFilter ? '#a78bfa' : C.dim}`,
-                    background: sciFilter ? '#2d1b4e' : 'transparent', color: sciFilter ? '#a78bfa' : C.muted,
-                    fontFamily: C.fDisplay, fontSize: 12, cursor: 'pointer' }}>
-                  ◈ Sciatica only
+                <button onClick={() => setStrFilter('sciatica')}
+                  style={{ flex: 1, padding: '7px 4px', borderRadius: 8,
+                    border: `1px solid ${strFilter === 'sciatica' ? '#a78bfa' : C.dim}`,
+                    background: strFilter === 'sciatica' ? '#2d1b4e' : 'transparent',
+                    color: strFilter === 'sciatica' ? '#a78bfa' : C.muted,
+                    fontFamily: C.fDisplay, fontSize: 11, cursor: 'pointer' }}>
+                  ◈ Sciatica
+                </button>
+                <button onClick={() => setStrFilter('crosslegged')}
+                  style={{ flex: 1, padding: '7px 4px', borderRadius: 8,
+                    border: `1px solid ${strFilter === 'crosslegged' ? '#34d399' : C.dim}`,
+                    background: strFilter === 'crosslegged' ? '#0a2e1e' : 'transparent',
+                    color: strFilter === 'crosslegged' ? '#34d399' : C.muted,
+                    fontFamily: C.fDisplay, fontSize: 11, cursor: 'pointer' }}>
+                  ⊕ Cross-legged
                 </button>
               </div>
 
-              {STRETCH_LIBRARY.filter(s => !sciFilter || s.sciatica).map((s) => {
+              {STRETCH_LIBRARY.filter(s =>
+                strFilter === 'all' ||
+                (strFilter === 'sciatica'     && s.sciatica)     ||
+                (strFilter === 'crosslegged'  && s.cross_legged)
+              ).map((s) => {
                 const isExp    = expandedStretch === s.id;
                 const imgDir   = s.imageDir || 'stretches';
                 const holdLabel = s.suggestedSecs
@@ -3093,8 +3181,9 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
                         </div>
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
                           <span style={{ ...st.mono(11, C.muted) }}>{s.targets}</span>
-                          {s.sciatica  && <span style={{ background: '#2d1b4e', color: '#a78bfa', fontSize: 9, borderRadius: 20, padding: '2px 8px', fontFamily: C.fMono, fontWeight: 700 }}>Sciatica</span>}
-                          {s.bilateral && <span style={{ ...st.pill(C.amber), fontSize: 9 }}>Both sides</span>}
+                          {s.sciatica     && <span style={{ background: '#2d1b4e', color: '#a78bfa', fontSize: 9, borderRadius: 20, padding: '2px 8px', fontFamily: C.fMono, fontWeight: 700 }}>Sciatica</span>}
+                          {s.cross_legged && <span style={{ background: '#0a2e1e', color: '#34d399',  fontSize: 9, borderRadius: 20, padding: '2px 8px', fontFamily: C.fMono, fontWeight: 700 }}>Cross-legged</span>}
+                          {s.bilateral   && <span style={{ ...st.pill(C.amber), fontSize: 9 }}>Both sides</span>}
                         </div>
                       </div>
                     </div>
