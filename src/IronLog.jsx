@@ -1861,6 +1861,176 @@ function WarmupPicker({ workout, slotIndex, onSelect, onBack }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
+// WARMUP ACTIVE — Screen 3: guided execution, one stretch at a time
+// ═══════════════════════════════════════════════════════════════════════
+
+// Screen 3: guided execution — one stretch at a time with countdown timer.
+// workout — the workout key ('A', 'B', 'C')
+// onComplete() — called when all stretches are done or skipped
+function WarmupActive({ workout, onComplete }) {
+  const config = getWarmupConfig(workout);
+  const stretches = WARMUP_GROUPS.map((group, i) => {
+    const id = config[i];
+    return STRETCH_LIBRARY.find(s => s.id === id)
+        || STRETCH_LIBRARY.find(s => s.id === group.defaultId);
+  }).filter(Boolean);
+
+  const [index, setIndex]           = useState(0);
+  const [timeLeft, setTimeLeft]     = useState(null);
+  const [side, setSide]             = useState(1);       // 1 = first side, 2 = second side
+  const [showSwitch, setShowSwitch] = useState(false);   // bilateral side-switch pulse
+
+  const current = stretches[index] || null;
+
+  // Reset timer whenever the stretch index changes
+  useEffect(() => {
+    if (!current) { onComplete(); return; }
+    setTimeLeft(current.suggestedSecs);
+    setSide(1);
+    setShowSwitch(false);
+  }, [index]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Tick down every second
+  useEffect(() => {
+    if (timeLeft === null || timeLeft <= 0) return;
+    const id = setTimeout(() => setTimeLeft(t => t - 1), 1000);
+    return () => clearTimeout(id);
+  }, [timeLeft]);
+
+  // Refs to avoid stale closures in the at-zero handler
+  const currentRef   = useRef(current);
+  const sideRef      = useRef(side);
+  const indexRef     = useRef(index);
+  const stretchesRef = useRef(stretches);
+  useEffect(() => { currentRef.current   = current;   }, [current]);
+  useEffect(() => { sideRef.current      = side;      }, [side]);
+  useEffect(() => { indexRef.current     = index;     }, [index]);
+  useEffect(() => { stretchesRef.current = stretches; }, [stretches]);
+
+  // Handle timer reaching zero
+  useEffect(() => {
+    if (timeLeft !== 0) return;
+    const s = currentRef.current;
+    if (!s) { onComplete(); return; }
+
+    if (s.bilateral && sideRef.current === 1) {
+      // First side done — show switch-sides pulse, then start second side
+      setShowSwitch(true);
+      const id = setTimeout(() => {
+        setShowSwitch(false);
+        setSide(2);
+        setTimeLeft(s.suggestedSecs);
+      }, 1500);
+      return () => clearTimeout(id);
+    }
+
+    // Both sides (or unilateral) done — pause briefly then auto-advance
+    const id = setTimeout(() => {
+      const nextIndex = indexRef.current + 1;
+      if (nextIndex < stretchesRef.current.length) {
+        setIndex(nextIndex);
+      } else {
+        onComplete();
+      }
+    }, 500);
+    return () => clearTimeout(id);
+  }, [timeLeft]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function advance() {
+    const nextIndex = index + 1;
+    if (nextIndex < stretches.length) {
+      setIndex(nextIndex);
+    } else {
+      onComplete();
+    }
+  }
+
+  if (!current) return null;
+
+  const totalSecs = current.suggestedSecs;
+  const circumference = 326.7; // 2π × 52 (radius of SVG ring at 120×120)
+  const elapsed = totalSecs - (timeLeft ?? totalSecs);
+  // arcOffset=0 → full ring visible (start); arcOffset=circumference → ring empty (end)
+  const arcOffset = circumference * (elapsed / totalSecs);
+
+  const isLast = index === stretches.length - 1;
+  const nextGroupLabel = !isLast ? WARMUP_GROUPS[index + 1]?.label : null;
+
+  return (
+    <div style={{ minHeight: '100vh', background: C.bg, color: C.text, display: 'flex', flexDirection: 'column' }}>
+
+      {/* Progress dots */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderBottom: `1px solid ${C.border}` }}>
+        <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+          {stretches.map((_, i) => (
+            <div key={i} style={{ width: 8, height: 8, borderRadius: '50%', background: i < index ? C.green : i === index ? C.amber : C.border, flexShrink: 0 }} />
+          ))}
+        </div>
+        <div style={st.label}>{index + 1} of {stretches.length}</div>
+        <button
+          onClick={onComplete}
+          style={{ background: 'none', border: 'none', color: C.muted, fontFamily: C.fMono, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, cursor: 'pointer', padding: 0 }}
+        >
+          Skip all →
+        </button>
+      </div>
+
+      {/* Main content */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px 24px', gap: 4 }}>
+        <StretchThumb stretch={current} group={WARMUP_GROUPS[index]} size={100} />
+
+        <div style={{ ...st.label, marginTop: 14 }}>{WARMUP_GROUPS[index]?.label}</div>
+        <div style={{ fontFamily: C.fDisplay, fontSize: 24, fontWeight: 700, textTransform: 'uppercase', textAlign: 'center', letterSpacing: 0.5, marginTop: 2 }}>
+          {current.name}
+        </div>
+        <div style={{ fontSize: 11, color: C.muted, fontFamily: C.fBody }}>
+          {current.bilateral ? `${current.suggestedSecs}s each side` : `${current.suggestedSecs}s`}
+          {current.bilateral && side === 2 && ' — side 2'}
+        </div>
+
+        {/* Countdown ring */}
+        <div style={{ position: 'relative', width: 120, height: 120, margin: '16px 0' }}>
+          <svg width="120" height="120" viewBox="0 0 120 120" style={{ transform: 'rotate(-90deg)' }}>
+            <circle cx="60" cy="60" r="52" fill="none" stroke={C.border} strokeWidth="8" />
+            <circle
+              cx="60" cy="60" r="52" fill="none"
+              stroke={C.amber} strokeWidth="8"
+              strokeDasharray={circumference}
+              strokeDashoffset={arcOffset}
+              strokeLinecap="round"
+            />
+          </svg>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: C.fMono, fontSize: 36, fontWeight: 700, color: C.amber }}>
+            {timeLeft ?? totalSecs}
+          </div>
+        </div>
+
+        {/* Cue or switch-sides message */}
+        {showSwitch ? (
+          <div style={{ fontFamily: C.fDisplay, fontSize: 20, fontWeight: 700, color: C.amber, textTransform: 'uppercase', letterSpacing: 1 }}>
+            ↔ Switch Sides
+          </div>
+        ) : current.cue ? (
+          <div style={{ fontSize: 12, color: C.muted, fontFamily: C.fBody, textAlign: 'center', lineHeight: 1.6, maxWidth: 280, fontStyle: 'italic' }}>
+            {current.cue}
+          </div>
+        ) : null}
+      </div>
+
+      {/* Footer */}
+      <div style={{ padding: '12px 16px 24px', borderTop: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <button style={st.btn()} onClick={advance}>
+          {isLast ? '→ Begin Workout' : `→ Next: ${nextGroupLabel}`}
+        </button>
+        <button style={st.ghost} onClick={advance}>
+          Skip this stretch
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 // ACTIVE WORKOUT
 // ═══════════════════════════════════════════════════════════════════════
 function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, setView, selectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, onDemoOpen, onWarmupOpen, coachRec }) {
