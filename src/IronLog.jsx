@@ -445,6 +445,15 @@ const STRETCH_LIBRARY = [
     name: 'Wall Ankle Dorsiflexion',
     targets: 'Ankle · Calves',
     cue: 'Stand facing a wall, about 10–15 cm away. Place one foot forward with toes near the wall. Bend your knee and push it toward the wall — heel must stay flat on the floor. If your knee reaches the wall easily, step slightly farther back. 30 sec each side.' },
+  // ── Sciatica-specific stretches ───────────────────────────────────────────
+  { id: 'str_nerve_floss',        imageDir: 'stretches', bilateral: true,  suggestedSecs: 30,
+    name: 'Sciatic Nerve Floss',
+    targets: 'Sciatic nerve · Neural mobility · Hamstrings',
+    cue: 'Sit upright on a chair with feet flat on the floor. Extend one leg out straight while tilting your head back — look up at the ceiling. Then bend the knee back down and drop your chin to your chest at the same time. Keep the movement slow and rhythmic. You should feel a gentle pulling sensation along the back of the leg — not pain. 10–15 reps each side.' },
+  { id: 'str_piriformis_seated',  imageDir: 'stretches', bilateral: true,  suggestedSecs: 45,
+    name: 'Seated Piriformis Stretch',
+    targets: 'Piriformis · Glutes · Hip rotators',
+    cue: 'Sit tall on a chair with feet flat on the floor. Cross one ankle over the opposite knee — keep your foot flexed to protect the knee. Gently lean forward from the hips (not the waist) until you feel a deep stretch in the outer glute and hip. Keep your back straight. 45 sec each side.' },
 ];
 
 // Muscle highlight mapping for MuscleDiagram.
@@ -484,7 +493,27 @@ const STRETCH_MUSCLE_META = {
   str_forward_fold:       ['Hamstrings',      'Spinal Erectors'],
   str_ankle_circles:      ['Calves',          null],
   str_ankle_dorsiflexion: ['Calves',          null],
+  // Sciatica-specific
+  str_nerve_floss:        ['Hamstrings',      null],
+  str_piriformis_seated:  ['Glutes',          null],
 };
+
+// IDs of stretches that directly address sciatica nerve pain.
+// This set drives the s.sciatica flag (applied in applyStretchMeta)
+// and the Sciatica filter toggle in the Stretches tab.
+const STRETCH_SCIATICA_IDS = new Set([
+  'str_figure_four',      // piriformis — compresses sciatic nerve
+  'str_childs_pose',      // lumbar decompression
+  'str_hamstring',        // tight hamstrings contribute to sciatica
+  'wu_hamstring_stretch', // same
+  'wu_prone_cobra',       // lumbar extension (McKenzie method)
+  'str_knee_to_chest',    // lumbar decompression
+  'str_pigeon',           // deep piriformis
+  'str_90_90_hip',        // piriformis / hip external rotators
+  'str_forward_fold',     // hamstring + neural tension
+  'str_nerve_floss',      // direct sciatic nerve mobilisation
+  'str_piriformis_seated',// piriformis
+]);
 
 const YT = q => `https://www.youtube.com/results?search_query=${q}`;
 
@@ -2724,6 +2753,7 @@ function applyStretchMeta() {
     const [p, sec] = STRETCH_MUSCLE_META[s.id] || [null, null];
     s.primary   = p   ? [p]   : [];
     s.secondary = sec ? [sec] : [];
+    s.sciatica  = STRETCH_SCIATICA_IDS.has(s.id);
   });
 }
 applyStretchMeta();
@@ -2747,6 +2777,7 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
   const [wktSearch, setWktSearch] = useState('');
   const [librarySubTab, setLibrarySubTab]   = useState('exercises');
   const [expandedStretch, setExpandedStretch] = useState(null);
+  const [sciFilter, setSciFilter]            = useState(false);
 
   // All exercises that can be browsed/added (workout exercises + presets + user-created custom)
   const libraryEntries = [
@@ -3022,7 +3053,23 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
           {/* ── Stretches sub-tab ── */}
           {librarySubTab === 'stretches' && (
             <div style={{ ...st.col(8) }}>
-              {STRETCH_LIBRARY.map((s) => {
+              {/* Sciatica filter toggle */}
+              <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                <button onClick={() => { setSciFilter(false); }}
+                  style={{ flex: 1, padding: '7px 0', borderRadius: 8, border: `1px solid ${!sciFilter ? C.border : C.dim}`,
+                    background: !sciFilter ? C.dim : 'transparent', color: !sciFilter ? '#fff' : C.muted,
+                    fontFamily: C.fDisplay, fontSize: 12, cursor: 'pointer' }}>
+                  All stretches
+                </button>
+                <button onClick={() => { setSciFilter(true); }}
+                  style={{ flex: 1, padding: '7px 0', borderRadius: 8, border: `1px solid ${sciFilter ? '#a78bfa' : C.dim}`,
+                    background: sciFilter ? '#2d1b4e' : 'transparent', color: sciFilter ? '#a78bfa' : C.muted,
+                    fontFamily: C.fDisplay, fontSize: 12, cursor: 'pointer' }}>
+                  ◈ Sciatica only
+                </button>
+              </div>
+
+              {STRETCH_LIBRARY.filter(s => !sciFilter || s.sciatica).map((s) => {
                 const isExp    = expandedStretch === s.id;
                 const imgDir   = s.imageDir || 'stretches';
                 const holdLabel = s.suggestedSecs
@@ -3046,6 +3093,7 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
                         </div>
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
                           <span style={{ ...st.mono(11, C.muted) }}>{s.targets}</span>
+                          {s.sciatica  && <span style={{ background: '#2d1b4e', color: '#a78bfa', fontSize: 9, borderRadius: 20, padding: '2px 8px', fontFamily: C.fMono, fontWeight: 700 }}>Sciatica</span>}
                           {s.bilateral && <span style={{ ...st.pill(C.amber), fontSize: 9 }}>Both sides</span>}
                         </div>
                       </div>
