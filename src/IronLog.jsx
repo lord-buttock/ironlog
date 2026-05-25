@@ -1916,12 +1916,16 @@ function WarmupActive({ workout, onComplete }) {
     if (!s) { onComplete(); return; }
 
     if (s.bilateral && sideRef.current === 1) {
-      // Side 1 done — show switch message and reset to paused for side 2
+      // Side 1 done — show switch message for 1.5s then auto-start side 2
       setShowSwitch(true);
-      setSide(2);
-      setTimeLeft(s.suggestedSecs);
-      setRunning(false);   // user must press Start again for side 2
-      return;
+      setRunning(false);
+      const switchId = setTimeout(() => {
+        setShowSwitch(false);
+        setSide(2);
+        setTimeLeft(s.suggestedSecs);
+        setRunning(true);   // auto-start side 2
+      }, 1500);
+      return () => clearTimeout(switchId);
     }
 
     // Both sides (or unilateral) done — brief pause then advance to next stretch (paused)
@@ -2012,8 +2016,9 @@ function WarmupActive({ workout, onComplete }) {
 
         {/* Cue or switch-sides message */}
         {showSwitch ? (
-          <div style={{ fontFamily: C.fDisplay, fontSize: 20, fontWeight: 700, color: C.amber, textTransform: 'uppercase', letterSpacing: 1 }}>
-            ↔ Switch Sides
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: C.green, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 18, fontWeight: 700 }}>✓</div>
+            <div style={{ fontFamily: C.fDisplay, fontSize: 20, fontWeight: 700, color: C.green, textTransform: 'uppercase', letterSpacing: 1 }}>Switch Sides</div>
           </div>
         ) : current.cue ? (
           <div style={{ fontSize: 12, color: C.muted, fontFamily: C.fBody, textAlign: 'center', lineHeight: 1.6, maxWidth: 280, fontStyle: 'italic' }}>
@@ -2022,7 +2027,7 @@ function WarmupActive({ workout, onComplete }) {
         ) : null}
       </div>
 
-      {/* Footer — Start button when paused, Next button when running */}
+      {/* Footer — Start when paused, Next when running, Skip-only during side-switch */}
       <div style={{ padding: '12px 16px 24px', borderTop: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 8 }}>
         {running ? (
           <>
@@ -2033,6 +2038,11 @@ function WarmupActive({ workout, onComplete }) {
               Skip this stretch
             </button>
           </>
+        ) : showSwitch ? (
+          // Side-switch window — auto-start incoming, just offer escape
+          <button style={st.ghost} onClick={advance}>
+            {isLast ? 'Skip → Begin Workout' : `Skip → ${nextGroupLabel || 'next'}`}
+          </button>
         ) : (
           <>
             <button style={st.btn()} onClick={startTimer}>
