@@ -562,6 +562,94 @@ function resetWarmupConfig(workout) {
   localStorage.setItem('il_warmup_config', JSON.stringify(raw));
 }
 
+// ─── STRETCH ROUTINE GROUPS ───────────────────────────────────────────────
+// 12 slots matching the current STRETCHES order. Each slot has a curated
+// options list from STRETCH_LIBRARY. Single global config — not per-workout.
+const STRETCH_GROUPS = [
+  {
+    id: 'neck', label: 'Neck', emoji: '🧠',
+    defaultId: 'str_neck',
+    options: ['str_neck', 'str_neck_rotation'],
+  },
+  {
+    id: 'shoulders', label: 'Shoulders', emoji: '💪',
+    defaultId: 'str_cross_shoulder',
+    options: ['str_cross_shoulder', 'str_overhead_triceps', 'wu_pendulum'],
+  },
+  {
+    id: 'chest', label: 'Chest', emoji: '🫁',
+    defaultId: 'str_pec_roller_t',
+    options: ['str_pec_roller_t', 'wu_chest_opener', 'str_upward_dog', 'str_biceps_wall'],
+  },
+  {
+    id: 'upperback', label: 'Upper Back', emoji: '🔙',
+    defaultId: 'str_upper_back_roller',
+    options: ['str_upper_back_roller', 'wu_prone_cobra'],
+  },
+  {
+    id: 'trunk', label: 'Trunk', emoji: '🔄',
+    defaultId: 'str_cat_cow_cow',
+    options: ['str_cat_cow_cow', 'str_sideways_bend', 'str_pilates_saw'],
+  },
+  {
+    id: 'lowerback', label: 'Lower Back', emoji: '🔻',
+    defaultId: 'str_childs_pose',
+    options: ['str_childs_pose', 'str_knee_to_chest', 'str_double_knee_chest', 'str_spine_twist'],
+  },
+  {
+    id: 'spine', label: 'Spine / Rotation', emoji: '🌀',
+    defaultId: 'str_spinal_rotation',
+    options: ['str_spinal_rotation', 'str_trunk_rotations', 'str_pilates_saw'],
+  },
+  {
+    id: 'hipflexors', label: 'Hip Flexors', emoji: '🏃',
+    defaultId: 'str_hip_flexor',
+    options: ['str_hip_flexor', 'str_90_90_hip', 'str_lateral_lunge', 'str_deep_squat'],
+  },
+  {
+    id: 'hips', label: 'Hips / Glutes', emoji: '🦋',
+    defaultId: 'str_figure_four',
+    options: ['str_figure_four', 'str_pigeon', 'str_piriformis_seated', 'str_butterfly', 'str_knee_opp_shoulder'],
+  },
+  {
+    id: 'hamstrings', label: 'Hamstrings', emoji: '🦵',
+    defaultId: 'str_hamstring',
+    options: ['str_hamstring', 'wu_hamstring_stretch', 'str_forward_fold', 'str_nerve_glide_supine'],
+  },
+  {
+    id: 'itband', label: 'IT Band', emoji: '🦴',
+    defaultId: 'str_it_band',
+    options: ['str_it_band', 'str_lateral_lunge'],
+  },
+  {
+    id: 'calves', label: 'Calves / Ankles', emoji: '🦶',
+    defaultId: 'str_calf_straight',
+    options: ['str_calf_straight', 'str_ankle_circles', 'str_ankle_dorsiflexion'],
+  },
+];
+
+// Returns the 12-element stretch-ID array for the routine.
+// Falls back to each group's defaultId for any unset slot.
+function getStretchConfig() {
+  const raw = JSON.parse(localStorage.getItem('il_stretch_config') || '[]');
+  return STRETCH_GROUPS.map((group, i) => raw[i] || group.defaultId);
+}
+
+// Saves a single slot choice to il_stretch_config.
+function saveStretchChoice(slotIndex, stretchId) {
+  const raw = JSON.parse(localStorage.getItem('il_stretch_config') || '[]');
+  const saved = Array.isArray(raw) && raw.length === 12
+    ? [...raw]
+    : STRETCH_GROUPS.map(g => g.defaultId);
+  saved[slotIndex] = stretchId;
+  localStorage.setItem('il_stretch_config', JSON.stringify(saved));
+}
+
+// Clears the stretch config — next load will use all defaults.
+function resetStretchConfig() {
+  localStorage.removeItem('il_stretch_config');
+}
+
 // Returns a human-readable duration string for a stretch.
 function fmtStretchDur(s) {
   if (!s) return '';
