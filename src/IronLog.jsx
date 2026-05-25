@@ -1981,10 +1981,10 @@ function WarmupActive({ workout, onComplete }) {
       </div>
 
       {/* Main content */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px 24px', gap: 4 }}>
-        <StretchThumb stretch={current} group={WARMUP_GROUPS[index]} size={100} />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', padding: '16px 24px 8px', gap: 2 }}>
+        <StretchThumb stretch={current} group={WARMUP_GROUPS[index]} size={90} />
 
-        <div style={{ ...st.label, marginTop: 14 }}>{WARMUP_GROUPS[index]?.label}</div>
+        <div style={{ ...st.label, marginTop: 10 }}>{WARMUP_GROUPS[index]?.label}</div>
         <div style={{ fontFamily: C.fDisplay, fontSize: 24, fontWeight: 700, textTransform: 'uppercase', textAlign: 'center', letterSpacing: 0.5, marginTop: 2 }}>
           {current.name}
         </div>
@@ -1994,7 +1994,7 @@ function WarmupActive({ workout, onComplete }) {
         </div>
 
         {/* Countdown ring */}
-        <div style={{ position: 'relative', width: 120, height: 120, margin: '16px 0' }}>
+        <div style={{ position: 'relative', width: 120, height: 120, margin: '10px 0' }}>
           <svg width="120" height="120" viewBox="0 0 120 120" style={{ transform: 'rotate(-90deg)' }}>
             <circle cx="60" cy="60" r="52" fill="none" stroke={C.border} strokeWidth="8" />
             <circle
