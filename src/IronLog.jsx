@@ -2221,6 +2221,85 @@ function StretchPicker({ group, currentId, onSelect, onBack }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
+// STRETCH ROUTINE — Screen 1: setup (review and customise 12 slots)
+// ═══════════════════════════════════════════════════════════════════════
+// onBegin() — user tapped Begin Stretching → navigate to StretchActive
+// onSkip()  — user tapped Skip → navigate back to dashboard
+function StretchSetup({ onBegin, onSkip }) {
+  const [config, setConfig] = useState(() => getStretchConfig());
+  const [pickerSlot, setPickerSlot] = useState(null); // null = closed; 0–11 = slot being edited
+
+  const totalSecs = STRETCH_GROUPS.reduce((acc, group, i) => {
+    const s = STRETCH_LIBRARY.find(x => x.id === config[i]);
+    if (!s) return acc;
+    return acc + s.suggestedSecs * (s.bilateral ? 2 : 1);
+  }, 0);
+  const estMin = Math.max(1, Math.round(totalSecs / 60));
+
+  const handleReset = () => {
+    resetStretchConfig();
+    setConfig(STRETCH_GROUPS.map(g => g.defaultId));
+  };
+
+  return (
+    <div style={{ minHeight: '100vh', background: C.bg, color: C.text, paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}>
+      {/* Header */}
+      <div style={{ padding: '8px 16px 12px', borderBottom: `1px solid ${C.border}` }}>
+        <div style={{ ...st.h2, marginTop: 2 }}>Full-Body Flexibility</div>
+        <div style={{ fontSize: 11, color: C.muted, fontFamily: C.fBody, marginTop: 2 }}>Tap Change to swap any stretch</div>
+      </div>
+
+      {/* Rows */}
+      {STRETCH_GROUPS.map((group, i) => {
+        const stretch = STRETCH_LIBRARY.find(s => s.id === config[i])
+                     || STRETCH_LIBRARY.find(s => s.id === group.defaultId);
+        return (
+          <div key={group.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', borderBottom: `1px solid ${C.border}` }}>
+            <StretchThumb stretch={stretch} group={group} size={36} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={st.label}>{group.label}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, fontFamily: C.fDisplay, textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: C.text }}>
+                {stretch?.name || group.label}
+              </div>
+              <div style={{ fontSize: 10, color: C.muted, fontFamily: C.fBody }}>{fmtStretchDur(stretch)}</div>
+            </div>
+            <button
+              onClick={() => setPickerSlot(i)}
+              style={{ fontSize: 10, background: C.dim, border: `1px solid ${C.border}`, color: C.muted, borderRadius: 4, padding: '4px 8px', cursor: 'pointer', flexShrink: 0, fontFamily: C.fMono, letterSpacing: 0.5 }}
+            >
+              Change
+            </button>
+          </div>
+        );
+      })}
+
+      {/* Footer */}
+      <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <button style={st.btn()} onClick={onBegin}>▶ Begin Stretching (≈{estMin} min)</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button style={{ ...st.ghost, flex: 1 }} onClick={handleReset}>Reset to defaults</button>
+          <button style={{ ...st.ghost, flex: 1 }} onClick={onSkip}>Skip</button>
+        </div>
+      </div>
+
+      {/* Picker overlay — position:fixed so it floats over everything */}
+      {pickerSlot !== null && (
+        <StretchPicker
+          group={STRETCH_GROUPS[pickerSlot]}
+          currentId={config[pickerSlot]}
+          onSelect={id => {
+            saveStretchChoice(pickerSlot, id);
+            setConfig(c => c.map((x, j) => j === pickerSlot ? id : x));
+            setPickerSlot(null);
+          }}
+          onBack={() => setPickerSlot(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 // ACTIVE WORKOUT
 // ═══════════════════════════════════════════════════════════════════════
 function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, setView, selectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, onDemoOpen, onWarmupOpen, coachRec }) {
