@@ -1878,24 +1878,26 @@ function WarmupActive({ workout, onComplete }) {
   const [index, setIndex]           = useState(0);
   const [timeLeft, setTimeLeft]     = useState(null);
   const [side, setSide]             = useState(1);       // 1 = first side, 2 = second side
-  const [showSwitch, setShowSwitch] = useState(false);   // bilateral side-switch pulse
+  const [showSwitch, setShowSwitch] = useState(false);   // bilateral side-switch message
+  const [running, setRunning]       = useState(false);   // timer only ticks when true
 
   const current = stretches[index] || null;
 
-  // Reset timer whenever the stretch index changes
+  // Reset to paused state whenever the stretch index changes
   useEffect(() => {
     if (!current) { onComplete(); return; }
     setTimeLeft(current.suggestedSecs);
     setSide(1);
     setShowSwitch(false);
+    setRunning(false);   // always start paused — user must press Start
   }, [index]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Tick down every second
+  // Tick down every second — only when running
   useEffect(() => {
-    if (timeLeft === null || timeLeft <= 0) return;
+    if (!running || timeLeft === null || timeLeft <= 0) return;
     const id = setTimeout(() => setTimeLeft(t => t - 1), 1000);
     return () => clearTimeout(id);
-  }, [timeLeft]);
+  }, [timeLeft, running]);
 
   // Refs to avoid stale closures in the at-zero handler
   const currentRef   = useRef(current);
@@ -1907,34 +1909,32 @@ function WarmupActive({ workout, onComplete }) {
   useEffect(() => { indexRef.current     = index;     }, [index]);
   useEffect(() => { stretchesRef.current = stretches; }, [stretches]);
 
-  // Handle timer reaching zero
+  // Handle timer reaching zero — only fires when actively running
   useEffect(() => {
-    if (timeLeft !== 0) return;
+    if (!running || timeLeft !== 0) return;
     const s = currentRef.current;
     if (!s) { onComplete(); return; }
 
     if (s.bilateral && sideRef.current === 1) {
-      // First side done — show switch-sides pulse, then start second side
+      // Side 1 done — show switch message and reset to paused for side 2
       setShowSwitch(true);
-      const id = setTimeout(() => {
-        setShowSwitch(false);
-        setSide(2);
-        setTimeLeft(s.suggestedSecs);
-      }, 1500);
-      return () => clearTimeout(id);
+      setSide(2);
+      setTimeLeft(s.suggestedSecs);
+      setRunning(false);   // user must press Start again for side 2
+      return;
     }
 
-    // Both sides (or unilateral) done — pause briefly then auto-advance
+    // Both sides (or unilateral) done — brief pause then advance to next stretch (paused)
     const id = setTimeout(() => {
       const nextIndex = indexRef.current + 1;
       if (nextIndex < stretchesRef.current.length) {
-        setIndex(nextIndex);
+        setIndex(nextIndex);   // index useEffect will reset running=false
       } else {
         onComplete();
       }
     }, 500);
     return () => clearTimeout(id);
-  }, [timeLeft]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [timeLeft, running]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function advance() {
     const nextIndex = index + 1;
@@ -1943,6 +1943,11 @@ function WarmupActive({ workout, onComplete }) {
     } else {
       onComplete();
     }
+  }
+
+  function startTimer() {
+    setShowSwitch(false);
+    setRunning(true);
   }
 
   if (!current) return null;
@@ -2017,14 +2022,27 @@ function WarmupActive({ workout, onComplete }) {
         ) : null}
       </div>
 
-      {/* Footer */}
+      {/* Footer — Start button when paused, Next button when running */}
       <div style={{ padding: '12px 16px 24px', borderTop: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <button style={st.btn()} onClick={advance}>
-          {isLast ? '→ Begin Workout' : `→ Next: ${nextGroupLabel}`}
-        </button>
-        <button style={st.ghost} onClick={advance}>
-          Skip this stretch
-        </button>
+        {running ? (
+          <>
+            <button style={st.btn()} onClick={advance}>
+              {isLast ? '→ Begin Workout' : `→ Next: ${nextGroupLabel}`}
+            </button>
+            <button style={st.ghost} onClick={advance}>
+              Skip this stretch
+            </button>
+          </>
+        ) : (
+          <>
+            <button style={st.btn()} onClick={startTimer}>
+              ▶ Start
+            </button>
+            <button style={st.ghost} onClick={advance}>
+              {isLast ? 'Skip → Begin Workout' : `Skip → ${nextGroupLabel || 'next'}`}
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
