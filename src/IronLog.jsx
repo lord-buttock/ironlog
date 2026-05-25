@@ -1966,7 +1966,7 @@ function WarmupActive({ workout, onComplete }) {
   const nextGroupLabel = !isLast ? WARMUP_GROUPS[index + 1]?.label : null;
 
   return (
-    <div style={{ minHeight: '100vh', background: C.bg, color: C.text, display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: C.bg, color: C.text, display: 'flex', flexDirection: 'column', paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}>
 
       {/* Progress dots */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderBottom: `1px solid ${C.border}` }}>
