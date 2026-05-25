@@ -2884,8 +2884,22 @@ function MiniLineChart({ data, dataKey, color, height = 160, domain }) {
 // PROGRESS
 // ═══════════════════════════════════════════════════════════════════════
 function Progress({ sessions, allExercises = EXERCISES }) {
-  const exKeys = Object.keys(allExercises);
-  const [selEx, setSelEx] = useState(exKeys[0]);
+  // Group exercises by workout, sorted alphabetically within each group
+  const workoutGroups = ['A', 'B', 'C'].map(key => {
+    const w = WORKOUTS[key];
+    const shortTitle = key === 'A' ? 'Push' : key === 'B' ? 'Pull' : 'Legs + Core';
+    const ids = w.exercises
+      .filter(id => allExercises[id])
+      .sort((a, b) => (allExercises[a]?.name || a).localeCompare(allExercises[b]?.name || b));
+    return { key, label: `Workout ${key} — ${shortTitle}`, ids };
+  });
+  const workoutExIds = new Set(['A', 'B', 'C'].flatMap(k => WORKOUTS[k].exercises));
+  const otherIds = Object.keys(allExercises)
+    .filter(id => !workoutExIds.has(id))
+    .sort((a, b) => (allExercises[a]?.name || a).localeCompare(allExercises[b]?.name || b));
+
+  const firstId = workoutGroups[0]?.ids[0] || Object.keys(allExercises)[0];
+  const [selEx, setSelEx] = useState(firstId);
 
   const def = allExercises[selEx] || EXERCISES[selEx];
 
@@ -2922,7 +2936,16 @@ function Progress({ sessions, allExercises = EXERCISES }) {
         <div style={{ ...st.label, marginBottom: 6 }}>Exercise</div>
         <select value={selEx} onChange={e => setSelEx(e.target.value)}
           style={{ ...st.inp, textAlign: 'left', fontSize: 14, padding: '10px 12px' }}>
-          {exKeys.map(id => <option key={id} value={id}>{allExercises[id]?.name || id}</option>)}
+          {workoutGroups.map(({ key, label, ids }) => (
+            <optgroup key={key} label={label}>
+              {ids.map(id => <option key={id} value={id}>{allExercises[id]?.name || id}</option>)}
+            </optgroup>
+          ))}
+          {otherIds.length > 0 && (
+            <optgroup label="Other">
+              {otherIds.map(id => <option key={id} value={id}>{allExercises[id]?.name || id}</option>)}
+            </optgroup>
+          )}
         </select>
       </div>
 
