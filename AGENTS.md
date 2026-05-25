@@ -48,10 +48,13 @@ A personal fitness tracking PWA for Phill (age 51, male, returning to training a
 | **ROADMAP.md** | Planned features, priorities, agent notes | Before starting any work |
 | **README.md** | Detailed architecture, user profile, medical constraints | When you need deeper context |
 | **DECISIONS.md** | Technical decisions and why they were made | When making architectural choices |
+| **ICON-GUIDE.md** | Source of truth for IronLog icon/demo image style, sizes, prompts, cleanup, and verification | Before generating or editing any icon, demo frame, warmup/finisher image, or stretch image |
 | `docs/superpowers/specs/` | Feature design specs (Claude-authored, Phill-approved) | When implementing a feature — read the relevant spec |
 | `CODEX_COACH_BRIEF_R4.md` | AI Coach debug brief — feature now complete and deployed | Historical reference only |
 
 **Do not rely on memory of previous sessions.** Always read CHANGELOG.md, BUGS.md, and ROADMAP.md fresh — they are the ground truth for what has and hasn't been done.
+
+**Image/icon work:** If the task involves generating, editing, replacing, reviewing, or committing any image asset — including exercise icons, stretch icons, warmup/finisher icons, demo frames, app icons, or review galleries — read **ICON-GUIDE.md** in full before starting. It supersedes older ad-hoc image prompts and style notes.
 
 ---
 

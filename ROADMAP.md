@@ -6,7 +6,7 @@ Read README.md first for full project context, user profile, medical constraints
 
 ---
 
-## Current State (as of 2026-05-20)
+## Current State (as of 2026-05-25)
 
 The app is functional and in active daily use. Core features are complete:
 - 3-day Push/Pull/Legs split (A/B/C) with full session flow
@@ -15,7 +15,7 @@ The app is functional and in active daily use. Core features are complete:
 - Previous session notes shown as read-only 📝 reminder during workout
 - Rest timer, session clock
 - PR detection and progressive overload nudges
-- Progress charts (custom SVG)
+- Progress charts (custom SVG) — exercise picker grouped by workout A/B/C, sorted A–Z
 - Session history
 - Ride log with programme phases
 - Exercise library with form cues, muscle diagrams, and YouTube links
@@ -27,6 +27,10 @@ The app is functional and in active daily use. Core features are complete:
 - 7-day week strip on home screen
 - Supabase auto-sync (count-based restore, blocked during active session)
 - Auto-update indicator (↺ pulses amber when newer version deployed)
+- Customisable warm-up: Setup → Picker → Guided execution; per-workout config (A/B/C); manual-start timer; bilateral auto-start side 2
+- Stretch library: 39 curated stretches with Sciatica / Cross-legged / Caution flags; expandable cards with muscle diagram
+- Exercise icons: 81 transparent PNGs in `assets/icons/` (324×324px); 14 warmup icons; 38 stretch icons
+- Demo animation frames: 93 PNGs in `assets/demos/` (1024×1024px) — component not yet built (see Priority 4)
 
 ---
 
@@ -152,9 +156,8 @@ Goblet Squat → Romanian Deadlift → Hip Thrust → Reverse Lunge → Swiss Ba
 
 ## Priority 3 — Muscle Group Anatomy Diagrams (SVG replacement)
 
-**Status:** Phase 1 complete — Phase 2 (component rewrite) ready for Codex  
-**Spec:** `MUSCLE-DIAGRAM-SPEC.md` (v1.1) — authoritative reference for all muscle diagram work  
-**Implementation instructions:** `CODEX_ANATOMY_SVG_INSTRUCTIONS.md`
+**Status:** ✅ Complete — 2026-05-16  
+**Spec:** `MUSCLE-DIAGRAM-SPEC.md` (v1.1) — authoritative reference for all muscle diagram work
 
 ### What was planned vs what was built
 
@@ -191,8 +194,8 @@ Exercise ID
 
 ## Priority 4 — Exercise Demo Animations
 
-**Status:** Planned — after all exercise icons are complete  
-**Depends on:** All 79 exercise icons generated and committed
+**Status:** Planned — demo frames exist, React component not yet built  
+**Assets ready:** 93 demo frames in `assets/demos/` (1024×1024px transparent PNG); 81 exercise icons in `assets/icons/`
 
 ### Concept
 
@@ -218,9 +221,9 @@ Interval: 0.4–0.5s per frame (tune after visual testing — 0.25s may feel too
 
 - Folder: `assets/demos/`
 - Naming: `{exercise_id}_1.png`, `{exercise_id}_2.png`, `{exercise_id}_3.png`
-- Size: 300×300px (larger than the 108×108 icon — these are shown in a modal/expanded view)
-- Format: transparent PNG, same blue illustration style as icons
-- Generation: same prompt template and Pillow cleanup pipeline as icons
+- Size: 1024×1024px transparent PNG (rendered at a smaller display size in-app)
+- Format: same blue illustration style as icons — see `ICON-GUIDE.md` for generation pipeline
+- Generation: already done for existing exercises; use multi-frame cleanup script in `ICON-GUIDE.md` for any new ones
 
 The 108×108 icon in `assets/icons/` is unchanged — it stays as a single peak-position image for exercise cards and library tiles.
 
@@ -235,8 +238,8 @@ The 108×108 icon in `assets/icons/` is unchanged — it stays as a single peak-
 ### Dependency check before starting
 
 ```bash
-ls assets/demos/ 2>/dev/null | wc -l   # should be 0 until this feature begins
-ls assets/icons/ | wc -l               # should be 79 (all icons complete)
+ls assets/demos/ | wc -l   # 93 frames already exist as of 2026-05-25
+ls assets/icons/ | wc -l   # 81 icons as of 2026-05-25
 ```
 
 ---
@@ -314,6 +317,17 @@ Currently the user manually selects which workout to do. The app suggests the ne
 - [x] Supabase auto-sync — sessions and rides pushed to cloud after each save; restore on app load if cloud has more records — 2026-05-13
 - [x] Auto-update indicator — ↺ button next to IRONLOG header pulses amber when a newer version is deployed — 2026-05-13
 - [x] Moved JSON backup/restore into Manage → Backup; dashboard now keeps only cloud sync status — 2026-05-13
+- [x] Stretch Library tab (Manage → Library → Stretches) — 39 curated stretches with expandable cards, muscle diagrams, hold time, cue text — 2026-05-23/24
+- [x] Stretch filter: 3-way All / ◈ Sciatica / ⊕ Cross-legged — 2026-05-24
+- [x] Customisable Warm-Up: Setup → Picker → Guided execution, per-workout A/B/C config, persisted in `il_warmup_config` — 2026-05-24
+- [x] Warm-up timer: manual-start (▶ Start tap), bilateral auto-start side 2 after 1.5s Switch Sides indicator — 2026-05-25
+- [x] Stats exercise picker grouped by workout (A — Push / B — Pull / C — Legs + Core / Other), sorted A–Z within group — 2026-05-25
+- [x] AI Coach: `computeCoachRecommendation()` rules engine, pre-start screen, safe exercise swaps — 2026-05-19
+- [x] MuscleDiagram: inline anatomical SVGs front/rear, primary (blue) / secondary (purple) path colouring — 2026-05-16
+- [x] MUSCLE_META: all exercises mapped to anatomical muscle arrays (ExRx-verified) — 2026-05-16
+- [x] Exercise icons: 81 transparent PNGs in `assets/icons/` (108×108 and 324×324) — 2026-05-15/16
+- [x] Previous session notes reminder: 📝 banner above set rows — 2026-05-20
+- [x] Muscle diagram collapsed by default, tappable MUSCLES ▼/▲ toggle — 2026-05-20
 
 ---
 
