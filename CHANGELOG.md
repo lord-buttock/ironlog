@@ -4,12 +4,19 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-05-25 — Warm-Up UX refinements + Stats picker grouping
+
+- Warm-up execution: timer now requires a manual **▶ Start** tap before counting down — gives time to read the stretch and get into position
+- Bilateral stretches (e.g. Neck Rotation): side 1 requires manual start; when it finishes a green ✓ Switch Sides indicator shows for 1.5s then side 2 auto-starts — no second tap needed
+- Fixed warm-up active screen footer being hidden behind the fixed nav bar (missing `paddingBottom` to clear safe-area + nav height)
+- Stats screen exercise picker now grouped by workout (Workout A — Push / Workout B — Pull / Workout C — Legs + Core / Other) with exercises sorted A–Z within each group, using native `<optgroup>` labels
+
 ## 2026-05-24 — Customisable Warm-Up
 
 - Replaced static warm-up checklist with a three-screen flow: **Setup → Picker → Guided execution**
 - Setup screen: 8 compact rows (one per muscle-tendon group — Neck, Shoulders, Chest, Trunk, Lower Back, Hips, Legs, Ankles), each with a Change button
 - Picker: full-screen overlay per group showing curated stretch options with Sciatica / Cross-legged / Caution pills so you can pick based on your goal
-- Guided execution: one stretch at a time, SVG countdown ring, cue text, bilateral switch-sides pulse at halfway, auto-advances when timer ends
+- Guided execution: one stretch at a time, SVG countdown ring, cue text; see 2026-05-25 entry for final execution behaviour
 - Per-workout config (A, B, C each store independent choices) persisted in `il_warmup_config` localStorage key
 - Skip Warm-Up and Reset to defaults available from the setup screen; Skip all → and Skip this stretch available during execution
 - Backward compatible: sessions stored with old `phase:'warmup'` resume at the setup screen

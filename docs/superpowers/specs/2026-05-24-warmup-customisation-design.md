@@ -176,6 +176,8 @@ Each option card:
 
 **Phase:** `warmup_active`
 
+*Updated 2026-05-25 — timer is now manual-start; see behaviour notes below.*
+
 ### Layout
 
 ```
@@ -198,35 +200,52 @@ Each option card:
 │   Feel it in the glute."        │
 │                                 │
 ├─────────────────────────────────┤
-│       → Next: Trunk             │
-│         Skip this stretch       │
+│          ▶ START                │   ← shown when paused
+│     Skip → [next group]         │
 └─────────────────────────────────┘
 ```
 
 ### Progress dots
 
-8 dots in a row. Completed = green (`#4a6`). Active = amber (`C.amber`). Remaining = dark (`#333`). Counter "X of 8" to the right.
+8 dots in a row. Completed = green (`C.green`). Active = amber (`C.amber`). Remaining = dark (`C.border`). Counter "X of 8" to the right.
 
 ### Timer ring
 
-SVG circle, 120×120px. Track ring: `#2a2a2a`. Progress arc: `C.amber`, stroke-linecap round, rotated −90°. Countdown numeral centred in `C.fMono` 36px amber.
+SVG circle, 120×120px. Track ring: `C.border`. Progress arc: `C.amber`, stroke-linecap round, rotated −90°. Countdown numeral centred in `C.fMono` 36px amber.
 
-Duration comes from the selected stretch's `hold` field (in seconds). For stretches with `perSide: true`, the timer runs for the single-side duration; at the halfway point a "Switch sides" text pulse replaces the cue text briefly (1.5s), then the cue returns.
+Duration comes from the selected stretch's `suggestedSecs` field. The ring shows full (offset=0) when paused; drains as the timer counts down (offset increases toward circumference=326.7).
 
-Auto-advances to next stretch when the countdown reaches 0, with no manual input required.
+### Timer start behaviour
+
+Each stretch loads in a **paused state** — the timer does not run until the user taps **▶ Start**. This gives time to read the stretch and get into position.
+
+**Unilateral stretches:** user taps ▶ Start → timer counts down → when it reaches 0, auto-advances to the next stretch (also paused).
+
+**Bilateral stretches (`bilateral: true`):**
+- User taps ▶ Start → side 1 counts down.
+- When side 1 reaches 0: a green ✓ **Switch Sides** indicator replaces the cue text; timer resets to `suggestedSecs`; after 1.5s side 2 auto-starts (no tap required).
+- When side 2 reaches 0: auto-advances to the next stretch (paused).
 
 ### Cue text
 
-Stretch's `cue` string rendered at 13px italic `#bbb`, centred, max-width 260px. If no `cue` field, omit the element.
+Stretch's `cue` string rendered at 12px italic `C.muted`, centred, max-width 280px. If no `cue` field, omit the element. During the side-switch window the Switch Sides indicator replaces the cue text.
 
-### Footer
+### Footer — three states
 
-- Primary button: amber fill, "→ Next: [next group label]". On the last stretch: "→ Begin Workout" — advances to `'workout'` phase.
-- Ghost link: "Skip this stretch" — increments `warmupIndex`, skips to next stretch without resetting timer.
+**Paused (not running, not switching):**
+- Primary button: amber fill, "▶ Start" — starts the timer.
+- Ghost link: "Skip → [next group label]" or "Skip → Begin Workout" on the last stretch.
+
+**Running:**
+- Primary button: amber fill, "→ Next: [next group label]" — manually advances early.
+- Ghost link: "Skip this stretch".
+
+**Side-switch window (1.5s between side 1 and side 2):**
+- Ghost link only: "Skip → [next group label]" — allows escaping; side 2 will auto-start when the window closes.
 
 ### Header actions
 
-"Skip all →" in the top-right: advances directly to `'workout'` phase immediately.
+"Skip all →" in the top-right: advances directly to `'workout'` phase immediately, at any point.
 
 ---
 
@@ -259,8 +278,8 @@ All UI elements use the existing app theme object (`C`). No new colour values ar
 | "Reset to defaults" tapped | Deletes `il_warmup_config[workout]`, re-renders setup with defaults |
 | "Skip" tapped on setup | Phase advances directly to `'workout'`; warm-up not logged |
 | "Skip all" tapped mid-execution | Phase advances directly to `'workout'` immediately |
-| Last stretch completes | Timer reaches 0 → "Begin Workout" fires automatically after 0.5s pause |
-| `perSide: true` stretch | Timer = single-side duration; "Switch sides" pulse at halfway |
+| Last stretch completes | Side 2 (or unilateral) timer reaches 0 → auto-advances after 0.5s pause; footer shows "→ Begin Workout" while running |
+| `bilateral: true` stretch | Side 1 requires manual ▶ Start; at zero a green ✓ Switch Sides indicator shows for 1.5s then side 2 auto-starts; side 2 completion auto-advances |
 | Stretch has no `cue` field | Cue text element omitted; icon and timer centred in available space |
 | Stretch has no PNG icon | Falls back to `group.emoji`; no broken image shown |
 | Mid-session app refresh | `il_active` stores `phase` and `warmupIndex`; resumes at correct stretch |
