@@ -3226,7 +3226,7 @@ function History({ sessions, setSessions, allExercises = EXERCISES }) {
                               <select value={s.pain ?? ''} onChange={e => updateSet(exIdx, i, 'pain', e.target.value !== '' ? +e.target.value : null)}
                                 style={{ ...st.inp, flex: '0 0 52px', fontSize: 12 }}>
                                 <option value=''>Pain</option>
-                                {[0,1,2,3,4,5].map(n => <option key={n} value={n}>{n}</option>)}
+                                {[0,1,2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n}>{n}</option>)}
                               </select>
 
                               {/* Delete set */}
