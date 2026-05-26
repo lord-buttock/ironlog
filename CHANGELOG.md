@@ -4,6 +4,17 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-05-26 — Session Set Editing
+
+- History: expanded session cards now have an "✏ Edit" button (left) alongside "🗑 Delete" (right)
+- Edit mode: inline input rows for weight, reps, RPE, pain, duration per set
+- Add set (copies last set's values) and delete set per exercise
+- Exercise notes editable as a text field
+- Save writes to localStorage immediately; Cancel discards all changes
+- Handles all exercise types: standard (kg), timed (secs), bodyweight, band, pullup-tracking (bw/band/neg)
+
+---
+
 ## 2026-05-26 — Customisable Stretch Routine
 
 - Added `STRETCH_GROUPS` constant: 12 body-part slots each with a default stretch and picker options

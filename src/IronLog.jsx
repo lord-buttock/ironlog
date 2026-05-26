@@ -3157,30 +3157,121 @@ function History({ sessions, setSessions, allExercises = EXERCISES }) {
 
             {expanded === sess.id && (
               <div style={{ marginTop: 12, borderTop: `1px solid ${C.border}`, paddingTop: 12 }}>
-                {sess.exercises?.map(ex => {
+                {(editingId === sess.id ? draft.exercises : sess.exercises)?.map((ex, exIdx) => {
                   const def = allExercises[ex.id] || EXERCISES[ex.id];
+                  const isEditing = editingId === sess.id;
+                  const isTimed = !!def?.isTimed;
+                  const isBW = def?.unit === 'bw' || def?.unit === 'band';
+                  const isPullup = !!def?.pullupTracking;
+                  const loadLabel = def?.unit === 'band' ? 'BAND' : 'BW';
+
                   return (
-                    <div key={ex.id} style={{ marginBottom: 10 }}>
+                    <div key={ex.id} style={{ marginBottom: isEditing ? 14 : 10 }}>
                       <div style={{ ...st.label, marginBottom: 4 }}>{def?.name}</div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                        {ex.sets.map((s, i) => {
-                          const display = def?.isTimed ? `${s.duration}s`
-                            : def?.pullupTracking
-                              ? s.mode === 'band' ? `${s.reps}r (${s.band || 'band'})`
-                                : s.mode === 'neg' ? `${s.reps}×${s.duration||'?'}s neg`
-                                : `${s.reps} reps`
-                            : def?.unit === 'bw' || def?.unit === 'band' ? `${s.reps} reps`
-                            : `${s.weight}kg × ${s.reps}`;
-                          return (
-                            <span key={i} style={{ ...st.pill(s.done ? C.text : C.muted), fontSize: 11 }}>
-                              {display}{s.rpe ? ` r${s.rpe}` : ''}
-                            </span>
-                          );
-                        })}
-                      </div>
-                      {ex.notes && (
-                        <div style={{ fontSize: 11, color: C.muted, fontStyle: 'italic', marginTop: 4 }}>
-                          {'\uD83D\uDCDD'} {ex.notes}
+
+                      {isEditing ? (
+                        /* ── EDIT MODE ── */
+                        <div>
+                          {ex.sets.map((s, i) => (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4, background: C.dim, borderRadius: 6, padding: '6px 8px' }}>
+                              {/* Set number */}
+                              <span style={{ ...st.mono(11, C.muted), width: 20, textAlign: 'center', flexShrink: 0 }}>S{i + 1}</span>
+
+                              {/* Pullup mode selector */}
+                              {isPullup && (
+                                <select value={s.mode || 'bw'} onChange={e => updateSet(exIdx, i, 'mode', e.target.value)}
+                                  style={{ ...st.inp, fontSize: 11, flex: '0 0 68px' }}>
+                                  <option value="bw">BW</option>
+                                  <option value="band">Band</option>
+                                  <option value="neg">Neg</option>
+                                </select>
+                              )}
+
+                              {/* Weight / Duration / BW label */}
+                              {isTimed ? (
+                                <input type="number" inputMode="numeric" value={s.duration ?? ''}
+                                  onChange={e => updateSet(exIdx, i, 'duration', e.target.value)}
+                                  style={{ ...st.inp, flex: 1 }} placeholder="sec" />
+                              ) : isPullup && (s.mode || 'bw') === 'band' ? (
+                                <input type="text" value={s.band || ''}
+                                  onChange={e => updateSet(exIdx, i, 'band', e.target.value)}
+                                  style={{ ...st.inp, flex: 1, fontSize: 12 }} placeholder="band" />
+                              ) : isPullup && (s.mode || 'bw') === 'neg' ? (
+                                <input type="number" inputMode="numeric" value={s.duration ?? ''}
+                                  onChange={e => updateSet(exIdx, i, 'duration', e.target.value)}
+                                  style={{ ...st.inp, flex: 1 }} placeholder="sec" />
+                              ) : isBW ? (
+                                <div style={{ ...st.inp, flex: 1, color: C.muted, fontSize: 10, lineHeight: '34px', border: `1px solid ${C.border}` }}>{loadLabel}</div>
+                              ) : (
+                                <input type="number" inputMode="decimal" value={s.weight ?? ''}
+                                  onChange={e => updateSet(exIdx, i, 'weight', e.target.value)}
+                                  style={{ ...st.inp, flex: 1 }} placeholder="kg" />
+                              )}
+
+                              {/* Reps (hidden for pure timed) */}
+                              {!isTimed && (
+                                <input type="number" inputMode="numeric" value={s.reps ?? ''}
+                                  onChange={e => updateSet(exIdx, i, 'reps', e.target.value)}
+                                  style={{ ...st.inp, flex: 1 }} placeholder="reps" />
+                              )}
+
+                              {/* RPE */}
+                              <select value={s.rpe ?? ''} onChange={e => updateSet(exIdx, i, 'rpe', e.target.value ? +e.target.value : null)}
+                                style={{ ...st.inp, flex: '0 0 52px', fontSize: 12 }}>
+                                <option value=''>RPE</option>
+                                {[5,6,7,8,9,10].map(n => <option key={n} value={n}>{n}</option>)}
+                              </select>
+
+                              {/* Pain */}
+                              <select value={s.pain ?? ''} onChange={e => updateSet(exIdx, i, 'pain', e.target.value !== '' ? +e.target.value : null)}
+                                style={{ ...st.inp, flex: '0 0 52px', fontSize: 12 }}>
+                                <option value=''>Pain</option>
+                                {[0,1,2,3,4,5].map(n => <option key={n} value={n}>{n}</option>)}
+                              </select>
+
+                              {/* Delete set */}
+                              <button onClick={() => deleteSet(exIdx, i)}
+                                style={{ background: 'none', border: 'none', color: C.muted, fontSize: 15, cursor: 'pointer', padding: '0 2px', flexShrink: 0 }}>
+                                🗑
+                              </button>
+                            </div>
+                          ))}
+
+                          {/* Add set */}
+                          <button onClick={() => addSet(exIdx)}
+                            style={{ background: 'none', border: `1px dashed ${C.border}`, color: C.muted, borderRadius: 4, fontSize: 11, padding: '5px 12px', width: '100%', cursor: 'pointer', marginTop: 2 }}>
+                            + Add set
+                          </button>
+
+                          {/* Exercise notes */}
+                          <input type="text" value={ex.notes || ''} onChange={e => updateNotes(exIdx, e.target.value)}
+                            placeholder="Exercise notes…"
+                            style={{ ...st.inp, marginTop: 6, fontSize: 12, textAlign: 'left', padding: '7px 10px' }} />
+                        </div>
+                      ) : (
+                        /* ── READ MODE (unchanged) ── */
+                        <div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                            {ex.sets.map((s, i) => {
+                              const display = def?.isTimed ? `${s.duration}s`
+                                : def?.pullupTracking
+                                  ? s.mode === 'band' ? `${s.reps}r (${s.band || 'band'})`
+                                    : s.mode === 'neg' ? `${s.reps}×${s.duration||'?'}s neg`
+                                    : `${s.reps} reps`
+                                : def?.unit === 'bw' || def?.unit === 'band' ? `${s.reps} reps`
+                                : `${s.weight}kg × ${s.reps}`;
+                              return (
+                                <span key={i} style={{ ...st.pill(s.done ? C.text : C.muted), fontSize: 11 }}>
+                                  {display}{s.rpe ? ` r${s.rpe}` : ''}
+                                </span>
+                              );
+                            })}
+                          </div>
+                          {ex.notes && (
+                            <div style={{ fontSize: 11, color: C.muted, fontStyle: 'italic', marginTop: 4 }}>
+                              {'\uD83D\uDCDD'} {ex.notes}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
