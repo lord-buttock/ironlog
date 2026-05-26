@@ -2306,12 +2306,14 @@ function StretchSetup({ onBegin, onSkip }) {
 function StretchActive({ onDone }) {
   // Build stretch list once on mount from saved config
   const stretchesRef = useRef(null);
+  const stretchesListRef = useRef([]);
   if (!stretchesRef.current) {
     stretchesRef.current = STRETCH_GROUPS.map((group, i) => {
       const id = getStretchConfig()[i];
       return STRETCH_LIBRARY.find(s => s.id === id)
           || STRETCH_LIBRARY.find(s => s.id === group.defaultId);
     }).filter(Boolean);
+    stretchesListRef.current = stretchesRef.current;
   }
   const stretches = stretchesRef.current;
 
@@ -2369,7 +2371,7 @@ function StretchActive({ onDone }) {
     // Unilateral or side 2 done — 0.5s pause then advance (paused)
     const id = setTimeout(() => {
       const next = indexRef.current + 1;
-      if (next < stretches.length) {
+      if (next < stretchesListRef.current.length) {
         setIndex(next);
       } else {
         onDone();
