@@ -358,7 +358,7 @@ const STRETCHES = [
 
 // ─── STRETCH LIBRARY (exercises + warm-up + finisher stretches) ────────────
 // STRETCHES items are shallow-cloned so applyStretchMeta does not mutate
-// the originals used by ActiveStretch and Dashboard.
+// the originals used by StretchActive, WarmupActive, and Dashboard.
 const STRETCH_LIBRARY = [
   ...STRETCHES.map(s => ({ ...s })),
   // ── Warm-up mobility stretches ────────────────────────────────────────────
