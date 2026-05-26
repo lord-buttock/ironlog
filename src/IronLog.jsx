@@ -1322,10 +1322,8 @@ function PreStartScreen({ selectedWorkout, coachRec, preStartSwaps, setPreStartS
 // ═══════════════════════════════════════════════════════════════════════
 function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, setSelectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, driveSync, onCloudSync, updateAvailable, onWarmupOpen, onDemoOpen, coachRec, showWhy, setShowWhy }) {
   const [showExercises, setShowExercises] = useState(false);
-  const [showStretches, setShowStretches] = useState(false);
   const [showWarmup, setShowWarmup] = useState(false);
   const [showCooldown, setShowCooldown] = useState(false);
-  const [stretchDemoItem, setStretchDemoItem] = useState(null);
   const suggested = nextWorkout(sessions);
   const wkt = WORKOUTS[selectedWorkout];
   const extraIds = workoutCustom[selectedWorkout] || [];
@@ -1552,58 +1550,33 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
         ))}
       </div>
 
-      {/* Stretch Routine card */}
-      <div style={{ ...st.card(), marginBottom: 16 }}>
-        <button onClick={() => setShowStretches(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, width: '100%', textAlign: 'left', marginBottom: showStretches ? 0 : 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div>
-              <div style={{ ...st.label, marginBottom: 4 }}>Stretch Routine</div>
-              <div style={{ fontSize: 16, fontWeight: 700, fontFamily: C.fDisplay, textTransform: 'uppercase' }}>Full-Body Flexibility</div>
-              <div style={{ fontSize: 12, color: C.muted, fontFamily: C.fMono, marginTop: 3 }}>12 stretches · ~15–20 min</div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <Icon name="activity" size={24} color={C.amber} />
-              <span style={{ color: C.muted, fontSize: 13 }}>{showStretches ? '▲' : '▼'}</span>
+      {/* Stretch Routine Card */}
+      <div style={{ ...st.card(), marginBottom: 16, padding: '14px 16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <div style={{ fontSize: 10, fontFamily: C.fMono, color: C.amber, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Stretch Routine</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 2 }}>Full-Body Flexibility</div>
+            <div style={{ fontSize: 12, color: C.muted }}>
+              {(() => {
+                const cfg = getStretchConfig();
+                const totalSecs = cfg.reduce((sum, id) => {
+                  const s = STRETCH_LIBRARY.find(x => x.id === id);
+                  if (!s) return sum;
+                  return sum + (s.bilateral ? s.suggestedSecs * 2 : s.suggestedSecs);
+                }, 0);
+                const mins = Math.round(totalSecs / 60);
+                return `12 stretches · ≈${mins} min`;
+              })()}
             </div>
           </div>
-        </button>
-
-        {showStretches && (
-          <div style={{ marginTop: 12, marginBottom: 12 }}>
-            {STRETCHES.map((stretch, i) => (
-              <div key={stretch.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < STRETCHES.length - 1 ? `1px solid ${C.border}` : 'none' }}>
-                <img
-                  src={`assets/icons/stretches/${stretch.id}.png`}
-                  style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#EEF3FF', flexShrink: 0, cursor: 'pointer' }}
-                  onError={e => { e.target.style.opacity = 0.2; }}
-                  onClick={() => setStretchDemoItem(stretch)}
-                />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, color: C.text, lineHeight: 1.2 }}>{stretch.name}</div>
-                  <div style={{ fontSize: 11, color: C.muted, fontFamily: C.fMono, marginTop: 2 }}>{stretch.targets}</div>
-                </div>
-                {stretch.bilateral && <span style={{ fontSize: 10, color: C.amber, fontFamily: C.fMono, flexShrink: 0 }}>Both sides</span>}
-              </div>
-            ))}
-          </div>
-        )}
-
-        <button style={{ ...st.ghost }} onClick={() => setView('stretch')}>
-          Start Stretching
+        </div>
+        <button
+          onClick={() => setView('stretch_setup')}
+          style={{ ...st.btn(), marginTop: 12, width: '100%' }}
+        >
+          ▶ Start Stretching
         </button>
       </div>
-
-      {stretchDemoItem && (
-        <div onClick={() => setStretchDemoItem(null)} style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'rgba(10,15,40,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: '#EEF3FF', borderRadius: 28, padding: 20, boxShadow: '0 8px 48px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, maxWidth: 320, margin: 24 }}>
-            <img src={`assets/icons/stretches/${stretchDemoItem.id}.png`} style={{ width: 220, height: 220, objectFit: 'contain', display: 'block' }} onError={e => { e.target.style.opacity = 0.2; }} alt={stretchDemoItem.name} />
-            <div style={{ fontSize: 15, fontWeight: 700, fontFamily: C.fDisplay, textTransform: 'uppercase', color: '#1a2a4a', textAlign: 'center' }}>{stretchDemoItem.name}</div>
-            <div style={{ fontSize: 11, color: C.amber, fontFamily: C.fMono, textAlign: 'center' }}>{stretchDemoItem.targets}</div>
-            <div style={{ fontSize: 13, lineHeight: 1.55, color: '#1a2a4a', textAlign: 'center', fontFamily: C.fMono }}>{stretchDemoItem.cue}</div>
-          </div>
-          <div style={{ position: 'absolute', top: 24, right: 24, color: 'rgba(255,255,255,0.5)', fontSize: 28, lineHeight: 1, cursor: 'pointer' }}>✕</div>
-        </div>
-      )}
 
       {/* Stats row */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 16 }}>
@@ -4367,159 +4340,6 @@ function ExerciseDemoModal({ exerciseId, onClose }) {
 
 // ═══════════════════════════════════════════════════════════════════════
 // WARMUP / FINISHER ICON MODAL
-// ═══════════════════════════════════════════════════════════════════════
-// ═══════════════════════════════════════════════════════════════════════
-// ACTIVE STRETCH
-// ═══════════════════════════════════════════════════════════════════════
-function ActiveStretch({ onDone }) {
-  const [idx, setIdx] = useState(0);
-  const [side, setSide] = useState(() => STRETCHES[0].bilateral ? 'left' : null);
-  const [elapsed, setElapsed] = useState(0);
-  const [demoImg, setDemoImg] = useState(null); // src string or null
-
-  // Reset and restart timer whenever stretch or side changes
-  useEffect(() => {
-    setElapsed(0);
-    const t = setInterval(() => setElapsed(e => e + 1), 1000);
-    return () => clearInterval(t);
-  }, [idx, side]);
-
-  const stretch = STRETCHES[idx];
-  const isLastStretch = idx === STRETCHES.length - 1;
-  const isLastSide = !stretch.bilateral || side === 'right';
-
-  const advance = () => {
-    if (stretch.bilateral && side === 'left') {
-      setSide('right');
-    } else if (isLastStretch) {
-      onDone();
-    } else {
-      const next = STRETCHES[idx + 1];
-      setIdx(idx + 1);
-      setSide(next.bilateral ? 'left' : null);
-    }
-  };
-
-  const fmtTime = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-  const nextLabel = stretch.bilateral && side === 'left' ? 'Switch Sides' : isLastStretch ? 'Finish' : 'Next Stretch';
-  const hintLabel = stretch.bilateral ? `~${stretch.suggestedSecs}s each side` : `~${stretch.suggestedSecs}s`;
-
-  return (
-    <div style={{ padding: '20px 16px 100px', minHeight: '100vh' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
-        <button onClick={onDone} style={{ background: 'none', border: 'none', color: C.muted, cursor: 'pointer', fontSize: 13, fontFamily: C.fMono, padding: 0 }}>
-          ← back
-        </button>
-        <span style={{ ...st.label, fontSize: 11 }}>{idx + 1} / {STRETCHES.length}</span>
-      </div>
-
-      {/* Name + targets */}
-      <div style={{ fontSize: 26, fontWeight: 700, fontFamily: C.fDisplay, textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 1.1, marginBottom: 6 }}>
-        {stretch.name}
-      </div>
-      <div style={{ fontSize: 12, color: C.muted, fontFamily: C.fMono, marginBottom: 24 }}>
-        {stretch.targets}
-      </div>
-
-      {/* Image(s) */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 20 }}>
-        {[stretch.id, stretch.id2].filter(Boolean).map((imgId, i) => {
-          const src = `assets/icons/stretches/${imgId}.png`;
-          const size = stretch.id2 ? 140 : 180;
-          const labels = stretch.id2
-            ? stretch.id.startsWith('str_pec_roller') ? ['T Position', 'W Position']
-              : stretch.id.startsWith('str_cat_cow') ? ['Cow', 'Cat']
-              : stretch.id.startsWith('str_calf') ? ['Straight Knee', 'Bent Knee']
-              : [null, null]
-            : [null];
-          return (
-            <div key={imgId} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-              <img
-                src={src}
-                style={{ width: size, height: size, objectFit: 'contain', borderRadius: 16, background: '#EEF3FF', cursor: 'pointer', display: 'block' }}
-                onError={e => { e.target.style.opacity = 0.15; }}
-                onClick={() => setDemoImg(src)}
-                alt={labels[i] || stretch.name}
-              />
-              {labels[i] && (
-                <span style={{ fontSize: 10, fontFamily: C.fMono, color: C.muted, textTransform: 'uppercase', letterSpacing: 0.5 }}>{labels[i]}</span>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Side indicator */}
-      {stretch.bilateral && (
-        <div style={{ textAlign: 'center', marginBottom: 16 }}>
-          <span style={{
-            background: C.amberDim, color: C.amber, fontSize: 11,
-            borderRadius: 4, padding: '3px 12px', fontFamily: C.fMono,
-            textTransform: 'uppercase', letterSpacing: 1,
-          }}>
-            {side === 'left' ? 'Left Side' : 'Right Side'}
-          </span>
-        </div>
-      )}
-
-      {/* Timer */}
-      <div style={{ textAlign: 'center', marginBottom: 2 }}>
-        <span style={{ fontSize: 68, fontFamily: C.fDisplay, fontWeight: 700, color: C.amber, lineHeight: 1 }}>
-          {fmtTime(elapsed)}
-        </span>
-      </div>
-      <div style={{ textAlign: 'center', fontSize: 11, color: C.muted, fontFamily: C.fMono, marginBottom: 24 }}>
-        {hintLabel}
-      </div>
-
-      {/* Cue card */}
-      <div style={{ ...st.card(), marginBottom: 20, fontSize: 14, color: C.muted, lineHeight: 1.65 }}>
-        {stretch.cue}
-      </div>
-
-      {/* Action buttons */}
-      <button style={{ ...st.btn(), marginBottom: 10 }} onClick={advance}>
-        {nextLabel} →
-      </button>
-      {!(isLastStretch && isLastSide) && (
-        <button style={{ ...st.ghost }} onClick={advance}>Skip</button>
-      )}
-
-      {/* Lightbox */}
-      {demoImg && (
-        <div onClick={() => setDemoImg(null)} style={{
-          position: 'fixed', inset: 0, zIndex: 500,
-          background: 'rgba(10,15,40,0.92)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexDirection: 'column', gap: 16,
-        }}>
-          <div onClick={e => e.stopPropagation()} style={{
-            background: '#EEF3FF', borderRadius: 28, padding: 20,
-            boxShadow: '0 8px 48px rgba(0,0,0,0.5)',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
-            maxWidth: 320, margin: 24,
-          }}>
-            <img
-              src={demoImg}
-              style={{ width: 260, height: 260, objectFit: 'contain', display: 'block' }}
-              onError={e => { e.target.style.opacity = 0.15; }}
-              alt={stretch.name}
-            />
-            <div style={{ fontSize: 15, fontWeight: 700, fontFamily: C.fDisplay, textTransform: 'uppercase', color: '#1a2a4a', textAlign: 'center' }}>
-              {stretch.name}
-            </div>
-            <div style={{ fontSize: 13, lineHeight: 1.55, color: '#1a2a4a', textAlign: 'center', fontFamily: C.fMono }}>
-              {stretch.cue}
-            </div>
-          </div>
-          <div style={{ position: 'absolute', top: 24, right: 24, color: 'rgba(255,255,255,0.5)', fontSize: 28, lineHeight: 1, cursor: 'pointer' }}>✕</div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 function WarmupDemoModal({ item, onClose }) {
   return (
     <div
@@ -4739,7 +4559,8 @@ export default function App() {
             coachRec={coachRec}
           />
         )}
-        {view === 'stretch' && <ActiveStretch onDone={() => setView('dashboard')} />}
+        {(view === 'stretch' || view === 'stretch_setup') && <StretchSetup onBegin={() => setView('stretch_active')} onSkip={() => setView('dashboard')} />}
+        {view === 'stretch_active' && <StretchActive onDone={() => setView('dashboard')} />}
         {view === 'history' && <History sessions={sessions} setSessions={setSessions} allExercises={allExercises} />}
         {view === 'progress' && <Progress sessions={sessions} allExercises={allExercises} />}
         {view === 'rides' && <Rides rides={rides} setRides={setRides} />}

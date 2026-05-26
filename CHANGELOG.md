@@ -4,6 +4,19 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-05-26 — Customisable Stretch Routine
+
+- Added `STRETCH_GROUPS` constant: 12 body-part slots each with a default stretch and picker options
+- Added `getStretchConfig()`, `saveStretchChoice()`, `resetStretchConfig()` helpers; storage key `il_stretch_config`
+- Added `StretchSetup` component: 12 rows with Change button, duration estimate, Reset to defaults
+- Added `StretchPicker` component: full-screen overlay with all options for a slot; Sciatica/Cross-legged/Caution pills
+- Added `StretchActive` component: guided execution with SVG countdown ring, bilateral auto-advance (1.5s Switch Sides), three footer states, Skip all
+- Dashboard: replaced static stretch accordion with simple card + "Start Stretching" button
+- Removed old `ActiveStretch` component
+- `view === 'stretch'` aliased to `'stretch_setup'` for backward compatibility
+
+---
+
 ## 2026-05-25 — Warm-Up UX refinements + Stats picker grouping
 
 - Warm-up execution: timer now requires a manual **▶ Start** tap before counting down — gives time to read the stretch and get into position
