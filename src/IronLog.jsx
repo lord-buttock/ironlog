@@ -3056,6 +3056,8 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
 function History({ sessions, setSessions, allExercises = EXERCISES }) {
   const [expanded, setExpanded] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null); // sess.id pending delete
+  const [editingId, setEditingId] = useState(null);   // sess.id being edited, or null
+  const [draft, setDraft] = useState(null);            // deep copy of session under edit
   const sorted = [...sessions].sort((a, b) => new Date(b.date) - new Date(a.date));
 
   function deleteSession(id) {
@@ -3066,6 +3068,61 @@ function History({ sessions, setSessions, allExercises = EXERCISES }) {
     });
     setExpanded(null);
     setConfirmDelete(null);
+  }
+
+  function startEdit(sess) {
+    setEditingId(sess.id);
+    setDraft(JSON.parse(JSON.stringify(sess)));
+    setConfirmDelete(null); // clear any pending delete
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setDraft(null);
+  }
+
+  function saveEdit() {
+    setSessions(prev => {
+      const next = prev.map(s => s.id === editingId ? draft : s);
+      localStorage.setItem('il_sessions', JSON.stringify(next));
+      return next;
+    });
+    setEditingId(null);
+    setDraft(null);
+  }
+
+  function updateSet(exIdx, setIdx, field, value) {
+    setDraft(prev => {
+      const next = JSON.parse(JSON.stringify(prev));
+      next.exercises[exIdx].sets[setIdx][field] = value;
+      return next;
+    });
+  }
+
+  function updateNotes(exIdx, value) {
+    setDraft(prev => {
+      const next = JSON.parse(JSON.stringify(prev));
+      next.exercises[exIdx].notes = value;
+      return next;
+    });
+  }
+
+  function deleteSet(exIdx, setIdx) {
+    setDraft(prev => {
+      const next = JSON.parse(JSON.stringify(prev));
+      next.exercises[exIdx].sets.splice(setIdx, 1);
+      return next;
+    });
+  }
+
+  function addSet(exIdx) {
+    setDraft(prev => {
+      const next = JSON.parse(JSON.stringify(prev));
+      const sets = next.exercises[exIdx].sets;
+      const last = sets[sets.length - 1] || {};
+      sets.push({ ...last, rpe: null, pain: null, done: true });
+      return next;
+    });
   }
 
   if (!sessions.length) return (
@@ -3131,16 +3188,33 @@ function History({ sessions, setSessions, allExercises = EXERCISES }) {
                 })}
                 {sess.notes && <div style={{ marginTop: 8, fontSize: 13, color: C.muted, fontStyle: 'italic', borderTop: `1px solid ${C.dim}`, paddingTop: 8 }}>"{sess.notes}"</div>}
                 <div style={{ marginTop: 12, borderTop: `1px solid ${C.dim}`, paddingTop: 10 }}>
-                  {confirmDelete === sess.id ? (
+                  {editingId === sess.id ? (
+                    /* Edit mode footer: Save full-width, Cancel below */
+                    <div>
+                      <button onClick={saveEdit} style={{ ...st.btn(), marginBottom: 8 }}>
+                        ✓ Save changes
+                      </button>
+                      <button onClick={cancelEdit} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontSize: 12, display: 'block', width: '100%', textAlign: 'center', padding: '4px 0' }}>
+                        Cancel
+                      </button>
+                    </div>
+                  ) : confirmDelete === sess.id ? (
+                    /* Delete confirmation */
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span style={{ fontSize: 12, color: C.muted, flex: 1 }}>Delete this session?</span>
                       <button onClick={() => deleteSession(sess.id)} style={{ ...st.btnSm('#d9534f'), padding: '5px 12px', fontSize: 12 }}>Delete</button>
                       <button onClick={() => setConfirmDelete(null)} style={{ ...st.btnSm(), padding: '5px 12px', fontSize: 12 }}>Cancel</button>
                     </div>
                   ) : (
-                    <button onClick={() => setConfirmDelete(sess.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontSize: 12, padding: 0, opacity: 0.7 }}>
-                      🗑 Delete session
-                    </button>
+                    /* Read mode footer: Edit left, Delete right — never adjacent */
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <button onClick={() => { startEdit(sess); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.amber, fontSize: 12, padding: 0 }}>
+                        ✏ Edit
+                      </button>
+                      <button onClick={() => setConfirmDelete(sess.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontSize: 12, padding: 0, opacity: 0.7 }}>
+                        🗑 Delete session
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
