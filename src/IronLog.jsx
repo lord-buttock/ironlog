@@ -1977,16 +1977,10 @@ function WarmupActive({ workout, onComplete }) {
     if (!s) { onComplete(); return; }
 
     if (s.bilateral && sideRef.current === 1) {
-      // Side 1 done — show switch message for 1.5s then auto-start side 2
+      // Side 1 done — signal Switch Sides; separate useEffect handles the 1.5s auto-start
       setShowSwitch(true);
       setRunning(false);
-      const switchId = setTimeout(() => {
-        setShowSwitch(false);
-        setSide(2);
-        setTimeLeft(s.suggestedSecs);
-        setRunning(true);   // auto-start side 2
-      }, 1500);
-      return () => clearTimeout(switchId);
+      return;
     }
 
     // Both sides (or unilateral) done — brief pause then advance to next stretch (paused)
@@ -2000,6 +1994,20 @@ function WarmupActive({ workout, onComplete }) {
     }, 500);
     return () => clearTimeout(id);
   }, [timeLeft, running]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Switch Sides: auto-start side 2 after 1.5s — isolated so setRunning(false) can't cancel it
+  useEffect(() => {
+    if (!showSwitch) return;
+    const s = currentRef.current;
+    if (!s) return;
+    const switchId = setTimeout(() => {
+      setShowSwitch(false);
+      setSide(2);
+      setTimeLeft(s.suggestedSecs);
+      setRunning(true);
+    }, 1500);
+    return () => clearTimeout(switchId);
+  }, [showSwitch]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function advance() {
     const nextIndex = index + 1;
@@ -2329,16 +2337,10 @@ function StretchActive({ onDone }) {
     if (!s) { onDone(); return; }
 
     if (s.bilateral && sideRef.current === 1) {
-      // Side 1 done — show Switch Sides for 1.5s then auto-start side 2
+      // Side 1 done — signal Switch Sides; separate useEffect handles the 1.5s auto-start
       setShowSwitch(true);
       setRunning(false);
-      const switchId = setTimeout(() => {
-        setShowSwitch(false);
-        setSide(2);
-        setTimeLeft(s.suggestedSecs);
-        setRunning(true);
-      }, 1500);
-      return () => clearTimeout(switchId);
+      return;
     }
 
     // Unilateral or side 2 done — 0.5s pause then advance (paused)
@@ -2352,6 +2354,20 @@ function StretchActive({ onDone }) {
     }, 500);
     return () => clearTimeout(id);
   }, [timeLeft, running]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Switch Sides: auto-start side 2 after 1.5s — isolated so setRunning(false) can't cancel it
+  useEffect(() => {
+    if (!showSwitch) return;
+    const s = currentRef.current;
+    if (!s) return;
+    const switchId = setTimeout(() => {
+      setShowSwitch(false);
+      setSide(2);
+      setTimeLeft(s.suggestedSecs);
+      setRunning(true);
+    }, 1500);
+    return () => clearTimeout(switchId);
+  }, [showSwitch]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function advance() {
     const next = index + 1;
