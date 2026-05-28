@@ -498,58 +498,70 @@ const STRETCH_LIBRARY = [
 const WARMUP_GROUPS = [
   {
     id: 'neck', label: 'Neck', emoji: '🧠',
-    defaultId: 'str_neck_rotation',
+    defaultId: { A: 'str_neck_rotation', B: 'str_neck_rotation', C: 'str_neck_rotation' },
     options: ['str_neck_rotation', 'str_neck'],
   },
   {
     id: 'shoulders', label: 'Shoulders', emoji: '💪',
-    defaultId: 'wu_pendulum',
+    // A (Push): pendulum loosens the joint before pressing; B (Pull): same — scapular prep; C (Legs): same
+    defaultId: { A: 'wu_pendulum', B: 'wu_pendulum', C: 'wu_pendulum' },
     options: ['wu_pendulum', 'str_cross_shoulder', 'str_overhead_triceps'],
   },
   {
     id: 'chest', label: 'Chest', emoji: '🫁',
-    defaultId: 'wu_chest_opener',
+    // A (Push): chest opener primes pec/anterior delt for pressing; B (Pull): biceps wall stretch
+    // targets the biceps/anterior chain loaded during rows & curls; C (Legs): upward dog opens hip
+    // flexors and thoracic spine before squatting
+    defaultId: { A: 'wu_chest_opener', B: 'str_biceps_wall', C: 'str_upward_dog' },
     options: ['wu_chest_opener', 'str_upward_dog', 'str_biceps_wall'],
   },
   {
     id: 'trunk', label: 'Trunk', emoji: '🔄',
-    defaultId: 'str_cat_cow_cow',
+    defaultId: { A: 'str_cat_cow_cow', B: 'str_cat_cow_cow', C: 'str_cat_cow_cow' },
     options: ['str_cat_cow_cow', 'str_sideways_bend', 'str_spinal_rotation', 'str_pilates_saw'],
   },
   {
     id: 'lowerback', label: 'Lower Back', emoji: '🔻',
-    defaultId: 'wu_prone_cobra',
+    // A & B: prone cobra activates thoracic extensors; C (Legs/hinge day): child's pose
+    // decompresses the lumbar spine before deadlifts, squats, and hip thrusts
+    defaultId: { A: 'wu_prone_cobra', B: 'wu_prone_cobra', C: 'str_childs_pose' },
     options: ['wu_prone_cobra', 'str_knee_to_chest', 'str_double_knee_chest', 'str_childs_pose'],
   },
   {
     id: 'hips', label: 'Hips', emoji: '🦋',
-    defaultId: 'str_figure_four',
+    // A (Push): figure-four keeps hip/sciatica coverage on a session that doesn't load hips;
+    // B (Pull): hip-flexor stretch counters the anterior tilt loaded by deadlifts;
+    // C (Legs): 90/90 opens both hip internal & external rotation — critical before squats/lunges
+    defaultId: { A: 'str_figure_four', B: 'str_hip_flexor', C: 'str_90_90_hip' },
     options: ['str_figure_four', 'str_pigeon', 'str_90_90_hip', 'str_piriformis_seated', 'str_butterfly', 'str_hip_flexor', 'str_knee_opp_shoulder'],
   },
   {
     id: 'legs', label: 'Legs', emoji: '🦵',
-    defaultId: 'wu_hamstring_stretch',
+    // Hamstring stretch retained across all workouts — core sciatica/hamstring care requirement
+    defaultId: { A: 'wu_hamstring_stretch', B: 'wu_hamstring_stretch', C: 'wu_hamstring_stretch' },
     options: ['wu_hamstring_stretch', 'str_hamstring', 'str_quad_standing', 'str_forward_fold', 'str_it_band', 'str_lateral_lunge'],
   },
   {
     id: 'ankles', label: 'Ankles', emoji: '🦶',
-    defaultId: 'str_ankle_circles',
+    // A & B: circles for general ankle mobility; C (Legs): dorsiflexion prep is critical for
+    // squat depth and lunge stability
+    defaultId: { A: 'str_ankle_circles', B: 'str_ankle_circles', C: 'str_ankle_dorsiflexion' },
     options: ['str_ankle_circles', 'str_ankle_dorsiflexion', 'str_calf_straight'],
   },
 ];
 
 // Returns the 8-element stretch-ID array for a given workout ('A', 'B', or 'C').
-// Falls back to the group default if a slot has no saved value.
+// Falls back to the per-workout group default if a slot has no saved value.
 function getWarmupConfig(workout) {
   const raw = JSON.parse(localStorage.getItem('il_warmup_config') || '{}');
   const saved = raw[workout] || [];
-  return WARMUP_GROUPS.map((group, i) => saved[i] || group.defaultId);
+  return WARMUP_GROUPS.map((group, i) => saved[i] || group.defaultId[workout] || group.defaultId.A);
 }
 
 // Saves a single slot choice.
 function saveWarmupChoice(workout, slotIndex, stretchId) {
   const raw = JSON.parse(localStorage.getItem('il_warmup_config') || '{}');
-  const saved = raw[workout] ? [...raw[workout]] : WARMUP_GROUPS.map(g => g.defaultId);
+  const saved = raw[workout] ? [...raw[workout]] : WARMUP_GROUPS.map(g => g.defaultId[workout] || g.defaultId.A);
   saved[slotIndex] = stretchId;
   raw[workout] = saved;
   localStorage.setItem('il_warmup_config', JSON.stringify(raw));
