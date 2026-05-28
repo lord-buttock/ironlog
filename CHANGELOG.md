@@ -4,6 +4,17 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-05-28 — Per-Workout Warm-Up Defaults
+
+- `WARMUP_GROUPS.defaultId` changed from a single string to `{ A, B, C }` so each workout gets targeted defaults
+- Workout A (Push): Chest slot = chest-opener; Hips = figure-four; Ankles = circles
+- Workout B (Pull): Chest slot = biceps-wall stretch (primes pull chain); Hips = hip-flexor; Ankles = circles
+- Workout C (Legs): Chest slot = upward-dog (thoracic/hip-flexor); Lower Back = child's pose (lumbar decompression); Hips = 90/90-hip; Ankles = dorsiflexion
+- Neck, shoulders, trunk, and legs (hamstring) unchanged across all workouts — sciatica/hamstring care retained
+- `getWarmupConfig` and `saveWarmupChoice` updated to resolve per-workout defaults; existing saved choices unaffected
+
+---
+
 ## 2026-05-26 — Session Set Editing
 
 - History: expanded session cards now have an "✏ Edit" button (left) alongside "🗑 Delete" (right)
