@@ -2543,6 +2543,79 @@ function StretchActive({ onDone }) {
 // ═══════════════════════════════════════════════════════════════════════
 // ACTIVE WORKOUT
 // ═══════════════════════════════════════════════════════════════════════
+function IronSeriesView({ sessions, allExercises, onStart }) {
+  const day = nextIronDay(sessions);
+  const wkt = getIronWorkout(day);
+  const PLAYLIST = 'https://www.youtube.com/playlist?list=PLhu1QCKrfgPWmStsg7imo5EQ0zmkxymJ2';
+  const ytUrl = wkt.ytId ? `https://www.youtube.com/watch?v=${wkt.ytId}` : PLAYLIST;
+  const week = Math.ceil(day / 5);
+
+  return (
+    <div style={{ padding: '16px 14px' }}>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+        {[1, 2, 3, 4, 5, 6].map(w => (
+          <div key={w} style={{
+            flex: 1, textAlign: 'center', padding: '5px 0',
+            borderRadius: 7, fontSize: 11, fontWeight: 700,
+            background: w === week ? C.amber : C.dim,
+            color: w < week ? C.amber : w === week ? '#fff' : C.muted,
+            border: w < week ? `1px solid ${C.amber}` : 'none',
+          }}>
+            Wk {w}
+          </div>
+        ))}
+      </div>
+
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 14, marginBottom: 12 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+          <div style={{ fontFamily: C.fCond, fontSize: 13, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: 1 }}>
+            🔩 Day {day} of 30
+          </div>
+          <div style={{ fontSize: 11, color: C.muted, textAlign: 'right' }}>{wkt.format}</div>
+        </div>
+        <div style={{ fontFamily: C.fCond, fontSize: 20, fontWeight: 700, color: C.text, marginBottom: 10 }}>
+          {wkt.title}
+        </div>
+
+        <div style={{ marginBottom: 10 }}>
+          {wkt.exercises.map((exId, idx) => {
+            const def = allExercises[exId];
+            if (!def) return null;
+            const isSuperset = wkt.supersets?.some(([, b]) => b === idx);
+            return (
+              <div key={`${exId}-${idx}`}>
+                {isSuperset && (
+                  <div style={{ textAlign: 'center', fontSize: 9, fontWeight: 700, color: C.amber, letterSpacing: 1, textTransform: 'uppercase', padding: '2px 0' }}>
+                    SUPERSET
+                  </div>
+                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', borderBottom: `1px solid ${C.dim}` }}>
+                  <div style={{ width: 18, height: 18, borderRadius: 4, background: C.dim, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: C.muted }}>
+                    {idx + 1}
+                  </div>
+                  <div style={{ flex: 1, fontSize: 13, color: C.text }}>{def.name}</div>
+                  {def.perSide && <div style={{ fontSize: 10, color: C.muted }}>/ side</div>}
+                </div>
+              </div>
+            );
+          }).filter(Boolean)}
+        </div>
+
+        <a href={ytUrl} target="_blank" rel="noopener noreferrer"
+          style={{ display: 'block', textAlign: 'center', fontSize: 12, color: C.amber, textDecoration: 'none', marginBottom: 10 }}>
+          ▶ Watch on YouTube
+        </a>
+      </div>
+
+      <button
+        onClick={() => onStart(`IRON_${day}`)}
+        style={{ ...st.btn('lg'), width: '100%', background: C.amber, color: '#fff', fontFamily: C.fCond, fontSize: 17, fontWeight: 700 }}>
+        ▶ Start Iron Day {day}
+      </button>
+    </div>
+  );
+}
+
 function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, setView, selectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, onDemoOpen, onWarmupOpen, coachRec }) {
   const nextWkt = selectedWorkout;
   const [session, setSession] = useState(activeSession || null);
@@ -4725,6 +4798,7 @@ export default function App() {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [showWhy, setShowWhy] = useState(false);
   const [preStartSwaps, setPreStartSwaps] = useState({});
+  const [ironView, setIronView] = useState(false);
 
   // Keep a ref to current data so export always uses the latest state
   const dataRef = useRef({});
@@ -4870,21 +4944,51 @@ export default function App() {
             coachRec={coachRec} showWhy={showWhy} setShowWhy={setShowWhy} />
         )}
         {view === 'workout' && (
-          <ActiveWorkout
-            sessions={sessions}
-            activeSession={activeSession}
-            setActiveSession={setActiveSession}
-            onComplete={handleComplete}
-            setView={setView}
-            selectedWorkout={selectedWorkout}
-            allExercises={allExercises}
-            workoutCustom={workoutCustom}
-            workoutHidden={workoutHidden}
-            setWorkoutHidden={setWorkoutHidden}
-            onDemoOpen={setDemoExId}
-            onWarmupOpen={setWarmupDemoItem}
-            coachRec={coachRec}
-          />
+          <>
+            {!activeSession && (
+              <div style={{ display: 'flex', background: C.dim, borderRadius: 10, padding: 3, margin: '12px 14px 0', gap: 3 }}>
+                {[['My Split', false], ['🔩 Iron Series', true]].map(([label, val]) => (
+                  <button key={label} onClick={() => setIronView(val)} style={{
+                    flex: 1, padding: '7px 4px',
+                    borderRadius: 7, border: 'none',
+                    background: ironView === val ? C.card : 'transparent',
+                    color: ironView === val ? C.text : C.muted,
+                    fontFamily: C.fCond, fontSize: 13, fontWeight: 700,
+                    boxShadow: ironView === val ? '0 1px 3px rgba(0,0,0,0.10)' : 'none',
+                    cursor: 'pointer',
+                  }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+            {ironView && !activeSession ? (
+              <IronSeriesView
+                sessions={sessions}
+                allExercises={allExercises}
+                onStart={key => {
+                  const sess = buildSession(key, sessions, allExercises, workoutCustom, workoutHidden);
+                  if (sess) setActiveSession(sess);
+                }}
+              />
+            ) : (
+              <ActiveWorkout
+                sessions={sessions}
+                activeSession={activeSession}
+                setActiveSession={setActiveSession}
+                onComplete={handleComplete}
+                setView={setView}
+                selectedWorkout={selectedWorkout}
+                allExercises={allExercises}
+                workoutCustom={workoutCustom}
+                workoutHidden={workoutHidden}
+                setWorkoutHidden={setWorkoutHidden}
+                onDemoOpen={setDemoExId}
+                onWarmupOpen={setWarmupDemoItem}
+                coachRec={coachRec}
+              />
+            )}
+          </>
         )}
         {(view === 'stretch' || view === 'stretch_setup') && <StretchSetup onBegin={() => setView('stretch_active')} onSkip={() => setView('dashboard')} />}
         {view === 'stretch_active' && <StretchActive onDone={() => setView('dashboard')} />}
