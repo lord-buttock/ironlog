@@ -2592,7 +2592,7 @@ function StretchActive({ onDone }) {
 // ═══════════════════════════════════════════════════════════════════════
 // ACTIVE WORKOUT
 // ═══════════════════════════════════════════════════════════════════════
-function IronSeriesView({ sessions, allExercises, onStart }) {
+function IronSeriesView({ sessions, allExercises, onStart, onDemoOpen }) {
   const day = nextIronDay(sessions);
   const wkt = getIronWorkout(day);
   const PLAYLIST = 'https://www.youtube.com/playlist?list=PLhu1QCKrfgPWmStsg7imo5EQ0zmkxymJ2';
@@ -2631,6 +2631,7 @@ function IronSeriesView({ sessions, allExercises, onStart }) {
             const def = allExercises[exId];
             if (!def) return null;
             const isSuperset = wkt.supersets?.some(([, b]) => b === idx);
+            const muscle = def.primaryMuscle || def.muscle;
             return (
               <div key={`${exId}-${idx}`}>
                 {isSuperset && (
@@ -2638,12 +2639,16 @@ function IronSeriesView({ sessions, allExercises, onStart }) {
                     SUPERSET
                   </div>
                 )}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', borderBottom: `1px solid ${C.dim}` }}>
-                  <div style={{ width: 18, height: 18, borderRadius: 4, background: C.dim, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: C.muted }}>
-                    {idx + 1}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: `1px solid ${C.border}` }}>
+                  <div onClick={() => onDemoOpen && onDemoOpen(exId)} style={{ cursor: 'pointer', flexShrink: 0 }}>
+                    <ExerciseIcon id={exId} size={36} />
                   </div>
-                  <div style={{ flex: 1, fontSize: 13, color: C.text }}>{def.name}</div>
-                  {def.perSide && <div style={{ fontSize: 10, color: C.muted }}>/ side</div>}
+                  <span style={{ flex: 1, minWidth: 0, fontSize: 15, color: C.text }}>{def.name}</span>
+                  {muscle && (
+                    <span style={{ border: `1px solid ${C.border}`, borderRadius: 20, padding: '2px 9px', fontSize: 11, color: C.muted, fontFamily: C.fMono, whiteSpace: 'nowrap' }}>
+                      {muscle}
+                    </span>
+                  )}
                 </div>
               </div>
             );
@@ -5052,6 +5057,7 @@ export default function App() {
               <IronSeriesView
                 sessions={sessions}
                 allExercises={allExercises}
+                onDemoOpen={setDemoExId}
                 onStart={key => {
                   const sess = buildSession(key, sessions, allExercises, workoutCustom, workoutHidden);
                   if (sess) {
