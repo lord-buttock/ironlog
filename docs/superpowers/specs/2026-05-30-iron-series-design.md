@@ -64,11 +64,11 @@ function nextIronDay(sessions) {
   if (!done.length) return 1;
   const last = done[done.length - 1].workout;       // e.g. 'IRON_4'
   const lastDay = parseInt(last.split('_')[1], 10);
-  return Math.min(lastDay + 1, 30);
+  return lastDay >= 30 ? 1 : lastDay + 1;           // loops back to Day 1 after Day 30
 }
 ```
 
-When all 30 days are complete, Day 30 remains shown — no auto-restart. Programme is done.
+When all 30 days are complete, the programme loops back to Day 1. The Iron Series is designed to be repeated.
 
 ---
 
@@ -101,6 +101,12 @@ Most Iron days use 4 sets × 60s work / 30s rest. Exceptions:
 | Day 19 | Mixed straight + supersets | 4 | 60 |
 
 **Supersets:** Represented as adjacent exercises in the list with a small "SUPERSET" label between them. No change to the exercise data model — just visual grouping.
+
+### Timer behaviour for Iron sessions
+
+`defaultDuration` is a **reference value only** — it pre-fills the duration field in the set row so the log reflects the programme's intended interval length. It does **not** trigger an automatic countdown or lock the user out when the time expires.
+
+Phill follows the video for actual timing. He can continue an exercise past the 60-second target (or stop early) without IronLog interfering. The logged duration stays editable, just like weight and reps in A/B/C sessions. The existing rest timer between sets remains available but is optional — the video handles rest cues.
 
 ---
 
@@ -300,6 +306,31 @@ Bicep Curls · Overhead Tricep Extensions · Hammer Curls · Skull Crushers · F
 The CSV provides the playlist URL for most days (not individual video links). Video IDs need to be researched from the playlist during implementation. Only Day 1 has a confirmed direct link: `https://www.youtube.com/watch?v=SCxNnWW2zB8`.
 
 Implementation task: open the playlist, extract individual video IDs for all 30 days, add as `demo` field on each `IRON_WORKOUTS` entry.
+
+---
+
+## Icons and animation frames
+
+Iron exercises follow the same icon convention as all other exercises. This work is separate from the main implementation and can be done by Codex in a dedicated pass.
+
+### Static icons
+- **Location:** `assets/icons/[exercise_id].png`
+- **Size:** 108 × 108 px, transparent PNG
+- **Naming:** exactly matches the exercise ID, e.g. `iron_heel_elev_squat.png`
+- **Style:** consistent with existing exercise icons (line-art, single colour, transparent background)
+
+All 37 new `iron_*` exercise IDs listed in the exercise table above need a corresponding icon file. Codex can generate these in a single batch once the exercise IDs are finalised in code.
+
+### Animation frames (if applicable)
+- If Codex adds animated SVG or frame-based icons for any Iron exercises, they follow the same pattern as warmup icons in `assets/icons/warmup/`
+- A dedicated subfolder `assets/icons/iron/` is **not** used — keep the flat `assets/icons/` structure to match the existing icon-loading code
+- The `iron_` prefix already namespaces the files visually in the directory
+
+### Codex brief note
+When creating an icon/animation brief for Codex, include:
+1. The exercise ID (exact filename to create)
+2. The exercise name and a one-line description of the movement
+3. Reference to the existing icon style (line-art, 108×108, transparent)
 
 ---
 
