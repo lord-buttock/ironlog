@@ -213,6 +213,8 @@ const PNG_EXERCISE_ICON_IDS = new Set([
   'iron_kas_bridge', 'iron_sl_rdl', 'iron_bw_kickback', 'iron_overhead_tricep',
   'iron_diamond_pushup', 'iron_cyclist_squat', 'iron_fwd_lunge', 'iron_1_5_goblet',
   'iron_squat_pulse', 'iron_lean_lateral', 'iron_bench_dip',
+  'iron_b_stance_rdl', 'iron_sumo_dl', 'iron_banded_abduct', 'iron_plank_tap',
+  'iron_pronated_row',
 ]);
 
 const ExerciseIcon = ({ id, size = 36 }) => {
