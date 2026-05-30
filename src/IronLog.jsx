@@ -3330,14 +3330,35 @@ function History({ sessions, setSessions, allExercises = EXERCISES }) {
     <div style={{ padding: 16 }}>
       <div style={{ ...st.h2, marginBottom: 16 }}>Session Log</div>
       <div style={{ ...st.col() }}>
-        {sorted.map(sess => (
+        {sorted.map(sess => {
+          const isIron = sess.workout?.startsWith('IRON_');
+          const ironDay = isIron ? parseInt(sess.workout.split('_')[1], 10) : null;
+          const ironWkt = isIron ? getIronWorkout(ironDay) : null;
+          const workoutTitle = isIron
+            ? `Iron Series — Day ${ironDay}`
+            : WORKOUTS[sess.workout]?.title || sess.workout;
+
+          return (
           <div key={sess.id} style={{ ...st.card(), overflow: 'hidden' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
               onClick={() => setExpanded(expanded === sess.id ? null : sess.id)}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{ fontFamily: C.fDisplay, fontSize: 34, color: C.amber, lineHeight: 1 }}>{sess.workout}</span>
+                {isIron ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <div style={{
+                      background: C.dim, border: `1px solid ${C.border}`,
+                      borderRadius: 8, padding: '3px 8px',
+                      fontFamily: C.fCond, fontSize: 13, fontWeight: 700, color: C.text,
+                    }}>
+                      🔩 {ironDay}
+                    </div>
+                    <div style={{ fontSize: 12, color: C.muted }}>{ironWkt?.title}</div>
+                  </div>
+                ) : (
+                  <span style={{ fontFamily: C.fDisplay, fontSize: 34, color: C.amber, lineHeight: 1 }}>{sess.workout}</span>
+                )}
                 <div>
-                  <div style={{ fontFamily: C.fDisplay, fontSize: 14, textTransform: 'uppercase', letterSpacing: 0.5 }}>{WORKOUTS[sess.workout].title}</div>
+                  <div style={{ fontFamily: C.fDisplay, fontSize: 14, textTransform: 'uppercase', letterSpacing: 0.5 }}>{workoutTitle}</div>
                   <div style={{ ...st.mono(11, C.muted) }}>{fmtDate(sess.date)}</div>
                 </div>
               </div>
@@ -3505,7 +3526,8 @@ function History({ sessions, setSessions, allExercises = EXERCISES }) {
               </div>
             )}
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
