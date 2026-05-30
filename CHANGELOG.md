@@ -4,6 +4,19 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-05-30 — Iron Series Integration
+
+- Added Caroline Girvan's Iron Series (30 workouts, 6-week dumbbell programme) as a parallel programme
+- Workout tab now has "My Split / 🔩 Iron Series" toggle — both programmes track independently
+- 40 new exercises in `IRON_EXERCISES` constant; 30 workouts in `IRON_WORKOUTS` constant
+- `nextIronDay(sessions)` derives next Iron day from session history; loops back to Day 1 after Day 30
+- Iron sessions: energy check → exercises → complete (no warmup, no finisher; user follows video)
+- `defaultDuration` is reference-only — no timer lockout; user follows video timing
+- History: Iron sessions show `🔩 N` day badge and "Iron Series — Day N" title
+- Exercises shared with A/B/C (RDL, hip thrust, etc.) contribute to the same Stats charts
+- 40 MUSCLE_META entries added for all new Iron exercises
+- Direct YouTube video IDs populated for all 30 Iron days; icons remain a separate Codex pass — see ICON-GUIDE.md
+
 ## 2026-05-28 — Per-Workout Warm-Up Defaults
 
 - `WARMUP_GROUPS.defaultId` changed from a single string to `{ A, B, C }` so each workout gets targeted defaults

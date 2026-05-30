@@ -979,6 +979,20 @@ function getIronWorkout(day) {
   return IRON_WORKOUTS.find(w => w.day === day) || IRON_WORKOUTS[0];
 }
 
+function workoutDisplay(sess) {
+  const isIron = sess?.workout?.startsWith('IRON_');
+  if (!isIron) return {
+    badge: sess?.workout || '',
+    title: WORKOUTS[sess?.workout]?.title || sess?.workout || '',
+  };
+  const day = parseInt(sess.workout.split('_')[1], 10);
+  return {
+    badge: `🔩 ${day}`,
+    title: `Iron Series — Day ${day}`,
+    subtitle: getIronWorkout(day).title,
+  };
+}
+
 function getLastLogged(sessions, exId) {
   for (let i = sessions.length - 1; i >= 0; i--) {
     const ex = sessions[i].exercises?.find(e => e.id === exId);
@@ -1630,7 +1644,7 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
           }}>
             <div style={{ ...st.label, fontSize: 9 }}>{dayLetter}</div>
             {sess ? (
-              <div style={{ fontSize: 11, fontFamily: C.fDisplay, color: C.amber, lineHeight: 1 }}>{sess.workout}✓</div>
+              <div style={{ fontSize: 11, fontFamily: C.fDisplay, color: C.amber, lineHeight: 1 }}>{workoutDisplay(sess).badge}✓</div>
             ) : ride ? (
               <div style={{ fontSize: 12, lineHeight: 1 }}>🚴</div>
             ) : (
@@ -1704,21 +1718,25 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
         <>
           <div style={{ ...st.label, marginBottom: 8 }}>Recent</div>
           <div style={{ ...st.col() }}>
-            {recent.map(sess => (
-              <div key={sess.id} style={{ ...st.card(), display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px' }}>
-                <div style={{ ...st.row }}>
-                  <span style={{ fontFamily: C.fDisplay, fontSize: 26, color: C.amber, width: 22 }}>{sess.workout}</span>
-                  <div>
-                    <div style={{ fontSize: 13, fontFamily: C.fDisplay, textTransform: 'uppercase', letterSpacing: 0.5 }}>{WORKOUTS[sess.workout].title}</div>
-                    <div style={{ ...st.mono(11, C.muted) }}>{fmtDate(sess.date)}</div>
+            {recent.map(sess => {
+              const display = workoutDisplay(sess);
+              return (
+                <div key={sess.id} style={{ ...st.card(), display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px' }}>
+                  <div style={{ ...st.row }}>
+                    <span style={{ fontFamily: C.fDisplay, fontSize: 26, color: C.amber, minWidth: 22 }}>{display.badge}</span>
+                    <div>
+                      <div style={{ fontSize: 13, fontFamily: C.fDisplay, textTransform: 'uppercase', letterSpacing: 0.5 }}>{display.title}</div>
+                      {display.subtitle && <div style={{ fontSize: 11, color: C.muted }}>{display.subtitle}</div>}
+                      <div style={{ ...st.mono(11, C.muted) }}>{fmtDate(sess.date)}</div>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    {sess.duration && <div style={{ ...st.mono(12, C.muted) }}>{sess.duration}min</div>}
+                    {sess.energy && <div style={{ fontSize: 16 }}>{['😴','😕','😐','💪','🔥'][sess.energy - 1]}</div>}
                   </div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  {sess.duration && <div style={{ ...st.mono(12, C.muted) }}>{sess.duration}min</div>}
-                  {sess.energy && <div style={{ fontSize: 16 }}>{['😴','😕','😐','💪','🔥'][sess.energy - 1]}</div>}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </>
       )}
@@ -4871,7 +4889,7 @@ export default function App() {
   // Keep a ref to current data so export always uses the latest state
   const dataRef = useRef({});
 
-  const allExercises = { ...EXERCISES, ...PRESET_LIBRARY, ...customExercises };
+  const allExercises = { ...EXERCISES, ...PRESET_LIBRARY, ...IRON_EXERCISES, ...customExercises };
   const coachRec = computeCoachRecommendation(sessions, rides, selectedWorkout);
 
   useEffect(() => {
@@ -5036,7 +5054,10 @@ export default function App() {
                 allExercises={allExercises}
                 onStart={key => {
                   const sess = buildSession(key, sessions, allExercises, workoutCustom, workoutHidden);
-                  if (sess) setActiveSession(sess);
+                  if (sess) {
+                    setIronView(false);
+                    setActiveSession(sess);
+                  }
                 }}
               />
             ) : (
