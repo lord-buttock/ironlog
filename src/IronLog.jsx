@@ -988,6 +988,37 @@ function getLastLogged(sessions, exId) {
 }
 
 function buildSession(workoutKey, prevSessions, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, preStartSwaps = {}) {
+  if (workoutKey?.startsWith('IRON_')) {
+    const dayNum = parseInt(workoutKey.split('_')[1], 10);
+    const ironWkt = getIronWorkout(dayNum);
+    const exercises = ironWkt.exercises.map(exId => {
+      const def = allExercises[exId];
+      if (!def) return null;
+      const last = getLastLogged(prevSessions, exId);
+      const sets = Array.from({ length: ironWkt.defaultSets }, (_, i) => {
+        const ls = last?.sets?.[i] || last?.sets?.[0];
+        return {
+          weight: ls?.weight ?? '',
+          reps: null,
+          duration: ls?.duration ?? ironWkt.defaultDuration,
+          rpe: null, pain: null, done: false,
+        };
+      });
+      return { id: exId, sets, notes: '' };
+    }).filter(Boolean);
+    return {
+      id: Date.now().toString(),
+      workout: workoutKey,
+      date: new Date().toISOString(),
+      startTime: Date.now(),
+      energy: null,
+      exercises,
+      notes: '',
+      completed: false,
+      phase: 'energy',
+    };
+  }
+
   const wkt = WORKOUTS[workoutKey];
   const extraIds = workoutCustom[workoutKey] || [];
   const hiddenIds = new Set(workoutHidden[workoutKey] || []);
@@ -2672,10 +2703,12 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
     const base = (activeSession?.exercises?.length > 0)
       ? activeSession
       : buildSession(nextWkt, sessions, allExercises, workoutCustom, workoutHidden);
-    const s = { ...base, energy, phase: 'warmup_setup' };
+    const isIron = base.workout?.startsWith('IRON_');
+    const nextPhase = isIron ? 'workout' : 'warmup_setup';
+    const s = { ...base, energy, phase: nextPhase };
     setSession(s);
     setActiveSession(s);
-    setPhase('warmup_setup');
+    setPhase(nextPhase);
   }
 
   function cancelSession() {
@@ -2750,13 +2783,17 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
 
   // ── Energy ──────────────────────────────────────────────────────────
   if (phase === 'energy') {
+    const workoutKey = session?.workout || activeSession?.workout || nextWkt;
+    const isIron = workoutKey?.startsWith('IRON_');
+    const ironDay = isIron ? parseInt(workoutKey.split('_')[1], 10) : null;
+    const title = isIron ? getIronWorkout(ironDay).title : WORKOUTS[workoutKey].title;
     return (
       <div style={{ padding: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
           <button onClick={() => setView('dashboard')} style={{ background: 'none', border: 'none', color: C.muted, cursor: 'pointer', fontSize: 13, fontFamily: C.fMono, padding: 0 }}>back to Home</button>
         </div>
-        <div style={{ ...st.label, marginBottom: 4 }}>Workout {nextWkt}</div>
-        <div style={{ fontFamily: C.fDisplay, fontSize: 26, textTransform: 'uppercase', marginBottom: 24 }}>{WORKOUTS[nextWkt].title}</div>
+        <div style={{ ...st.label, marginBottom: 4 }}>{isIron ? `Iron Series · Day ${ironDay}` : `Workout ${nextWkt}`}</div>
+        <div style={{ fontFamily: C.fDisplay, fontSize: 26, textTransform: 'uppercase', marginBottom: 24 }}>{title}</div>
         <div style={{ ...st.card(), marginBottom: 16 }}>
           <div style={{ fontFamily: C.fDisplay, fontSize: 16, textTransform: 'uppercase', letterSpacing: 1, color: C.muted, marginBottom: 16 }}>Energy level today?</div>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -3050,7 +3087,16 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
           {exIdx < session.exercises.length - 1 ? (
             <button style={{ ...st.btn(), flex: 1 }} onClick={() => setExIdx(i => i + 1)}>Next ›</button>
           ) : (
-            <button style={{ ...st.btn(C.green), flex: 1 }} onClick={() => { setPhase('finisher'); setActiveSession(s => s ? { ...s, phase: 'finisher' } : s); }}>Finisher ›</button>
+            <button style={{ ...st.btn(C.green), flex: 1 }} onClick={() => {
+              if (session.workout?.startsWith('IRON_')) {
+                completeWorkout();
+              } else {
+                setPhase('finisher');
+                setActiveSession(s => s ? { ...s, phase: 'finisher' } : s);
+              }
+            }}>
+              {session.workout?.startsWith('IRON_') ? 'Complete Session ✓' : 'Finisher ›'}
+            </button>
           )}
         </div>
 
