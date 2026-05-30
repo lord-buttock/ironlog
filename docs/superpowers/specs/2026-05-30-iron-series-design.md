@@ -311,26 +311,57 @@ Implementation task: open the playlist, extract individual video IDs for all 30 
 
 ## Icons and animation frames
 
-Iron exercises follow the same icon convention as all other exercises. This work is separate from the main implementation and can be done by Codex in a dedicated pass.
+**Authoritative reference: `ICON-GUIDE.md` — read it in full before generating anything.**
 
-### Static icons
-- **Location:** `assets/icons/[exercise_id].png`
-- **Size:** 108 × 108 px, transparent PNG
-- **Naming:** exactly matches the exercise ID, e.g. `iron_heel_elev_squat.png`
-- **Style:** consistent with existing exercise icons (line-art, single colour, transparent background)
+Icon and animation work is a separate pass from the main implementation, done by Codex once exercise IDs are finalised in code.
 
-All 37 new `iron_*` exercise IDs listed in the exercise table above need a corresponding icon file. Codex can generate these in a single batch once the exercise IDs are finalised in code.
+### Asset sizes and locations
 
-### Animation frames (if applicable)
-- If Codex adds animated SVG or frame-based icons for any Iron exercises, they follow the same pattern as warmup icons in `assets/icons/warmup/`
-- A dedicated subfolder `assets/icons/iron/` is **not** used — keep the flat `assets/icons/` structure to match the existing icon-loading code
-- The `iron_` prefix already namespaces the files visually in the directory
+| Asset | Path | Size |
+|---|---|---|
+| Exercise icon | `assets/icons/<exercise_id>.png` | **324 × 324 px** |
+| Demo frame 1 | `assets/demos/<exercise_id>_1.png` | 1024 × 1024 px |
+| Demo frame 2 | `assets/demos/<exercise_id>_2.png` | 1024 × 1024 px |
+| Demo frame 3 (complex moves) | `assets/demos/<exercise_id>_3.png` | 1024 × 1024 px |
 
-### Codex brief note
-When creating an icon/animation brief for Codex, include:
-1. The exercise ID (exact filename to create)
-2. The exercise name and a one-line description of the movement
-3. Reference to the existing icon style (line-art, 108×108, transparent)
+All assets: true transparent alpha, no background, no text, no border.
+
+> **Note:** Early icons were produced at 108×108px. The current standard is **324×324px** (3× Retina — renders sharp at the 108px CSS display size). All new Iron exercise icons must use 324×324px.
+
+### Generation pipeline (summary — see ICON-GUIDE.md for full scripts)
+
+1. Generate demo frames first at 1024×1024 using the master prompt template (athlete bible + camera family + exercise description)
+2. Check all frames against the quality gate — regenerate failures before cleanup
+3. Run the **multi-frame cleanup script** (processes frames together with shared union bounding box — keeps figure same apparent size across frames)
+4. Derive the 324×324 icon from the best demo frame using the **single-frame icon cleanup script**
+5. Verify with `sips` — icons must show `pixelWidth: 324 / pixelHeight: 324 / hasAlpha: yes`
+6. Save to `assets/icons/<exercise_id>.png` and `assets/demos/<exercise_id>_N.png`
+
+### Camera family per Iron exercise type
+
+Select the correct camera family from ICON-GUIDE.md:
+
+| Camera family | Use for these Iron exercises |
+|---|---|
+| **Squat/lunge** | Heel-elevated squat, goblet squat, sumo squat, Bulgarian split squat, cyclist squat, reverse lunge, forward lunge, curtsy lunge, squat hold, squat pulse, step-ups, cross-over step-up |
+| **Hinge** | RDL, B-stance RDL, single-leg RDL, sumo deadlift, hip hinge hold |
+| **Bench/supine** | Hip thrust, B-stance hip thrust, Kas bridge, floor hip thrust, glute bridge, frog pump, lying hamstring curl, skull crushers, chest press, incline press, floor fly, pullover |
+| **Floor/mat** | Dead bug, plank, plank tap, banded abduction, bodyweight kickback, back hyper-extension |
+| **Standing frontal/three-quarter** | All row variations, bicep curls, hammer curls, zottman curl, lateral raise, front raise, rear delt row, shoulder press, overhead tricep, tricep kickback, shrug, calf raise, suitcase carry, suitcase squat, bench dip, chair dip, diamond push-up, push-up |
+
+### After icons are added
+
+1. Add each new exercise ID to `PNG_EXERCISE_ICON_IDS` in `src/IronLog.jsx` (~line 186) so the app uses the PNG instead of the SVG fallback
+2. Run `node build.js`
+3. Commit `src/IronLog.jsx` + `dist/index.html` + `index.html` + `version.json` together
+
+### Directory structure — do not create subfolders
+
+A dedicated `assets/icons/iron/` subfolder is **not** used. Keep the flat `assets/icons/` structure to match the existing icon-loading code. The `iron_` prefix namespaces the files within the directory.
+
+### MUSCLE_META entries
+
+All 37 new Iron exercises also need entries in `MUSCLE_META` in `src/IronLog.jsx`. See `MUSCLE-DIAGRAM-SPEC.md` for the canonical muscle name list and rules (max 1 primary, max 2 secondary). This can be done in the same Codex pass as the icon work or as part of the main implementation.
 
 ---
 
