@@ -211,7 +211,8 @@ const PNG_EXERCISE_ICON_IDS = new Set([
   // Iron Series exercises
   'iron_heel_elev_squat', 'iron_bulgarian_split', 'iron_db_row', 'iron_pushup',
   'iron_kas_bridge', 'iron_sl_rdl', 'iron_bw_kickback', 'iron_overhead_tricep',
-  'iron_diamond_pushup', 'iron_cyclist_squat',
+  'iron_diamond_pushup', 'iron_cyclist_squat', 'iron_fwd_lunge', 'iron_1_5_goblet',
+  'iron_squat_pulse', 'iron_lean_lateral', 'iron_bench_dip',
 ]);
 
 const ExerciseIcon = ({ id, size = 36 }) => {
