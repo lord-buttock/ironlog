@@ -4210,7 +4210,7 @@ applyStretchMeta();
 // ═══════════════════════════════════════════════════════════════════════
 // MANAGE (Exercise Library + Workout Builder)
 // ═══════════════════════════════════════════════════════════════════════
-const MUSCLE_FILTERS = ['All','Arms','Shoulders','Push','Pull','Hinge','Legs','Glutes','Core'];
+const MUSCLE_FILTERS = ['All','Push','Pull','Hinge','Legs','Quads','Hamstrings','Glutes','Shoulders','Arms','Core'];
 const EMPTY_FORM = { name: '', muscle: 'Arms', unit: 'kg', defaultSets: 3, defaultReps: 10, repMax: 10, cue: '' };
 
 function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkoutCustom, workoutHidden, setWorkoutHidden, allExercises, driveSync, onDriveSave, onDriveLoad, onCloudSync, onDemoOpen }) {
@@ -4232,6 +4232,7 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
   const libraryEntries = [
     ...Object.entries(EXERCISES),
     ...Object.entries(PRESET_LIBRARY),
+    ...Object.entries(IRON_EXERCISES),
     ...Object.entries(customExercises),
   ];
 
@@ -4240,7 +4241,7 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
   );
 
   const filtered = libraryEntries.filter(([, ex]) => {
-    const mMatch = muscle === 'All' || ex.muscle === muscle;
+    const mMatch = muscle === 'All' || ex.muscle === muscle || ex.primaryMuscle === muscle;
     const sMatch = !search.trim() || ex.name.toLowerCase().includes(search.toLowerCase());
     return mMatch && sMatch;
   });
