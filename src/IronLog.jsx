@@ -217,7 +217,8 @@ const PNG_EXERCISE_ICON_IDS = new Set([
   'iron_pronated_row', 'iron_supinated_row', 'iron_pullover', 'iron_zottman',
   'iron_suitcase_squat', 'iron_curtsy_lunge', 'iron_seated_calf',
   'iron_incline_press', 'iron_hip_hinge_hold', 'iron_bw_hyper_ext',
-  'iron_front_raise',
+  'iron_front_raise', 'iron_lying_ham_curl', 'iron_lateral_hold',
+  'iron_rear_delt_row', 'iron_crossover_stepup', 'iron_squat_hold',
 ]);
 
 const ExerciseIcon = ({ id, size = 36 }) => {
