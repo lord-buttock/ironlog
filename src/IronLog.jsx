@@ -2608,7 +2608,8 @@ function IronSeriesView({ sessions, allExercises, onStart, onDemoOpen }) {
   const ytUrl = wkt.ytId ? `https://www.youtube.com/watch?v=${wkt.ytId}` : PLAYLIST;
   const week = Math.ceil(day / 5);
   const [expandedEx, setExpandedEx] = useState(null);
-  const [ytModal, setYtModal] = useState(false);
+  const [ytModal, setYtModal] = useState(false);       // full workout video
+  const [demoModal, setDemoModal] = useState(null);    // { id, name } for per-exercise demo
 
   return (
     <div style={{ padding: '16px 14px' }}>
@@ -2709,18 +2710,31 @@ function IronSeriesView({ sessions, allExercises, onStart, onDemoOpen }) {
                         {def.cue}
                       </div>
                     )}
-                    {def.demo && (
+                    {def.demoId ? (
+                      <button onClick={() => setDemoModal({ id: def.demoId, name: def.name })}
+                        style={{ background: 'none', border: 'none', padding: 0, fontSize: 12, color: C.amber, cursor: 'pointer' }}>
+                        ▶ Watch demo
+                      </button>
+                    ) : def.demo ? (
                       <a href={def.demo} target="_blank" rel="noopener noreferrer"
                         style={{ display: 'inline-block', fontSize: 12, color: C.amber, textDecoration: 'none' }}>
                         ▶ Watch demo
                       </a>
-                    )}
+                    ) : null}
                   </div>
                 )}
               </div>
             );
           }).filter(Boolean)}
         </div>
+
+        {demoModal && (
+          <YouTubeModal
+            ytId={demoModal.id}
+            title={demoModal.name}
+            onClose={() => setDemoModal(null)}
+          />
+        )}
 
         {wkt.ytId ? (
           <button
@@ -4299,6 +4313,7 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
   const [muscle, setMuscle] = useState('All');
   const [addWktPicker, setAddWktPicker] = useState(null); // exId being placed into a workout
   const [expandedLib, setExpandedLib] = useState(null);  // exId currently expanded in library
+  const [libDemoModal, setLibDemoModal] = useState(null); // { id, name } for in-app demo
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [wktTab, setWktTab] = useState('A');
@@ -4482,6 +4497,17 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
                           {ex.cue}
                         </div>
                       )}
+                      {ex.demoId ? (
+                        <button onClick={() => setLibDemoModal({ id: ex.demoId, name: ex.name })}
+                          style={{ background: 'none', border: 'none', padding: 0, fontSize: 12, color: C.amber, cursor: 'pointer' }}>
+                          ▶ Watch demo
+                        </button>
+                      ) : ex.demo ? (
+                        <a href={ex.demo} target="_blank" rel="noopener noreferrer"
+                          style={{ fontSize: 12, color: C.amber, textDecoration: 'none' }}>
+                          ▶ Watch demo
+                        </a>
+                      ) : null}
                     </div>
                   )}
 
@@ -4518,13 +4544,19 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
                       <button onClick={() => setAddWktPicker(id)} style={{ ...st.btnSm(), fontSize: 12, flex: 1 }}>
                         ＋ Add to Workout
                       </button>
-                      {ex.demo && (
+                      {ex.demoId ? (
+                        <button onClick={() => setLibDemoModal({ id: ex.demoId, name: ex.name })} style={{
+                          ...st.btnSm(C.dim, C.muted), fontSize: 11, display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer',
+                        }}>
+                          <span style={{ color: C.red }}>▶</span> Demo
+                        </button>
+                      ) : ex.demo ? (
                         <a href={ex.demo} target="_blank" rel="noopener noreferrer" style={{
                           ...st.btnSm(C.dim, C.muted), fontSize: 11, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4,
                         }}>
                           <span style={{ color: C.red }}>▶</span> Demo
                         </a>
-                      )}
+                      ) : null}
                     </div>
                   )}
                 </div>
@@ -4847,6 +4879,13 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
             ↺ Check for updates
           </button>
         </div>
+      )}
+      {libDemoModal && (
+        <YouTubeModal
+          ytId={libDemoModal.id}
+          title={libDemoModal.name}
+          onClose={() => setLibDemoModal(null)}
+        />
       )}
     </div>
   );
