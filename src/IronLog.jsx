@@ -2608,6 +2608,7 @@ function IronSeriesView({ sessions, allExercises, onStart, onDemoOpen }) {
   const ytUrl = wkt.ytId ? `https://www.youtube.com/watch?v=${wkt.ytId}` : PLAYLIST;
   const week = Math.ceil(day / 5);
   const [expandedEx, setExpandedEx] = useState(null);
+  const [ytModal, setYtModal] = useState(false);
 
   return (
     <div style={{ padding: '16px 14px' }}>
@@ -2721,11 +2722,27 @@ function IronSeriesView({ sessions, allExercises, onStart, onDemoOpen }) {
           }).filter(Boolean)}
         </div>
 
-        <a href={ytUrl} target="_blank" rel="noopener noreferrer"
-          style={{ display: 'block', textAlign: 'center', fontSize: 12, color: C.amber, textDecoration: 'none', marginBottom: 10 }}>
-          ▶ Watch full workout on YouTube
-        </a>
+        {wkt.ytId ? (
+          <button
+            onClick={() => setYtModal(true)}
+            style={{ display: 'block', width: '100%', background: 'none', border: 'none', textAlign: 'center', fontSize: 12, color: C.amber, cursor: 'pointer', marginBottom: 10, padding: 0 }}>
+            ▶ Watch full workout
+          </button>
+        ) : (
+          <a href={ytUrl} target="_blank" rel="noopener noreferrer"
+            style={{ display: 'block', textAlign: 'center', fontSize: 12, color: C.amber, textDecoration: 'none', marginBottom: 10 }}>
+            ▶ Watch full workout
+          </a>
+        )}
       </div>
+
+      {ytModal && (
+        <YouTubeModal
+          ytId={wkt.ytId}
+          title={`Iron Series · Day ${day} — ${wkt.title}`}
+          onClose={() => setYtModal(false)}
+        />
+      )}
 
       <button
         onClick={() => onStart(`IRON_${day}`)}
@@ -4902,6 +4919,48 @@ function ExerciseDemoModal({ exerciseId, onClose }) {
         position: 'absolute', top: 24, right: 24,
         color: 'rgba(255,255,255,0.5)', fontSize: 28, lineHeight: 1, cursor: 'pointer',
       }}>✕</div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// YOUTUBE EMBED MODAL
+function YouTubeModal({ ytId, title, onClose }) {
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 600,
+        background: 'rgba(5,10,30,0.96)',
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{ width: '100%', maxWidth: 480, padding: '0 12px', boxSizing: 'border-box' }}
+      >
+        {title && (
+          <div style={{ fontFamily: C.fCond, fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10, textAlign: 'center' }}>
+            {title}
+          </div>
+        )}
+        <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%', borderRadius: 12, overflow: 'hidden', background: '#000' }}>
+          <iframe
+            src={`https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1`}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
+          />
+        </div>
+        <div style={{ textAlign: 'center', marginTop: 14 }}>
+          <button onClick={onClose} style={{
+            background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+            borderRadius: 20, color: 'rgba(255,255,255,0.7)', padding: '8px 24px',
+            fontSize: 13, cursor: 'pointer',
+          }}>✕ Close</button>
+        </div>
+      </div>
     </div>
   );
 }
