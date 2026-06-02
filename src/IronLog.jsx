@@ -2813,6 +2813,7 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [showDiagram, setShowDiagram] = useState(false);
   const [pickerSlot, setPickerSlot] = useState(null); // null = no picker; 0–7 = slot being edited
+  const [workoutDemoModal, setWorkoutDemoModal] = useState(null); // { id, name } for in-app demo
 
   const elapsedRef = useRef(null);
   const restRef = useRef(null);
@@ -3070,8 +3071,17 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
         </div>
         <div style={{ ...st.card(), padding: '10px 12px', borderLeft: `2px solid ${C.amber}`, marginBottom: 14, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5, marginBottom: def.demo ? 10 : 0 }}>{def.cue}</div>
-            {def.demo && (
+            <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5, marginBottom: (def.demoId || def.demo) ? 10 : 0 }}>{def.cue}</div>
+            {def.demoId ? (
+              <button onClick={() => setWorkoutDemoModal({ id: def.demoId, name: def.name })} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                background: C.dim, border: `1px solid ${C.border}`, borderRadius: 4,
+                padding: '6px 12px', fontSize: 11, fontFamily: C.fMono,
+                color: C.text, cursor: 'pointer', letterSpacing: 0.8, textTransform: 'uppercase',
+              }}>
+                <span style={{ color: C.red, fontSize: 13 }}>▶</span> Watch Demo
+              </button>
+            ) : def.demo ? (
               <a href={def.demo} target="_blank" rel="noopener noreferrer" style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6,
                 background: C.dim, border: `1px solid ${C.border}`, borderRadius: 4,
@@ -3080,6 +3090,13 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
               }}>
                 <span style={{ color: C.red, fontSize: 13 }}>▶</span> Watch Demo
               </a>
+            ) : null}
+            {workoutDemoModal && (
+              <YouTubeModal
+                ytId={workoutDemoModal.id}
+                title={workoutDemoModal.name}
+                onClose={() => setWorkoutDemoModal(null)}
+              />
             )}
           </div>
           <div onClick={() => onDemoOpen && onDemoOpen(exId)} style={{ cursor: 'pointer', flexShrink: 0 }}>
