@@ -2607,6 +2607,7 @@ function IronSeriesView({ sessions, allExercises, onStart, onDemoOpen }) {
   const PLAYLIST = 'https://www.youtube.com/playlist?list=PLhu1QCKrfgPWmStsg7imo5EQ0zmkxymJ2';
   const ytUrl = wkt.ytId ? `https://www.youtube.com/watch?v=${wkt.ytId}` : PLAYLIST;
   const week = Math.ceil(day / 5);
+  const [expandedEx, setExpandedEx] = useState(null);
 
   return (
     <div style={{ padding: '16px 14px' }}>
@@ -2641,15 +2642,19 @@ function IronSeriesView({ sessions, allExercises, onStart, onDemoOpen }) {
             if (!def) return null;
             const isSuperset = wkt.supersets?.some(([, b]) => b === idx);
             const muscle = def.primaryMuscle || def.muscle;
+            const isExpanded = expandedEx === `${exId}-${idx}`;
             return (
-              <div key={`${exId}-${idx}`}>
+              <div key={`${exId}-${idx}`} style={{ borderBottom: `1px solid ${C.border}` }}>
                 {isSuperset && (
                   <div style={{ textAlign: 'center', fontSize: 9, fontWeight: 700, color: C.amber, letterSpacing: 1, textTransform: 'uppercase', padding: '2px 0' }}>
                     SUPERSET
                   </div>
                 )}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: `1px solid ${C.border}` }}>
-                  <div onClick={() => onDemoOpen && onDemoOpen(exId)} style={{ cursor: 'pointer', flexShrink: 0 }}>
+                {/* Tappable row */}
+                <div
+                  onClick={() => setExpandedEx(isExpanded ? null : `${exId}-${idx}`)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', cursor: 'pointer' }}>
+                  <div style={{ flexShrink: 0 }}>
                     <ExerciseIcon id={exId} size={36} />
                   </div>
                   <span style={{ flex: 1, minWidth: 0, fontSize: 15, color: C.text }}>{def.name}</span>
@@ -2658,7 +2663,59 @@ function IronSeriesView({ sessions, allExercises, onStart, onDemoOpen }) {
                       {muscle}
                     </span>
                   )}
+                  <span style={{ color: C.muted, fontSize: 11, flexShrink: 0, marginLeft: 2 }}>{isExpanded ? '▲' : '▼'}</span>
                 </div>
+
+                {/* Expanded detail panel */}
+                {isExpanded && (
+                  <div style={{ paddingBottom: 14 }}>
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+                      <div onClick={() => onDemoOpen && onDemoOpen(exId)} style={{ cursor: 'pointer' }}>
+                        <ExerciseIcon id={exId} size={96} />
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
+                      <MuscleDiagram
+                        primary={def.primary || []}
+                        secondary={def.secondary || []}
+                        size="medium"
+                      />
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 10 }}>
+                      {muscle && (
+                        <span style={{ background: C.amberDim, color: C.amber, fontSize: 11, borderRadius: 20, padding: '3px 10px', fontFamily: C.fMono }}>
+                          ● {muscle}
+                        </span>
+                      )}
+                      {def.secondaryMuscle && (
+                        <span style={{ background: '#e8f0ff', color: '#5b8fdc', fontSize: 11, borderRadius: 20, padding: '3px 10px', fontFamily: C.fMono }}>
+                          ○ {def.secondaryMuscle}
+                        </span>
+                      )}
+                      {def.perSide && (
+                        <span style={{ background: C.blue + '22', color: C.blue, fontSize: 11, borderRadius: 20, padding: '3px 10px', fontFamily: C.fMono }}>
+                          Per side
+                        </span>
+                      )}
+                    </div>
+                    {def.caution && (
+                      <div style={{ background: C.red + '14', border: `1px solid ${C.red}44`, borderRadius: 6, padding: '8px 10px', marginBottom: 8, fontSize: 12, color: C.red, lineHeight: 1.4 }}>
+                        ⚠ {def.caution}
+                      </div>
+                    )}
+                    {def.cue && (
+                      <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.6, marginBottom: 8 }}>
+                        {def.cue}
+                      </div>
+                    )}
+                    {def.demo && (
+                      <a href={def.demo} target="_blank" rel="noopener noreferrer"
+                        style={{ display: 'inline-block', fontSize: 12, color: C.amber, textDecoration: 'none' }}>
+                        ▶ Watch demo
+                      </a>
+                    )}
+                  </div>
+                )}
               </div>
             );
           }).filter(Boolean)}
@@ -2666,7 +2723,7 @@ function IronSeriesView({ sessions, allExercises, onStart, onDemoOpen }) {
 
         <a href={ytUrl} target="_blank" rel="noopener noreferrer"
           style={{ display: 'block', textAlign: 'center', fontSize: 12, color: C.amber, textDecoration: 'none', marginBottom: 10 }}>
-          ▶ Watch on YouTube
+          ▶ Watch full workout on YouTube
         </a>
       </div>
 
