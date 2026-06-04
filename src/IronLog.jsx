@@ -1265,8 +1265,9 @@ function computeCoachRecommendation(sessions, rides, override = null) {
 // ═══════════════════════════════════════════════════════════════════════
 
 // Weekly volume for last 6 weeks (Mon–Sun). Volume = weight × reps for done kg sets.
+// Includes Iron Series sessions — Iron exercises looked up in IRON_EXERCISES.
 function healthWeeklyVolume(sessions) {
-  const completed = sessions.filter(s => s.completed && !s.workout?.startsWith('IRON_'));
+  const completed = sessions.filter(s => s.completed);
   const thisMonday = weekMondayStart();
   const weeks = [];
   for (let w = 5; w >= 0; w--) {
@@ -1277,7 +1278,7 @@ function healthWeeklyVolume(sessions) {
       .filter(s => { const d = new Date(s.date); return d >= start && d < end; })
       .reduce((total, s) =>
         total + (s.exercises || []).reduce((t2, ex) => {
-          const def = EXERCISES[ex.id] || PRESET_LIBRARY[ex.id] || {};
+          const def = EXERCISES[ex.id] || PRESET_LIBRARY[ex.id] || IRON_EXERCISES[ex.id] || {};
           if (def.unit !== 'kg') return t2;
           return t2 + ex.sets.filter(set => set.done).reduce((t3, set) =>
             t3 + (Number(set.weight) || 0) * (Number(set.reps) || 0), 0);
@@ -1315,12 +1316,13 @@ function healthVolumeByGroup(sessions) {
 function healthConsistency(sessions) {
   const completed = sessions.filter(s => s.completed);
   const trainedDates = new Set(completed.map(s => s.date?.slice(0, 10)).filter(Boolean));
-  const today = new Date(); today.setHours(0, 0, 0, 0);
+  // Use current UTC time (same as session storage format) — not local midnight
+  const now = Date.now();
+  const todayStr = new Date(now).toISOString().slice(0, 10);
   const days = [];
   for (let i = 27; i >= 0; i--) {
-    const d = new Date(today.getTime() - i * 86400000);
-    const dateStr = d.toISOString().slice(0, 10);
-    days.push({ dateStr, trained: trainedDates.has(dateStr), isToday: i === 0 });
+    const dateStr = new Date(now - i * 86400000).toISOString().slice(0, 10);
+    days.push({ dateStr, trained: trainedDates.has(dateStr), isToday: dateStr === todayStr });
   }
   // Count consecutive trained days from most recent end
   let streak = 0;
