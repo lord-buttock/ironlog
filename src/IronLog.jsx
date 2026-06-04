@@ -2432,7 +2432,8 @@ function StretchActive({ onDone }) {
   const [side, setSide]             = useState(1);       // 1 = first side, 2 = second
   const [showSwitch, setShowSwitch] = useState(false);   // bilateral side-switch indicator
   const [running, setRunning]       = useState(false);   // timer ticks only when true
-  const [stretchModal, setStretchModal] = useState(null); // stretch object for demo modal
+  const [stretchModal, setStretchModal] = useState(null);   // stretch object → animation modal
+  const [stretchYtModal, setStretchYtModal] = useState(null); // stretch object → YouTube modal
 
   const current = stretches[index] || null;
 
@@ -2580,11 +2581,21 @@ function StretchActive({ onDone }) {
             <div style={{ width: 32, height: 32, borderRadius: '50%', background: C.green, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 18, fontWeight: 700 }}>✓</div>
             <div style={{ fontFamily: C.fDisplay, fontSize: 20, fontWeight: 700, color: C.green, textTransform: 'uppercase', letterSpacing: 1 }}>Switch Sides</div>
           </div>
-        ) : current.cue ? (
-          <div style={{ fontSize: 12, color: C.muted, fontFamily: C.fBody, textAlign: 'center', lineHeight: 1.6, maxWidth: 280, fontStyle: 'italic' }}>
-            {current.cue}
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+            {current.cue && (
+              <div style={{ fontSize: 12, color: C.muted, fontFamily: C.fBody, textAlign: 'center', lineHeight: 1.6, maxWidth: 280, fontStyle: 'italic' }}>
+                {current.cue}
+              </div>
+            )}
+            {current.demoId && (
+              <button onClick={() => setStretchYtModal(current)}
+                style={{ background: 'none', border: 'none', padding: 0, fontSize: 12, color: C.amber, cursor: 'pointer', fontFamily: C.fBody }}>
+                ▶ Watch demo
+              </button>
+            )}
           </div>
-        ) : null}
+        )}
       </div>
 
       {/* Footer — three states: paused / running / switch-sides window */}
@@ -2610,6 +2621,7 @@ function StretchActive({ onDone }) {
         )}
       </div>
       {stretchModal && <StretchDemoModal stretch={stretchModal} onClose={() => setStretchModal(null)} />}
+      {stretchYtModal && <YouTubeModal ytId={stretchYtModal.demoId} title={stretchYtModal.name} onClose={() => setStretchYtModal(null)} />}
     </div>
   );
 }
@@ -4766,6 +4778,13 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
                             {s.cue}
                           </div>
                         )}
+                        {/* Watch demo */}
+                        {s.demoId && (
+                          <button onClick={() => setLibStretchModal({ ...s, _ytDemo: true })}
+                            style={{ background: 'none', border: 'none', padding: '4px 0 0', fontSize: 12, color: C.amber, cursor: 'pointer', fontFamily: C.fBody, textAlign: 'left' }}>
+                            ▶ Watch demo
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -4922,8 +4941,11 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
           onClose={() => setLibDemoModal(null)}
         />
       )}
-      {libStretchModal && (
+      {libStretchModal && !libStretchModal._ytDemo && (
         <StretchDemoModal stretch={libStretchModal} onClose={() => setLibStretchModal(null)} />
+      )}
+      {libStretchModal?.demoId && libStretchModal._ytDemo && (
+        <YouTubeModal ytId={libStretchModal.demoId} title={libStretchModal.name} onClose={() => setLibStretchModal(null)} />
       )}
     </div>
   );
