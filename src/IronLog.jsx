@@ -265,6 +265,7 @@ const WARMUP = [
 const STRETCHES = [
   {
     id: 'str_neck',
+    imageDir: 'stretches',
     name: 'Neck Side Stretch',
     targets: 'Upper traps · Neck',
     cue: 'Sit or stand tall. Place one hand gently over your head and draw your ear toward your shoulder. Keep your face forward — no rotation. Breathe slowly and hold.',
@@ -273,6 +274,7 @@ const STRETCHES = [
   },
   {
     id: 'str_cross_shoulder',
+    imageDir: 'stretches',
     name: 'Cross-Body Shoulder Stretch',
     targets: 'Posterior shoulder · Rotator cuff',
     cue: 'Bring one arm across your chest at shoulder height. Use your other hand to gently pull it closer to your body. Keep your shoulder down, not shrugging. Good for shoulder bursitis recovery.',
@@ -281,6 +283,7 @@ const STRETCHES = [
   },
   {
     id: 'str_pec_roller_t',
+    imageDir: 'stretches',
     id2: 'str_pec_roller_w',
     name: 'Pec Stretch on Foam Roller',
     targets: 'Chest · Anterior shoulder',
@@ -290,6 +293,7 @@ const STRETCHES = [
   },
   {
     id: 'str_upper_back_roller',
+    imageDir: 'stretches',
     name: 'Upper Back Foam Roller',
     targets: 'Thoracic spine · Upper back',
     cue: 'Place the foam roller perpendicular to your spine across your upper back, hips on the floor. Clasp hands behind your head to support your neck. Slowly allow your upper back to extend backwards over the roller. Shift position to find tight spots.',
@@ -298,6 +302,7 @@ const STRETCHES = [
   },
   {
     id: 'str_cat_cow_cow',
+    imageDir: 'stretches',
     id2: 'str_cat_cow_cat',
     name: 'Cat-Cow',
     targets: 'Spine · Lower back · Core',
@@ -307,6 +312,7 @@ const STRETCHES = [
   },
   {
     id: 'str_childs_pose',
+    imageDir: 'stretches',
     name: "Child's Pose",
     targets: 'Lower back · Lats · Hips',
     cue: 'Kneel and sit back toward your heels. Reach arms forward along the floor and let your lower back lengthen and relax. For a lat stretch, walk both hands to one side, hold, then the other side.',
@@ -315,6 +321,7 @@ const STRETCHES = [
   },
   {
     id: 'str_spinal_rotation',
+    imageDir: 'stretches',
     name: 'Seated Spinal Rotation',
     targets: 'Thoracic spine · Obliques',
     cue: 'Sit upright with legs crossed or extended. Place hands behind your head or cross arms over your chest. Rotate your torso to one side as far as comfortable, keeping hips facing forward. Hold, then switch sides.',
@@ -323,6 +330,7 @@ const STRETCHES = [
   },
   {
     id: 'str_hip_flexor',
+    imageDir: 'stretches',
     name: 'Kneeling Hip Flexor Stretch',
     targets: 'Hip flexors · Quads',
     cue: 'Kneel with one knee on the floor, other foot forward in a lunge. Tuck your pelvis under — bring your hips forward without arching your lower back. Feel the stretch at the front of the rear hip. Hold without leaning forward excessively.',
@@ -331,6 +339,7 @@ const STRETCHES = [
   },
   {
     id: 'str_figure_four',
+    imageDir: 'stretches',
     name: 'Figure-4 Glute Stretch',
     targets: 'Glutes · Piriformis · Hip',
     cue: 'Lie on your back, knees bent, feet flat. Cross one ankle over the opposite knee to form a figure-4. Pull the uncrossed leg gently toward your chest until you feel the stretch deep in the crossed-leg glute. Hold, then switch sides.',
@@ -339,6 +348,7 @@ const STRETCHES = [
   },
   {
     id: 'str_hamstring',
+    imageDir: 'stretches',
     name: 'Lying Hamstring Stretch',
     targets: 'Hamstrings · Lower back',
     cue: 'Lie on your back, both legs flat. Loop a towel or resistance band around one foot and slowly lift that leg toward the ceiling. Keep the opposite leg flat on the floor. Stop when you feel a gentle stretch down the back of the raised leg. Breathe slowly.',
@@ -347,6 +357,7 @@ const STRETCHES = [
   },
   {
     id: 'str_it_band',
+    imageDir: 'stretches',
     name: 'IT Band / Lateral Hip Stretch',
     targets: 'IT band · Outer hip · Glutes',
     cue: 'Stand near a wall for balance. Cross one leg behind the other and lean your hips away from the crossed leg — you should feel a stretch along the outside of the front hip and thigh. Keep both feet flat on the floor.',
@@ -355,6 +366,7 @@ const STRETCHES = [
   },
   {
     id: 'str_calf_straight',
+    imageDir: 'stretches',
     id2: 'str_calf_bent',
     name: 'Calf Stretch',
     targets: 'Gastrocnemius · Soleus',
@@ -2420,6 +2432,7 @@ function StretchActive({ onDone }) {
   const [side, setSide]             = useState(1);       // 1 = first side, 2 = second
   const [showSwitch, setShowSwitch] = useState(false);   // bilateral side-switch indicator
   const [running, setRunning]       = useState(false);   // timer ticks only when true
+  const [stretchModal, setStretchModal] = useState(null); // stretch object for demo modal
 
   const current = stretches[index] || null;
 
@@ -2531,7 +2544,9 @@ function StretchActive({ onDone }) {
 
       {/* Main content */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', padding: '16px 24px 8px', gap: 2 }}>
-        <StretchThumb stretch={current} group={STRETCH_GROUPS[index]} size={90} />
+        <div onClick={() => setStretchModal(current)} style={{ cursor: 'pointer' }}>
+          <StretchThumb stretch={current} group={STRETCH_GROUPS[index]} size={90} />
+        </div>
 
         <div style={{ ...st.label, marginTop: 10 }}>{STRETCH_GROUPS[index]?.label}</div>
         <div style={{ fontFamily: C.fDisplay, fontSize: 24, fontWeight: 700, textTransform: 'uppercase', textAlign: 'center', letterSpacing: 0.5, marginTop: 2 }}>
@@ -2594,6 +2609,7 @@ function StretchActive({ onDone }) {
           </>
         )}
       </div>
+      {stretchModal && <StretchDemoModal stretch={stretchModal} onClose={() => setStretchModal(null)} />}
     </div>
   );
 }
@@ -4338,6 +4354,7 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
   const [wktSearch, setWktSearch] = useState('');
   const [librarySubTab, setLibrarySubTab]   = useState('exercises');
   const [expandedStretch, setExpandedStretch] = useState(null);
+  const [libStretchModal, setLibStretchModal] = useState(null); // stretch object for demo modal
   const [strFilter, setStrFilter]            = useState('all'); // 'all' | 'sciatica' | 'crosslegged'
 
   // All exercises that can be browsed/added (workout exercises + presets + user-created custom)
@@ -4698,14 +4715,15 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
                     {/* Expanded detail */}
                     {isExp && (
                       <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
-                        {/* Image(s) — dual side-by-side for stretches with id2 */}
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 14 }}>
+                        {/* Image(s) — dual side-by-side for stretches with id2; tappable to animate */}
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 14 }}
+                          onClick={() => setLibStretchModal(s)} title="Tap to animate">
                           {[s.id, s.id2].filter(Boolean).map(imgId => {
                             const sz = s.id2 ? 140 : 180;
                             return (
                               <img key={imgId}
                                 src={`assets/icons/${imgDir}/${imgId}.png`}
-                                style={{ width: sz, height: sz, objectFit: 'contain', display: 'block' }}
+                                style={{ width: sz, height: sz, objectFit: 'contain', display: 'block', cursor: 'pointer' }}
                                 onError={e => { e.target.style.opacity = 0.2; }}
                                 alt={s.name}
                               />
@@ -4904,6 +4922,9 @@ function Manage({ customExercises, setCustomExercises, workoutCustom, setWorkout
           onClose={() => setLibDemoModal(null)}
         />
       )}
+      {libStretchModal && (
+        <StretchDemoModal stretch={libStretchModal} onClose={() => setLibStretchModal(null)} />
+      )}
     </div>
   );
 }
@@ -5017,6 +5038,57 @@ function YouTubeModal({ ytId, title, onClose }) {
           }}>✕ Close</button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// STRETCH DEMO MODAL  (animated frames from assets/demos/stretches/)
+function StretchDemoModal({ stretch, onClose }) {
+  const [frames, setFrames] = React.useState([]);
+  const [seqIdx, setSeqIdx] = React.useState(0);
+
+  React.useEffect(() => {
+    setFrames([]);
+    setSeqIdx(0);
+    // Probe all frame slots across primary id and optional id2
+    const ids = [stretch.id, stretch.id2].filter(Boolean);
+    const found = [];
+    let checked = 0;
+    const total = ids.length * 3;
+    ids.forEach((sid, si) => {
+      for (let fi = 1; fi <= 3; fi++) {
+        const img = new window.Image();
+        const src = `assets/demos/stretches/${sid}_${fi}.png?v=${APP_BUILD}`;
+        const slot = si * 3 + fi - 1;
+        img.onload  = () => { found[slot] = src; checked++; if (checked === total) setFrames(found.filter(Boolean)); };
+        img.onerror = () => {                    checked++; if (checked === total) setFrames(found.filter(Boolean)); };
+        img.src = src;
+      }
+    });
+  }, [stretch.id]);
+
+  React.useEffect(() => {
+    if (frames.length < 2) return;
+    const id = setInterval(() => setSeqIdx(p => (p + 1) % frames.length), 600);
+    return () => clearInterval(id);
+  }, [frames]);
+
+  const currentSrc = frames.length > 0 ? frames[seqIdx] : null;
+
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'rgba(10,15,40,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div onClick={e => e.stopPropagation()} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: 20 }}>
+        {currentSrc ? (
+          <div style={{ background: '#EEF3FF', borderRadius: 28, padding: 16, boxShadow: '0 8px 48px rgba(0,0,0,0.5)' }}>
+            <img src={currentSrc} style={{ width: 300, height: 300, objectFit: 'contain', display: 'block' }} />
+          </div>
+        ) : (
+          <div style={{ color: 'rgba(255,255,255,0.35)', fontFamily: C.fMono, fontSize: 11, letterSpacing: 1 }}>NO ANIMATION YET</div>
+        )}
+        <div style={{ fontFamily: C.fDisplay, fontSize: 15, fontWeight: 700, color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase', textAlign: 'center' }}>{stretch.name}</div>
+      </div>
+      <div style={{ position: 'absolute', top: 24, right: 24, color: 'rgba(255,255,255,0.5)', fontSize: 28, lineHeight: 1, cursor: 'pointer' }}>✕</div>
     </div>
   );
 }
