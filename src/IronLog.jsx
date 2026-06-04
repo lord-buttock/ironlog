@@ -1261,6 +1261,116 @@ function computeCoachRecommendation(sessions, rides, override = null) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
+// HEALTH DATA HELPERS
+// ═══════════════════════════════════════════════════════════════════════
+
+// Weekly volume for last 6 weeks (Mon–Sun). Volume = weight × reps for done kg sets.
+function healthWeeklyVolume(sessions) {
+  const completed = sessions.filter(s => s.completed && !s.workout?.startsWith('IRON_'));
+  const thisMonday = weekMondayStart();
+  const weeks = [];
+  for (let w = 5; w >= 0; w--) {
+    const start = new Date(thisMonday.getTime() - w * 7 * 86400000);
+    const end   = new Date(start.getTime() + 7 * 86400000);
+    const label = w === 0 ? 'Now' : `W-${w}`;
+    const volume = completed
+      .filter(s => { const d = new Date(s.date); return d >= start && d < end; })
+      .reduce((total, s) =>
+        total + (s.exercises || []).reduce((t2, ex) => {
+          const def = EXERCISES[ex.id] || PRESET_LIBRARY[ex.id] || {};
+          if (def.unit !== 'kg') return t2;
+          return t2 + ex.sets.filter(set => set.done).reduce((t3, set) =>
+            t3 + (Number(set.weight) || 0) * (Number(set.reps) || 0), 0);
+        }, 0), 0);
+    weeks.push({ label, volume, isCurrent: w === 0 });
+  }
+  return weeks;
+}
+
+// Volume this week split by workout type: Push (A), Pull (B), Legs+Core (C)
+function healthVolumeByGroup(sessions) {
+  const weekStart = weekMondayStart();
+  const completed = sessions.filter(s => s.completed && !s.workout?.startsWith('IRON_'));
+  const groups = { A: 0, B: 0, C: 0 };
+  completed
+    .filter(s => new Date(s.date) >= weekStart && (s.workout === 'A' || s.workout === 'B' || s.workout === 'C'))
+    .forEach(s => {
+      const vol = (s.exercises || []).reduce((t, ex) => {
+        const def = EXERCISES[ex.id] || PRESET_LIBRARY[ex.id] || {};
+        if (def.unit !== 'kg') return t;
+        return t + ex.sets.filter(set => set.done).reduce((t2, set) =>
+          t2 + (Number(set.weight) || 0) * (Number(set.reps) || 0), 0);
+      }, 0);
+      groups[s.workout] = (groups[s.workout] || 0) + vol;
+    });
+  const labels = { A: 'Push', B: 'Pull', C: 'Legs + Core' };
+  const colors  = { A: '#5B8DEF', B: '#1f9d8a', C: '#7c6ee6' };
+  return ['A', 'B', 'C']
+    .map(k => ({ key: k, label: labels[k], volume: groups[k], color: colors[k] }))
+    .filter(g => g.volume > 0)
+    .sort((a, b) => b.volume - a.volume);
+}
+
+// 28-day consistency: trained days heatmap + stats
+function healthConsistency(sessions) {
+  const completed = sessions.filter(s => s.completed);
+  const trainedDates = new Set(completed.map(s => s.date?.slice(0, 10)).filter(Boolean));
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const days = [];
+  for (let i = 27; i >= 0; i--) {
+    const d = new Date(today.getTime() - i * 86400000);
+    const dateStr = d.toISOString().slice(0, 10);
+    days.push({ dateStr, trained: trainedDates.has(dateStr), isToday: i === 0 });
+  }
+  // Count consecutive trained days from most recent end
+  let streak = 0;
+  for (let i = 27; i >= 0; i--) {
+    if (days[i].trained) streak++;
+    else if (i < 27) break;
+  }
+  const totalThisMonth = days.filter(d => d.trained).length;
+  return { days, streak, totalThisMonth };
+}
+
+// kg exercises that hit their all-time max within the last 30 days
+function healthRecentPRs(sessions, allExercises) {
+  const completed = sessions.filter(s => s.completed).sort((a, b) => new Date(a.date) - new Date(b.date));
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 30);
+  const exerciseMaxes = {};
+  completed.forEach(sess => {
+    (sess.exercises || []).forEach(ex => {
+      const def = allExercises[ex.id];
+      if (!def || def.unit !== 'kg') return;
+      const sessionMax = Math.max(0, ...ex.sets.filter(s => s.done).map(s => Number(s.weight) || 0));
+      if (!sessionMax) return;
+      if (!exerciseMaxes[ex.id] || sessionMax > exerciseMaxes[ex.id].weight) {
+        exerciseMaxes[ex.id] = { weight: sessionMax, date: sess.date, name: def.name };
+      }
+    });
+  });
+  return Object.values(exerciseMaxes)
+    .filter(pr => new Date(pr.date) >= cutoff)
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .slice(0, 8);
+}
+
+// Average RPE per session for last 10 completed non-Iron sessions
+function healthRPETrend(sessions) {
+  return sessions
+    .filter(s => s.completed && !s.workout?.startsWith('IRON_'))
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .slice(-10)
+    .map(s => {
+      const allRpe = (s.exercises || []).flatMap(ex =>
+        ex.sets.filter(set => set.done && set.rpe).map(set => Number(set.rpe))
+      );
+      const avg = allRpe.length ? allRpe.reduce((a, b) => a + b, 0) / allRpe.length : null;
+      return { label: s.date?.slice(5, 10) || '', avgRpe: avg ? Math.round(avg * 10) / 10 : null };
+    })
+    .filter(d => d.avgRpe !== null);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 // STYLE HELPERS
 // ═══════════════════════════════════════════════════════════════════════
 const st = {
@@ -1329,12 +1439,13 @@ function FontLoader() {
 // ═══════════════════════════════════════════════════════════════════════
 function Nav({ view, setView, hasActive }) {
   const tabs = [
-    { id: 'dashboard', label: 'Home',   icon: 'home' },
-    { id: 'workout',   label: 'Workout',  icon: 'dumbbell', dot: hasActive },
-    { id: 'history',   label: 'Log',    icon: 'clipboard-list' },
-    { id: 'progress',  label: 'Stats',  icon: 'bar-chart-2' },
-    { id: 'rides',     label: 'Rides',  icon: 'bike' },
-    { id: 'manage',    label: 'Manage', icon: 'grid-2x2' },
+    { id: 'dashboard', label: 'Home',    icon: 'home' },
+    { id: 'workout',   label: 'Workout', icon: 'dumbbell', dot: hasActive },
+    { id: 'history',   label: 'Log',     icon: 'clipboard-list' },
+    { id: 'progress',  label: 'Stats',   icon: 'bar-chart-2' },
+    { id: 'health',    label: 'Health',  icon: 'heart' },
+    { id: 'rides',     label: 'Rides',   icon: 'bike' },
+    { id: 'manage',    label: 'Manage',  icon: 'grid-2x2' },
   ];
   return (
     <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: C.surface, borderTop: `1px solid ${C.border}`, display: 'flex', zIndex: 200, paddingBottom: 'env(safe-area-inset-bottom, 0px)', paddingLeft: 'env(safe-area-inset-left, 0px)', paddingRight: 'env(safe-area-inset-right, 0px)' }}>
@@ -3971,6 +4082,226 @@ function Progress({ sessions, allExercises = EXERCISES }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
+// HEALTH VIEW
+// ═══════════════════════════════════════════════════════════════════════
+function HealthView({ sessions, allExercises }) {
+  const weeklyVol   = healthWeeklyVolume(sessions);
+  const groupVol    = healthVolumeByGroup(sessions);
+  const consistency = healthConsistency(sessions);
+  const recentPRs   = healthRecentPRs(sessions, allExercises);
+  const rpeTrend    = healthRPETrend(sessions);
+  const maxWeekVol  = Math.max(...weeklyVol.map(w => w.volume), 1);
+
+  if (!sessions.filter(s => s.completed).length) {
+    return (
+      <div style={{ padding: 16, textAlign: 'center', color: C.muted, paddingTop: 64 }}>
+        <div style={{ fontSize: 48, marginBottom: 12 }}>❤️</div>
+        <div style={{ fontFamily: C.fDisplay, fontSize: 16, textTransform: 'uppercase' }}>No data yet</div>
+        <div style={{ fontSize: 12, marginTop: 8 }}>Complete your first session to see stats here.</div>
+      </div>
+    );
+  }
+
+  // RPE line chart path
+  const rpeW = 280, rpeH = 56;
+  const rpeMin = 4, rpeMax = 10;
+  const rpePts = rpeTrend.map((d, i) => {
+    const x = rpeTrend.length < 2 ? rpeW / 2 : (i / (rpeTrend.length - 1)) * rpeW;
+    const y = rpeH - ((d.avgRpe - rpeMin) / (rpeMax - rpeMin)) * rpeH;
+    return `${x},${Math.max(0, Math.min(rpeH, y))}`;
+  });
+  const rpePath = rpePts.length >= 2 ? `M${rpePts.join('L')}` : null;
+
+  const sectionHeader = (label, emoji) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+      <span style={{ fontSize: 16 }}>{emoji}</span>
+      <span style={{ fontFamily: C.fDisplay, fontSize: 13, fontWeight: 700, color: C.muted,
+        textTransform: 'uppercase', letterSpacing: 1.5 }}>{label}</span>
+    </div>
+  );
+
+  return (
+    <div style={{ padding: 16, paddingBottom: 100 }}>
+      <div style={{ fontFamily: C.fDisplay, fontSize: 22, fontWeight: 900, letterSpacing: 2,
+        textTransform: 'uppercase', color: C.text, marginBottom: 20 }}>
+        Health
+      </div>
+
+      {/* ── 1. Weekly Volume ─────────────────────────────────────────── */}
+      <div style={{ ...st.card(), marginBottom: 16 }}>
+        {sectionHeader('Weekly Volume', '📊')}
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 72, marginBottom: 8 }}>
+          {weeklyVol.map((w, i) => {
+            const pct = maxWeekVol > 0 ? w.volume / maxWeekVol : 0;
+            const barH = Math.max(pct * 64, w.volume > 0 ? 4 : 0);
+            return (
+              <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
+                <div style={{
+                  width: '100%', height: barH,
+                  background: w.isCurrent ? C.amber : C.amber + '55',
+                  borderRadius: '3px 3px 0 0',
+                  outline: w.isCurrent ? `2px solid ${C.amber}` : 'none',
+                  outlineOffset: 1,
+                }} />
+                <span style={{ fontFamily: C.fMono, fontSize: 8, color: w.isCurrent ? C.amber : C.muted,
+                  textTransform: 'uppercase' }}>{w.label}</span>
+              </div>
+            );
+          })}
+        </div>
+        {(() => {
+          const curr = weeklyVol[weeklyVol.length - 1].volume;
+          const prev = weeklyVol.slice(0, -1).filter(w => w.volume > 0);
+          const prevAvg = prev.length ? Math.round(prev.reduce((s, w) => s + w.volume, 0) / prev.length) : 0;
+          const pct = prevAvg > 0 ? Math.round(((curr - prevAvg) / prevAvg) * 100) : null;
+          return (
+            <div style={{ fontFamily: C.fMono, fontSize: 11, color: C.muted }}>
+              This week: <span style={{ color: C.text }}>{curr.toLocaleString()} kg·reps</span>
+              {pct !== null && (
+                <span>{'  '}<span style={{ color: pct >= 0 ? C.green : C.red }}>
+                  {pct >= 0 ? '↑' : '↓'} {Math.abs(pct)}% vs avg
+                </span></span>
+              )}
+            </div>
+          );
+        })()}
+      </div>
+
+      {/* ── 2. Volume by Workout Type ─────────────────────────────────── */}
+      {groupVol.length > 0 && (
+        <div style={{ ...st.card(), marginBottom: 16 }}>
+          {sectionHeader('This Week by Type', '💪')}
+          {groupVol.map(g => (
+            <div key={g.key} style={{ marginBottom: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                <span style={{ fontFamily: C.fMono, fontSize: 11, color: C.muted }}>{g.label}</span>
+                <span style={{ fontFamily: C.fMono, fontSize: 11, color: C.text }}>{g.volume.toLocaleString()}</span>
+              </div>
+              <div style={{ height: 6, background: C.dim, borderRadius: 3, overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%',
+                  width: `${Math.round((g.volume / groupVol[0].volume) * 100)}%`,
+                  background: g.color,
+                  borderRadius: 3,
+                }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── 3. Consistency ───────────────────────────────────────────── */}
+      <div style={{ ...st.card(), marginBottom: 16 }}>
+        {sectionHeader('Consistency', '🗓')}
+        <div style={{ display: 'flex', justifyContent: 'space-around', marginBottom: 16 }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontFamily: C.fDisplay, fontSize: 28, fontWeight: 900, color: C.amber, lineHeight: 1 }}>
+              {consistency.streak}
+            </div>
+            <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, textTransform: 'uppercase', marginTop: 4, lineHeight: 1.4 }}>
+              Streak
+            </div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontFamily: C.fDisplay, fontSize: 28, fontWeight: 900, color: C.text, lineHeight: 1 }}>
+              {consistency.totalThisMonth}
+            </div>
+            <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, textTransform: 'uppercase', marginTop: 4, lineHeight: 1.4 }}>
+              Sessions<br/>28 days
+            </div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontFamily: C.fDisplay, fontSize: 28, fontWeight: 900, color: C.text, lineHeight: 1 }}>
+              {Math.round((consistency.totalThisMonth / 4) * 10) / 10}
+            </div>
+            <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, textTransform: 'uppercase', marginTop: 4, lineHeight: 1.4 }}>
+              Per<br/>week
+            </div>
+          </div>
+        </div>
+        {/* 4 weeks × 7 days heatmap */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
+          {['M','T','W','T','F','S','S'].map((d, i) => (
+            <div key={i} style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted,
+              textAlign: 'center', paddingBottom: 2 }}>{d}</div>
+          ))}
+          {consistency.days.map((d, i) => (
+            <div key={i} style={{
+              aspectRatio: '1',
+              borderRadius: 3,
+              background: d.trained ? C.amber : C.dim,
+              outline: d.isToday ? `2px solid ${C.amber}` : 'none',
+              outlineOffset: 1,
+              opacity: d.trained ? 1 : 0.5,
+            }} />
+          ))}
+        </div>
+      </div>
+
+      {/* ── 4. Recent PRs ─────────────────────────────────────────────── */}
+      {recentPRs.length > 0 && (
+        <div style={{ ...st.card(), marginBottom: 16 }}>
+          {sectionHeader('Recent PRs', '🏆')}
+          {recentPRs.map((pr, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between',
+              alignItems: 'center', paddingBottom: 8, marginBottom: 8,
+              borderBottom: i < recentPRs.length - 1 ? `1px solid ${C.border}` : 'none' }}>
+              <div>
+                <div style={{ fontFamily: C.fBody, fontSize: 13, color: C.text }}>{pr.name}</div>
+                <div style={{ fontFamily: C.fMono, fontSize: 10, color: C.muted }}>{pr.date.slice(0, 10)}</div>
+              </div>
+              <div style={{ fontFamily: C.fDisplay, fontSize: 18, fontWeight: 700, color: C.amber }}>
+                {pr.weight}<span style={{ fontSize: 11, color: C.muted, fontFamily: C.fMono }}> kg</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── 5. RPE Trend ──────────────────────────────────────────────── */}
+      {rpeTrend.length >= 2 && (
+        <div style={{ ...st.card(), marginBottom: 16 }}>
+          {sectionHeader('Effort Trend', '🔥')}
+          <svg width="100%" viewBox={`0 0 ${rpeW} ${rpeH + 20}`} style={{ display: 'block', overflow: 'visible' }}>
+            {[6, 7, 8].map(v => {
+              const y = rpeH - ((v - rpeMin) / (rpeMax - rpeMin)) * rpeH;
+              return (
+                <g key={v}>
+                  <line x1={0} y1={y} x2={rpeW} y2={y}
+                    stroke={C.border} strokeWidth={1} strokeDasharray="3,3" />
+                  <text x={2} y={y - 2} fill={C.muted} fontSize={8} fontFamily={C.fMono}>{v}</text>
+                </g>
+              );
+            })}
+            {rpePath && (
+              <path d={rpePath} fill="none" stroke={C.amber} strokeWidth={2}
+                strokeLinecap="round" strokeLinejoin="round" />
+            )}
+            {rpeTrend.map((d, i) => {
+              const x = rpeTrend.length < 2 ? rpeW / 2 : (i / (rpeTrend.length - 1)) * rpeW;
+              const y = rpeH - ((d.avgRpe - rpeMin) / (rpeMax - rpeMin)) * rpeH;
+              const cy = Math.max(0, Math.min(rpeH, y));
+              const col = d.avgRpe >= 9 ? C.red : d.avgRpe >= 7 ? C.amber : C.green;
+              return (
+                <g key={i}>
+                  <circle cx={x} cy={cy} r={4} fill={col} />
+                  <text x={x} y={rpeH + 14} textAnchor="middle" fill={C.muted}
+                    fontSize={8} fontFamily={C.fMono}>{d.label}</text>
+                </g>
+              );
+            })}
+          </svg>
+          <div style={{ fontFamily: C.fMono, fontSize: 10, color: C.muted, marginTop: 4, textAlign: 'center' }}>
+            Avg RPE per session · last {rpeTrend.length} sessions
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 // RIDES
 // ═══════════════════════════════════════════════════════════════════════
 function Rides({ rides, setRides }) {
@@ -5387,6 +5718,7 @@ export default function App() {
         {view === 'stretch_active' && <StretchActive onDone={() => setView('dashboard')} />}
         {view === 'history' && <History sessions={sessions} setSessions={setSessions} allExercises={allExercises} />}
         {view === 'progress' && <Progress sessions={sessions} allExercises={allExercises} />}
+        {view === 'health'   && <HealthView sessions={sessions} allExercises={allExercises} />}
         {view === 'rides' && <Rides rides={rides} setRides={setRides} />}
         {view === 'manage' && (
           <Manage

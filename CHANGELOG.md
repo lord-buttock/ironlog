@@ -4,6 +4,16 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-06-05 — Health Tab (Training section)
+
+- Added ❤️ Health tab (7th nav tab)
+- Weekly volume: 6-week bar chart (kg × reps, completed kg sets, non-Iron sessions)
+- Volume by workout type: Push / Pull / Legs+Core horizontal bars for current week
+- Consistency: 28-day heatmap grid + streak / total sessions / per-week stats
+- Recent PRs: kg exercises that hit their all-time max weight within the last 30 days
+- Effort trend: line chart of average RPE per session, last 10 sessions, coloured green/amber/red by intensity
+- Body section (Apple Watch / HRV / Sleep) deferred — to be added once Watch Shortcut is set up
+
 ## 2026-05-30 — Iron Series Integration
 
 - Added Caroline Girvan's Iron Series (30 workouts, 6-week dumbbell programme) as a parallel programme
