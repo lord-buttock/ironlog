@@ -1950,25 +1950,31 @@ function computeFatigue(healthData, sessions) {
   return { level, label, color };
 }
 
+// Training Load — uses session duration, not volume.
+// Volume (sets×reps×weight) breaks for bodyweight/Iron Series sessions where weight≈0.
+// Duration is honest across all session types.
+// Formula: (this week's total session time / 4-week avg weekly session time) × 50
+//   50% = exactly your average week → sits in the Optimal zone
+//   75% = 50% above average → High
+//   25% = half your average  → Low
+// Fallback to active calories if no session history.
 function computeTrainingLoad(sessions, activeCal) {
+  const DEFAULT_DURATION = 45; // assumed minutes when session has no duration recorded
   const ws = weekMondayStart();
-  const weekSessions = sessions.filter(s => s.completed && new Date(s.date) >= ws);
-  let weekVol = 0;
-  weekSessions.forEach(sess => {
-    (sess.exercises || []).forEach(ex => {
-      ex.sets.filter(s => s.done).forEach(s => { weekVol += (Number(s.weight) || 0) * (Number(s.reps) || 0); });
-    });
-  });
   const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 28);
-  let totalVol = 0;
-  sessions.filter(s => s.completed && new Date(s.date) >= cutoff).forEach(sess => {
-    (sess.exercises || []).forEach(ex => {
-      ex.sets.filter(s => s.done).forEach(s => { totalVol += (Number(s.weight) || 0) * (Number(s.reps) || 0); });
-    });
-  });
-  const avgWeekVol = totalVol / 4;
-  if (avgWeekVol > 0) return Math.min(100, Math.round((weekVol / avgWeekVol) * 50));
-  // Fallback: active calories proxy
+
+  const weekSessions   = sessions.filter(s => s.completed && new Date(s.date) >= ws);
+  const recentSessions = sessions.filter(s => s.completed && new Date(s.date) >= cutoff);
+
+  // Only use the duration method if we have at least 4 completed sessions in history
+  if (recentSessions.length >= 4) {
+    const weekTime   = weekSessions.reduce((s, sess)   => s + (Number(sess.duration) || DEFAULT_DURATION), 0);
+    const totalTime  = recentSessions.reduce((s, sess) => s + (Number(sess.duration) || DEFAULT_DURATION), 0);
+    const avgWeekTime = totalTime / 4;
+    return Math.min(100, Math.round((weekTime / avgWeekTime) * 50));
+  }
+
+  // Fallback: active calories proxy (today vs 7-day rolling average)
   const todayCal = Number(getLatestReading(activeCal)?.value) || 0;
   const avgCal   = rollingAvg(activeCal, 7) || 0;
   if (todayCal && avgCal) return Math.min(100, Math.round((todayCal / avgCal) * 50));
