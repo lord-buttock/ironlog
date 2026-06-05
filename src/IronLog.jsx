@@ -2124,7 +2124,7 @@ function CyclingWeekCard({ rides }) {
 // Strength This Week card
 function StrengthWeekCard({ sessions, allExercises }) {
   const ws = weekMondayStart();
-  const weekSess = sessions.filter(s => s.completed && new Date(s.date) >= ws && !s.workout?.startsWith('IRON_'));
+  const weekSess = sessions.filter(s => s.completed && new Date(s.date) >= ws);
   let totalVol = 0, totalTime = 0;
   weekSess.forEach(s => {
     totalTime += s.duration || 0;
@@ -2576,10 +2576,20 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
         </div>
       )}
 
-      {/* ── OLD title (hidden now that we have greeting) ── */}
-      <div style={{ display: 'none' }}>
-        <div style={{ ...st.label, marginBottom: 6 }}>Training Log</div>
-        <div style={{ ...st.h1 }}>IRON<span style={{ color: C.amber }}>LOG</span></div>
+      {/* ── Cycling + Strength week ── */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+        <CyclingWeekCard rides={rides} />
+        <StrengthWeekCard sessions={sessions} allExercises={allExercises} />
+      </div>
+
+      {/* ── Weekly Activity + Recent Workouts side by side ── */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'flex-start' }}>
+        <div style={{ flex: '0 0 auto', width: 'calc(45% - 4px)' }}>
+          <WeeklyHeatmap sessions={sessions} rides={rides} healthData={hd} />
+        </div>
+        <div style={{ flex: '1 1 auto', minWidth: 0 }}>
+          <RecentWorkoutsSection sessions={sessions} rides={rides} setView={setView} />
+        </div>
       </div>
 
       {/* Selected workout hero */}
@@ -2786,22 +2796,6 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
         >
           ▶ Start Stretching
         </button>
-      </div>
-
-      {/* ── Cycling + Strength week ── */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-        <CyclingWeekCard rides={rides} />
-        <StrengthWeekCard sessions={sessions} allExercises={allExercises} />
-      </div>
-
-      {/* ── Weekly Activity + Recent Workouts side by side ── */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-start' }}>
-        <div style={{ flex: '0 0 auto', width: 'calc(45% - 4px)' }}>
-          <WeeklyHeatmap sessions={sessions} rides={rides} healthData={hd} />
-        </div>
-        <div style={{ flex: '1 1 auto', minWidth: 0 }}>
-          <RecentWorkoutsSection sessions={sessions} rides={rides} setView={setView} />
-        </div>
       </div>
 
       {/* Cloud sync status */}
