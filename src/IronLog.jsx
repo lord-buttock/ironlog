@@ -1953,18 +1953,19 @@ function timeGreeting() {
   return 'Hey';
 }
 
-// SVG circular recovery ring
+// SVG circular recovery ring — always caps at 100% visually
 function RecoveryRing({ score, color, label, size = 90 }) {
+  const displayScore = Math.min(score, 100);
   const r = (size - 16) / 2, cx = size / 2;
   const circ = 2 * Math.PI * r;
-  const dash = circ * clamp(score / 100, 0, 1);
+  const dash = circ * (displayScore / 100);
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ display: 'block', flexShrink: 0 }}>
       <circle cx={cx} cy={cx} r={r} fill="none" stroke={C.border} strokeWidth={9} />
       <circle cx={cx} cy={cx} r={r} fill="none" stroke={color} strokeWidth={9}
         strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
         transform={`rotate(-90 ${cx} ${cx})`} />
-      <text x={cx} y={cx - 2} textAnchor="middle" fill={color} fontSize={19} fontWeight={800} fontFamily={C.fDisplay}>{score}%</text>
+      <text x={cx} y={cx - 2} textAnchor="middle" fill={color} fontSize={19} fontWeight={800} fontFamily={C.fDisplay}>{displayScore}%</text>
       <text x={cx} y={cx + 14} textAnchor="middle" fill={C.muted} fontSize={10} fontFamily={C.fMono}>{label}</text>
     </svg>
   );
@@ -2047,8 +2048,19 @@ function RecoveryTrendChart({ healthData, days }) {
       <text x={pL - 4} y={H - pB + 4} fill={C.blue} fontSize={8} textAnchor="end" fontFamily={C.fMono}>{Math.round(hLo)}</text>
       <text x={W - pR + 4} y={pT + 10} fill={C.red} fontSize={8} fontFamily={C.fMono}>{Math.round(rHi)}</text>
       <text x={W - pR + 4} y={H - pB + 4} fill={C.red} fontSize={8} fontFamily={C.fMono}>{Math.round(rLo)}</text>
-      <text x={pL} y={H - 4} fill={C.muted} fontSize={8} fontFamily={C.fMono}>{fmtHealthDate(first)}</text>
-      <text x={W - pR} y={H - 4} fill={C.muted} fontSize={8} textAnchor="end" fontFamily={C.fMono}>{fmtHealthDate(last)}</text>
+      {/* X-axis: first, midpoint, last */}
+      {(() => {
+        const all = [...new Set([...hrv.map(d => d.date), ...rhr.map(d => d.date)])].sort();
+        const labels = all.length <= 7
+          ? [all[0], all[Math.floor(all.length / 2)], all[all.length - 1]].filter(Boolean)
+          : [all[0], all[Math.floor(all.length * 0.33)], all[Math.floor(all.length * 0.66)], all[all.length - 1]].filter(Boolean);
+        const uniq = [...new Set(labels)];
+        return uniq.map((d, i) => {
+          const xPos = pL + (all.indexOf(d) / Math.max(all.length - 1, 1)) * iW;
+          const anchor = i === 0 ? 'start' : i === uniq.length - 1 ? 'end' : 'middle';
+          return <text key={d} x={xPos} y={H - 4} fill={C.muted} fontSize={8} textAnchor={anchor} fontFamily={C.fMono}>{fmtHealthDate(d)}</text>;
+        });
+      })()}
     </svg>
   );
 }
@@ -2141,25 +2153,183 @@ function StrengthWeekCard({ sessions, allExercises }) {
   );
   return (
     <div style={{ ...st.card(), flex: 1 }}>
-      <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>🏋️ Strength this week</div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 2 }}>
+      <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>🏋️ Strength this week</div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 8 }}>
         <span style={{ fontFamily: C.fDisplay, fontSize: 22, fontWeight: 800, color: C.amber }}>{weekSess.length}</span>
         <span style={{ fontFamily: C.fMono, fontSize: 10, color: C.muted }}>sessions</span>
       </div>
-      {totalVol > 0 && <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, marginBottom: 2 }}>Vol: {Math.round(totalVol).toLocaleString()} kg</div>}
-      {totalTime > 0 && <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, marginBottom: 2 }}>{Math.floor(totalTime / 60)}h {totalTime % 60}m total</div>}
-      {topLift && <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.green, marginBottom: 6 }}>▲ {topLift.name} +{topLift.gain} kg</div>}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4, marginBottom: 8 }}>
+        {[
+          { label: 'Volume', value: totalVol > 0 ? `${Math.round(totalVol / 1000 * 10) / 10}t` : '—' },
+          { label: 'Top Lift', value: topLift ? `+${topLift.gain}kg` : '—', color: topLift ? C.green : C.muted, sub: topLift?.name?.split(' ')[0] },
+          { label: 'Time', value: totalTime > 0 ? `${Math.floor(totalTime / 60)}h${totalTime % 60}m` : '—' },
+        ].map(s => (
+          <div key={s.label}>
+            <div style={{ fontFamily: C.fMono, fontSize: 7, color: C.muted, textTransform: 'uppercase', marginBottom: 2 }}>{s.label}</div>
+            <div style={{ fontFamily: C.fDisplay, fontSize: 11, fontWeight: 700, color: s.color || C.text }}>{s.value}</div>
+            {s.sub && <div style={{ fontFamily: C.fMono, fontSize: 7, color: C.muted }}>{s.sub}</div>}
+          </div>
+        ))}
+      </div>
       <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: H, display: 'block' }}>
         {weekDays.map((d, i) => {
           const val = byDay[d] || 0;
           const bH = val > 0 ? H - pad.b : 2;
           const x = i * (barW + 2);
-          return <rect key={d} x={x} y={H - pad.b - (val > 0 ? H - pad.b : 2)} width={barW} height={val > 0 ? H - pad.b : 2} rx={2} fill={val > 0 ? C.amber : C.border} />;
+          return <rect key={d} x={x} y={H - pad.b - bH} width={barW} height={bH} rx={2} fill={val > 0 ? C.amber : C.border} />;
         })}
         {['M','T','W','T','F','S','S'].map((l, i) => (
           <text key={i} x={i * (barW + 2) + barW / 2} y={H} fill={C.muted} fontSize={7} textAnchor="middle" fontFamily={C.fMono}>{l}</text>
         ))}
       </svg>
+    </div>
+  );
+}
+
+// Weekly Activity Heatmap (GitHub-style, last 5 weeks, Mon–Sun rows)
+function WeeklyHeatmap({ sessions, rides, healthData }) {
+  const WEEKS = 5;
+  const today = new Date(); today.setHours(0,0,0,0);
+  // Find the Monday of current week
+  const mon = new Date(today);
+  mon.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+  // Go back WEEKS-1 more weeks to get grid start
+  const start = new Date(mon); start.setDate(mon.getDate() - (WEEKS - 1) * 7);
+
+  const stepsGoal = 8000;
+  const stepsByDate = {};
+  (healthData?.steps || []).forEach(r => { stepsByDate[r.date] = Number(r.value); });
+  const trainedDates = new Set(sessions.filter(s => s.completed).map(s => s.date ? localDateStr(new Date(s.date)) : null).filter(Boolean));
+  const rideDates    = new Set(rides.map(r => r.date ? localDateStr(new Date(r.date)) : null).filter(Boolean));
+
+  // Build 7 rows (Mon-Sun), WEEKS columns
+  const grid = Array.from({ length: 7 }, (_, row) =>
+    Array.from({ length: WEEKS }, (_, col) => {
+      const d = new Date(start); d.setDate(start.getDate() + col * 7 + row);
+      const ds = localDateStr(d);
+      const isFuture = d > today;
+      const steps = stepsByDate[ds] || 0;
+      const hasWorkout = trainedDates.has(ds);
+      const hasRide    = rideDates.has(ds);
+      const stepsRatio = steps / stepsGoal;
+      // Colour logic
+      let bg = C.border; // grey = no data / no activity
+      if (!isFuture) {
+        if (hasWorkout && stepsRatio >= 1) bg = C.green;      // goal hit + trained
+        else if (hasWorkout)               bg = C.amber;      // trained, steps below goal
+        else if (hasRide)                  bg = C.blue + 'cc'; // ride day
+        else if (stepsRatio >= 1)          bg = C.green + '88'; // steps goal hit, no workout
+        else if (stepsRatio >= 0.5)        bg = C.blue + '55'; // partial steps
+        else if (steps > 0)               bg = C.border;      // minimal activity
+      }
+      return { ds, isFuture, bg, hasWorkout, hasRide, steps };
+    })
+  );
+
+  const cellSize = 11, gap = 3;
+  // Column headers: week start dates
+  const colDates = Array.from({ length: WEEKS }, (_, col) => {
+    const d = new Date(start); d.setDate(start.getDate() + col * 7);
+    return fmtHealthDate(localDateStr(d));
+  });
+  const days = ['M','T','W','T','F','S','S'];
+
+  return (
+    <div style={{ ...st.card(), marginBottom: 12 }}>
+      <div style={{ fontFamily: C.fDisplay, fontSize: 13, fontWeight: 800, textTransform: 'uppercase', color: C.text, marginBottom: 10 }}>Weekly Activity</div>
+      <div style={{ overflowX: 'auto' }}>
+        {/* Column date labels */}
+        <div style={{ display: 'flex', marginLeft: 16, marginBottom: 4, gap: gap }}>
+          {colDates.map((d, i) => (
+            <div key={i} style={{ width: cellSize, fontFamily: C.fMono, fontSize: 7, color: C.muted, textAlign: 'center', flexShrink: 0 }}>{i % 2 === 0 ? d.replace(' ', '\n') : ''}</div>
+          ))}
+        </div>
+        {/* Grid rows */}
+        {grid.map((row, ri) => (
+          <div key={ri} style={{ display: 'flex', alignItems: 'center', gap: gap, marginBottom: gap }}>
+            <div style={{ width: 12, fontFamily: C.fMono, fontSize: 7, color: C.muted, textAlign: 'right', flexShrink: 0 }}>{days[ri]}</div>
+            {row.map((cell, ci) => (
+              <div key={ci} style={{
+                width: cellSize, height: cellSize, borderRadius: 2, flexShrink: 0,
+                background: cell.isFuture ? 'transparent' : cell.bg,
+                border: cell.isFuture ? `1px dashed ${C.border}` : 'none',
+                opacity: cell.isFuture ? 0.3 : 1,
+              }} title={`${cell.ds}${cell.hasWorkout ? ' · Workout' : ''}${cell.hasRide ? ' · Ride' : ''}${cell.steps ? ` · ${cell.steps.toLocaleString()} steps` : ''}`} />
+            ))}
+          </div>
+        ))}
+      </div>
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 12, marginTop: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        {[
+          { color: C.border,        label: 'No activity' },
+          { color: C.blue + '55',   label: 'Steps' },
+          { color: C.blue + 'cc',   label: 'Ride' },
+          { color: C.amber,         label: 'Workout' },
+          { color: C.green,         label: 'Goal + Workout' },
+        ].map(l => (
+          <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div style={{ width: 8, height: 8, borderRadius: 1, background: l.color, flexShrink: 0 }} />
+            <span style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted }}>{l.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Recent Workouts section (sessions + rides combined, 3 most recent)
+function RecentWorkoutsSection({ sessions, rides, setView }) {
+  const all = [
+    ...sessions.filter(s => s.completed).map(s => ({ _type: 'workout', _date: new Date(s.date), _dateStr: s.date, ...s })),
+    ...rides.map(r => ({ _type: 'ride',    _date: new Date(r.date), _dateStr: r.date, ...r })),
+  ].sort((a, b) => b._date - a._date).slice(0, 3);
+
+  if (!all.length) return null;
+
+  return (
+    <div style={{ ...st.card(), marginBottom: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <div style={{ fontFamily: C.fDisplay, fontSize: 13, fontWeight: 800, textTransform: 'uppercase', color: C.text }}>Recent Workouts</div>
+        <button onClick={() => setView('history')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: C.fMono, fontSize: 10, color: C.blue }}>View all</button>
+      </div>
+      {all.map((item, i) => {
+        const isRide = item._type === 'ride';
+        const dateLabel = new Date(item._dateStr).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+        let icon, title, stat;
+        if (isRide) {
+          icon = '🚴';
+          title = item.type ? `${item.type} Ride` : 'Cycling';
+          stat = [item.distance && `${item.distance} km`, item.duration && `${item.duration} min`].filter(Boolean).join(' · ');
+        } else {
+          const display = workoutDisplay(item);
+          icon = display.badge;
+          title = display.title;
+          stat = [item.duration && `${item.duration} min`].filter(Boolean).join('');
+        }
+        return (
+          <div key={item.id || item._dateStr + i} style={{
+            display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0',
+            borderBottom: i < all.length - 1 ? `1px solid ${C.border}` : 'none',
+          }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: isRide ? C.blue + '18' : C.amberDim,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
+              {icon}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: C.fBody, fontSize: 13, fontWeight: 600, color: C.text, lineHeight: 1.2 }}>{title}</div>
+              <div style={{ fontFamily: C.fMono, fontSize: 10, color: C.muted, marginTop: 2 }}>
+                {dateLabel}{stat ? ` · ${stat}` : ''}
+              </div>
+            </div>
+            <span style={{ color: C.muted, fontSize: 14, flexShrink: 0 }}>›</span>
+          </div>
+        );
+      })}
+      <button onClick={() => setView('preStart')}
+        style={{ ...st.btn(C.dim, C.text), marginTop: 12, fontSize: 13 }}>
+        + Log Workout
+      </button>
     </div>
   );
 }
@@ -2255,11 +2425,18 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
               <div style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Recovery</div>
               <RecoveryRing score={recovery.score} color={recovery.color} label={recovery.label} size={82} />
             </div>
-            {/* Fatigue */}
+            {/* Fatigue + Readiness */}
             <div>
-              <div style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Fatigue</div>
-              <div style={{ fontFamily: C.fDisplay, fontSize: 16, fontWeight: 700, color: fatigue?.color || C.muted }}>{fatigue?.label || '—'}</div>
+              <div style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Fatigue</div>
+              <div style={{ fontFamily: C.fDisplay, fontSize: 15, fontWeight: 700, color: fatigue?.color || C.muted }}>{fatigue?.label || '—'}</div>
               {fatigue && <FatigueBar level={fatigue.level} color={fatigue.color} />}
+              <div style={{ marginTop: 8 }}>
+                <div style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Readiness</div>
+                <div style={{ fontFamily: C.fBody, fontSize: 12, fontWeight: 600, color: rec.color }}>{rec.label}</div>
+                <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, marginTop: 2 }}>
+                  {rec.label === 'Recommended' ? 'You can push hard today.' : rec.label === 'Take it steady' ? 'Moderate effort today.' : 'Prioritise recovery.'}
+                </div>
+              </div>
             </div>
             {/* Training Load */}
             <div>
@@ -2282,21 +2459,19 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
       )}
 
       {/* ── Today's Training ── */}
-      {hasHealthData && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
-          {[
-            { icon: '🏋️', label: 'Weight Training', focus: 'Strength' },
-            { icon: '🚴', label: 'Cycling', focus: 'Endurance' },
-          ].map(t => (
-            <div key={t.label} style={{ ...st.card(), padding: '10px 12px' }}>
-              <div style={{ fontSize: 18, marginBottom: 4 }}>{t.icon}</div>
-              <div style={{ fontFamily: C.fDisplay, fontSize: 13, fontWeight: 700, color: C.text, lineHeight: 1.2 }}>{t.label}</div>
-              <div style={{ fontFamily: C.fMono, fontSize: 10, color: rec.color, fontWeight: 700, marginTop: 3 }}>{rec.label}</div>
-              <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, marginTop: 2 }}>Focus: {t.focus}</div>
-            </div>
-          ))}
-        </div>
-      )}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+        {[
+          { icon: '🏋️', label: 'Weight Training', focus: 'Strength' },
+          { icon: '🚴', label: 'Cycling', focus: 'Endurance' },
+        ].map(t => (
+          <div key={t.label} style={{ ...st.card(), padding: '10px 12px' }}>
+            <div style={{ fontSize: 18, marginBottom: 4 }}>{t.icon}</div>
+            <div style={{ fontFamily: C.fDisplay, fontSize: 13, fontWeight: 700, color: C.text, lineHeight: 1.2 }}>{t.label}</div>
+            <div style={{ fontFamily: C.fMono, fontSize: 10, color: rec.color, fontWeight: 700, marginTop: 3 }}>{rec.label}</div>
+            <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, marginTop: 2 }}>Focus: {t.focus}</div>
+          </div>
+        ))}
+      </div>
 
       {/* ── 4-Metric sparkline grid ── */}
       {hasHealthData && (
@@ -2586,6 +2761,12 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
         <CyclingWeekCard rides={rides} />
         <StrengthWeekCard sessions={sessions} allExercises={allExercises} />
       </div>
+
+      {/* ── Weekly Activity Heatmap ── */}
+      <WeeklyHeatmap sessions={sessions} rides={rides} healthData={hd} />
+
+      {/* ── Recent Workouts ── */}
+      <RecentWorkoutsSection sessions={sessions} rides={rides} setView={setView} />
 
       {/* Cloud sync status */}
       {driveSync && (
