@@ -4,6 +4,17 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-06-06 — Sleep-aware recovery score (Claude Sonnet 4.6)
+
+- `computeRecovery()` now adapts automatically based on sleep data availability
+- **With sleep** (≥3 nights in 7-day window + last-night reading): HRV 40% + RHR 30% + Sleep 30% — matches Oura/WHOOP weighting
+- **Without sleep** (watch not worn overnight): HRV 70% + RHR 30% — graceful fallback, clearly labelled as estimate
+- Recovery card disclaimer updates dynamically: shows actual sleep hours and weights when sleep is available, or "no sleep reading for last night" when it isn't
+- Extended `ingest-health` Edge Function (v2): added `sleep_analysis → sleep` to METRIC_MAP
+- `pullHealthMetrics()` and `pushHealthMetrics()` now include sleep
+- App state, startup `useEffect`, and localStorage load all extended for sleep
+- Sleep metric: Health Auto Export reports "Sleep Analysis" as hours per night (no unit conversion needed)
+
 ## 2026-06-06 — Recovery score methodology overhaul (Claude Sonnet 4.6)
 
 - Replaced simple ratio formula with science-based SD-band approach (Buchheit 2014, Plews 2013, Altini/HRV4Training methodology)

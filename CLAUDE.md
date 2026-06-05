@@ -225,7 +225,7 @@ Energy check → Warm-up checklist → Exercises (weight/reps/RPE/pain per set) 
 - ✅ Health Auto Export → Supabase pipeline (nightly automation, `ingest-health` Edge Function, `health_metrics` table)
 - ✅ Health tab Body section: charts for HRV, Resting HR, Steps, Active Cal with workout markers, badges, trend arrows
 - ✅ Recovery Dashboard on Home: greeting, recovery ring, fatigue bar, training load, Today's Training, 4-metric strip with area sparklines, Recovery Trends dual-axis chart (7D/30D/90D), Cycling/Strength week cards, Weekly Heatmap, Recent Workouts
-- ✅ Recovery score: science-based SD-band formula (Buchheit/Altini methodology) — 7-day rolling mean+SD, HRV 70%/RHR 30%, score = 50 + z×15. See `computeRecovery()` in source and ROADMAP.md for full formula. **Sleep data would improve accuracy — already exported, not yet stored.**
+- ✅ Recovery score: adaptive SD-band formula — auto-switches between 2-factor (HRV 70%/RHR 30%) and 3-factor (HRV 40%/RHR 30%/Sleep 30%) depending on whether sleep data is available. Sleep pipeline complete: Edge Function v2 handles `sleep_analysis`, `pullHealthMetrics` returns sleep, state and localStorage extended. See `computeRecovery()` and ROADMAP.md formula block.
 
 ---
 

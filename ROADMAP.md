@@ -27,17 +27,25 @@ The app is in active daily use. All core workout features complete. Apple Watch 
 - Recent Workouts (last 3 sessions+rides, "+ Log Workout" CTA)
 
 ### Recovery score formula (as of 2026-06-06)
-Based on Buchheit 2014, Plews 2013, Altini/HRV4Training methodology:
+Based on Buchheit 2014, Plews 2013, Altini/HRV4Training methodology.
+Adaptive: uses 3-factor formula when sleep is available, 2-factor otherwise.
+
 ```
-hrv7  = 7-day rolling mean + SD of HRV readings
-rhr7  = 7-day rolling mean + SD of resting HR readings
-zHRV  = (todayHRV - mean7HRV) / sd7HRV        // higher = good
-zRHR  = (mean7RHR - todayRHR) / sd7RHR        // lower = good (inverted)
-zComb = zHRV × 0.70 + zRHR × 0.30             // HRV weighted more heavily
-score = clamp(50 + zComb × 15, 0, 100)        // 50=average, ±1SD=±15pts
+// Shared baseline (both variants)
+zHRV   = (todayHRV   - mean7HRV)  / sd7HRV   // higher HRV = positive = good
+zRHR   = (mean7RHR   - todayRHR)  / sd7RHR   // lower  RHR = positive = good (inverted)
+
+// WITH sleep (≥3 nights in last 7 days + last-night reading):
+zSleep = (todaySleep - mean7Sleep) / sd7Sleep // higher sleep = positive = good
+zComb  = zHRV × 0.40 + zRHR × 0.30 + zSleep × 0.30
+
+// WITHOUT sleep (watch not worn overnight):
+zComb  = zHRV × 0.70 + zRHR × 0.30
+
+score = clamp(50 + zComb × 15, 0, 100)       // 50 = average, ±1 SD = ±15 pts
 ```
 Thresholds: Good ≥ 60, Fair 38–59, Low < 38
-**Known limitation:** sleep data not yet stored. All commercial devices weight sleep 33–50%. Score is an estimate until Sleep Analysis is wired in (data already being exported by Health Auto Export — needs Edge Function + DB extension).
+Sleep metric name in Health Auto Export JSON: `sleep_analysis` (hours per night)
 
 ---
 
@@ -405,7 +413,7 @@ Currently the user manually selects which workout to do. The app suggests the ne
 - See CHANGELOG.md 2026-06-06 entry and `computeRecovery()` comment block in source
 
 **What Codex could tackle next:**
-- **High priority: Add sleep data to recovery score.** Sleep Analysis is already being exported by Health Auto Export. Steps: (1) extend `ingest-health` Edge Function to parse `sleep_analysis` metric, (2) add `sleep` column to `health_metrics` table or use existing schema with metric='sleep', (3) add `pullHealthMetrics` to return sleep array, (4) update `computeRecovery()` to include sleep score at 30% weight (formula in ROADMAP.md Recovery score section). When sleep is available, formula becomes: `score = zHRV×0.40 + zRHR×0.30 + zSleep×0.30`
+- **Sleep pipeline now complete** — `ingest-health` Edge Function v2 handles `sleep_analysis`, `pullHealthMetrics` returns sleep array, `computeRecovery` auto-switches to 3-factor formula. Sleep data will start appearing once the nightly automation sends the first export containing sleep.
 - Extend `ingest-health` Edge Function for remaining metrics: cycling_distance, vo2_max, respiratory_rate, blood_oxygen — see CLAUDE.md Health Export section for metric name mappings
 - Demo animation component (Priority 4) — still pending, all assets exist in `assets/demos/`
 - Exercise YouTube video IDs (Decision 1) — research pass pending per memory file
