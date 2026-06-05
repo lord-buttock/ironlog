@@ -1316,12 +1316,16 @@ function healthVolumeByGroup(sessions) {
 function healthConsistency(sessions) {
   const completed = sessions.filter(s => s.completed);
   const trainedDates = new Set(completed.map(s => s.date?.slice(0, 10)).filter(Boolean));
-  // Use current UTC time (same as session storage format) — not local midnight
-  const now = Date.now();
-  const todayStr = new Date(now).toISOString().slice(0, 10);
+  // Start from the Monday 4 weeks ago so days align with the M-T-W-T-F-S-S column headers
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+  const todayStr = today.toISOString().slice(0, 10);
+  // Find Monday of current week (UTC)
+  const dowOffset = (today.getUTCDay() + 6) % 7; // 0=Mon … 6=Sun
+  const startMonday = new Date(today.getTime() - (dowOffset + 21) * 86400000); // 4 Mondays ago
   const days = [];
-  for (let i = 27; i >= 0; i--) {
-    const dateStr = new Date(now - i * 86400000).toISOString().slice(0, 10);
+  for (let i = 0; i < 28; i++) {
+    const dateStr = new Date(startMonday.getTime() + i * 86400000).toISOString().slice(0, 10);
     days.push({ dateStr, trained: trainedDates.has(dateStr), isToday: dateStr === todayStr });
   }
   // Count consecutive trained days from most recent end
@@ -1378,19 +1382,39 @@ const HEALTH_METRICS = [
   { id: 'steps', key: 'steps', storage: 'il_health_steps', title: 'Steps', subtitle: 'Daily Total', unit: 'steps', type: 'bar', days: 14, color: C.green, target: 8000 },
   { id: 'active_cal', key: 'activeCal', storage: 'il_health_active_cal', title: 'Active Calories', subtitle: 'Daily Total', unit: 'kcal', type: 'bar', days: 14, color: C.amber },
   { id: 'cardio', key: 'cardio', storage: 'il_health_cardio', title: 'Cardio Fitness', subtitle: 'VO2 Max Estimate', unit: 'mL/kg/min', type: 'line', days: 180, color: C.purple, sparse: true },
-  { id: 'sleep', key: 'sleep', storage: 'il_health_sleep', title: 'Sleep', subtitle: 'Nightly Duration', unit: 'h', type: 'bar', days: 14, color: C.blue, target: 7.5 },
 ];
 
+function normaliseHealthReading(item, i) {
+  if (!item || typeof item !== 'object') throw new Error(`Reading ${i + 1} is not an object.`);
+  const date = typeof item.date === 'string' ? item.date.trim().slice(0, 10) : '';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error(`Reading ${i + 1} needs a YYYY-MM-DD date.`);
+  const value = Number(String(item.value ?? '').trim().replace(/,/g, ''));
+  if (!Number.isFinite(value)) throw new Error(`Reading ${i + 1} needs a single numeric value.`);
+  return { date, value: Math.round(value * 100) / 100 };
+}
+
 function normaliseHealthReadings(input) {
-  if (!Array.isArray(input)) throw new Error('JSON must be an array of {date, value} objects.');
-  return input.map((item, i) => {
-    if (!item || typeof item !== 'object') throw new Error(`Reading ${i + 1} is not an object.`);
-    const date = typeof item.date === 'string' ? item.date.slice(0, 10) : '';
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error(`Reading ${i + 1} needs a YYYY-MM-DD date.`);
-    const value = Number(item.value);
-    if (!Number.isFinite(value)) throw new Error(`Reading ${i + 1} needs a single numeric value.`);
-    return { date, value: Math.round(value * 100) / 100 };
-  }).sort((a, b) => a.date.localeCompare(b.date));
+  if (Array.isArray(input)) {
+    return input.map(normaliseHealthReading).sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  if (input && typeof input === 'object' && typeof input.dates === 'string' && typeof input.values === 'string') {
+    const dates = input.dates.split(/\r?\n/);
+    const values = input.values.split(/\r?\n/);
+    const rows = [];
+    const rowCount = Math.max(dates.length, values.length);
+    for (let i = 0; i < rowCount; i++) {
+      const date = (dates[i] || '').trim();
+      const value = (values[i] || '').trim();
+      if (!date && !value) continue;
+      if (!date || !value) throw new Error(`Shortcut row ${i + 1} needs both a date and value.`);
+      rows.push(normaliseHealthReading({ date, value }, i));
+    }
+    if (!rows.length) throw new Error('Shortcut JSON did not contain any readings.');
+    return rows.sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  throw new Error('JSON must be either an array of {date, value} objects or an object with dates and values strings.');
 }
 
 function mergeHealthReadings(existing, incoming) {
@@ -4543,8 +4567,11 @@ function HealthView({ sessions, allExercises, healthData, setHealthData }) {
                 <Icon name="x" size={18} />
               </button>
             </div>
+            <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.45, marginBottom: 8 }}>
+              Paste either <span style={{ fontFamily: C.fMono }}>[{'{'}date,value{'}'}]</span> JSON or the Shortcuts blob format with newline-separated dates and values.
+            </div>
             <textarea value={importText} onChange={e => setImportText(e.target.value)} rows={8}
-              placeholder='[{"date":"2026-05-06","value":19.05}]'
+              placeholder='{"dates":"2026-05-06\n2026-05-07","values":"19.05\n22.54"}'
               style={{ ...st.inp, textAlign: 'left', padding: 12, resize: 'vertical', lineHeight: 1.4, fontSize: 12 }} />
             {importError && <div style={{ color: C.red, fontSize: 12, marginTop: 8 }}>{importError}</div>}
             {importResult && <div style={{ color: C.green, fontSize: 12, marginTop: 8 }}>{importResult}</div>}
@@ -5780,7 +5807,7 @@ export default function App() {
   const [preStartSwaps, setPreStartSwaps] = useState({});
   const [ironView, setIronView] = useState(false);
   const [healthData, setHealthData] = useState({
-    hrv: [], restingHr: [], steps: [], activeCal: [], cardio: [], sleep: [],
+    hrv: [], restingHr: [], steps: [], activeCal: [], cardio: [],
   });
 
   // Keep a ref to current data so export always uses the latest state
@@ -5795,11 +5822,11 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
-      const [s, r, a, ce, wc, wh, hrv, restingHr, steps, activeCal, cardio, sleep] = await Promise.all([
+      const [s, r, a, ce, wc, wh, hrv, restingHr, steps, activeCal, cardio] = await Promise.all([
         load('il_sessions'), load('il_rides'), load('il_active'),
         load('il_custom_exercises'), load('il_workout_custom'), load('il_workout_hidden'),
         load('il_health_hrv'), load('il_health_resting_hr'), load('il_health_steps'),
-        load('il_health_active_cal'), load('il_health_cardio'), load('il_health_sleep'),
+        load('il_health_active_cal'), load('il_health_cardio'),
       ]);
       const localSessions = s || [];
       const localRides    = r || [];
@@ -5822,7 +5849,6 @@ export default function App() {
         steps: steps || [],
         activeCal: activeCal || [],
         cardio: cardio || [],
-        sleep: sleep || [],
       });
       setSelectedWorkout(nextWorkout(finalSessions));
       setReady(true);
@@ -5847,7 +5873,6 @@ export default function App() {
   useEffect(() => { if (ready) save('il_health_steps', healthData.steps); }, [healthData.steps, ready]);
   useEffect(() => { if (ready) save('il_health_active_cal', healthData.activeCal); }, [healthData.activeCal, ready]);
   useEffect(() => { if (ready) save('il_health_cardio', healthData.cardio); }, [healthData.cardio, ready]);
-  useEffect(() => { if (ready) save('il_health_sleep', healthData.sleep); }, [healthData.sleep, ready]);
 
   function handleExport() {
     exportData(dataRef.current);
