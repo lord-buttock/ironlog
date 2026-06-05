@@ -1313,27 +1313,44 @@ function healthVolumeByGroup(sessions) {
 }
 
 // 28-day consistency: trained days heatmap + stats
+// Format a Date object as YYYY-MM-DD in LOCAL time (not UTC)
+function localDateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
 function healthConsistency(sessions) {
   const completed = sessions.filter(s => s.completed);
-  const trainedDates = new Set(completed.map(s => s.date?.slice(0, 10)).filter(Boolean));
-  // Start from the Monday 4 weeks ago so days align with the M-T-W-T-F-S-S column headers
-  const today = new Date();
-  today.setUTCHours(0, 0, 0, 0);
-  const todayStr = today.toISOString().slice(0, 10);
-  // Find Monday of current week (UTC)
-  const dowOffset = (today.getUTCDay() + 6) % 7; // 0=Mon … 6=Sun
-  const startMonday = new Date(today.getTime() - (dowOffset + 21) * 86400000); // 4 Mondays ago
+  // Use local date so a 5am workout doesn't appear on the previous UTC day
+  const trainedDates = new Set(
+    completed.map(s => s.date ? localDateStr(new Date(s.date)) : null).filter(Boolean)
+  );
+  const now = new Date();
+  const todayStr = localDateStr(now);
+
+  // Start from the Monday 4 weeks ago (local calendar) so columns align with M-T-W-T-F-S-S
+  const dowOffset = (now.getDay() + 6) % 7; // 0=Mon … 6=Sun
+  const start = new Date(now);
+  start.setDate(now.getDate() - dowOffset - 21); // Monday 4 weeks ago
+  start.setHours(12, 0, 0, 0); // use noon to avoid DST edge cases
+
   const days = [];
   for (let i = 0; i < 28; i++) {
-    const dateStr = new Date(startMonday.getTime() + i * 86400000).toISOString().slice(0, 10);
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    const dateStr = localDateStr(d);
     days.push({ dateStr, trained: trainedDates.has(dateStr), isToday: dateStr === todayStr });
   }
-  // Count consecutive trained days from most recent end
+
+  // Streak: count consecutive trained days ending today (or yesterday if today not done yet)
+  const todayIdx = days.findIndex(d => d.isToday);
+  let startIdx = todayIdx >= 0 ? todayIdx : days.length - 1;
+  if (startIdx >= 0 && !days[startIdx].trained) startIdx--; // today not done yet — look from yesterday
   let streak = 0;
-  for (let i = 27; i >= 0; i--) {
+  for (let i = startIdx; i >= 0; i--) {
     if (days[i].trained) streak++;
-    else if (i < 27) break;
+    else break;
   }
+
   const totalThisMonth = days.filter(d => d.trained).length;
   return { days, streak, totalThisMonth };
 }
@@ -1417,6 +1434,36 @@ function normaliseHealthReadings(input) {
   throw new Error('JSON must be either an array of {date, value} objects or an object with dates and values strings.');
 }
 
+// Parse a Health Auto Export JSON file and return {hrv, restingHr, steps, activeCal} all at once
+const HEALTH_EXPORT_MAP = {
+  heart_rate_variability: 'hrv',
+  resting_heart_rate:     'restingHr',
+  step_count:             'steps',
+  active_energy:          'activeCal',
+};
+function parseHealthAutoExport(parsed) {
+  const metrics = parsed?.data?.metrics;
+  if (!Array.isArray(metrics)) return null; // not this format
+  const result = {};
+  metrics.forEach(metric => {
+    const key = HEALTH_EXPORT_MAP[metric.name];
+    if (!key) return;
+    const entries = (metric.data || [])
+      .map(entry => {
+        const date = typeof entry.date === 'string' ? entry.date.slice(0, 10) : '';
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+        let value = Number(entry.qty);
+        if (!Number.isFinite(value)) return null;
+        if (metric.name === 'active_energy') value = value / 4.184; // kJ → kcal
+        return { date, value: Math.round(value * 10) / 10 };
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.date.localeCompare(b.date));
+    if (entries.length) result[key] = entries;
+  });
+  return Object.keys(result).length ? result : null;
+}
+
 function mergeHealthReadings(existing, incoming) {
   const byDate = {};
   (existing || []).forEach(r => {
@@ -1449,7 +1496,7 @@ function healthSevenDayTrend(readings) {
 
 function healthWorkoutCorrelation(sessions, hrvReadings) {
   const byDate = new Map((hrvReadings || []).map(r => [r.date, Number(r.value)]));
-  const trained = new Set(sessions.filter(s => s.completed).map(s => s.date?.slice(0, 10)).filter(Boolean));
+  const trained = new Set(sessions.filter(s => s.completed).map(s => s.date ? localDateStr(new Date(s.date)) : null).filter(Boolean));
   const recent = lastNDaysReadings(hrvReadings, 30).filter(r => byDate.has(r.date));
   const workout = recent.filter(r => trained.has(r.date)).map(r => Number(r.value));
   const rest = recent.filter(r => !trained.has(r.date)).map(r => Number(r.value));
@@ -4258,6 +4305,10 @@ function HealthView({ sessions, allExercises, healthData, setHealthData }) {
   const [importText, setImportText] = useState('');
   const [importError, setImportError] = useState('');
   const [importResult, setImportResult] = useState('');
+  const [bulkImportOpen, setBulkImportOpen] = useState(false);
+  const [bulkText, setBulkText] = useState('');
+  const [bulkError, setBulkError] = useState('');
+  const [bulkResult, setBulkResult] = useState('');
 
   const completed   = sessions.filter(s => s.completed);
   const weeklyVol   = healthWeeklyVolume(sessions);
@@ -4303,6 +4354,30 @@ function HealthView({ sessions, allExercises, healthData, setHealthData }) {
     } catch (e) {
       setImportError(e.message || 'Could not import this JSON.');
       setImportResult('');
+    }
+  }
+
+  function confirmBulkImport() {
+    try {
+      const parsed = JSON.parse(bulkText);
+      const bulk = parseHealthAutoExport(parsed);
+      if (!bulk) throw new Error('Not a Health Auto Export JSON file. Expected {"data":{"metrics":[...]}}.');
+      const counts = {};
+      setHealthData(prev => {
+        const next = { ...prev };
+        Object.entries(bulk).forEach(([key, entries]) => {
+          next[key] = mergeHealthReadings(prev[key], entries);
+          counts[key] = entries.length;
+        });
+        return next;
+      });
+      const summary = Object.entries(counts).map(([k, n]) => `${n} ${k}`).join(', ');
+      setBulkResult(`Imported: ${summary}`);
+      setBulkError('');
+      setBulkText('');
+    } catch (e) {
+      setBulkError(e.message || 'Could not parse this file.');
+      setBulkResult('');
     }
   }
 
@@ -4532,9 +4607,13 @@ function HealthView({ sessions, allExercises, healthData, setHealthData }) {
           <div style={{ fontFamily: C.fDisplay, fontSize: 16, fontWeight: 800, color: C.text, textTransform: 'uppercase', marginBottom: 4 }}>
             Import Health Data
           </div>
-          <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.45 }}>
-            Export each Apple Health Shortcut as JSON, then import the matching file below.
+          <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.45, marginBottom: 10 }}>
+            Use <strong style={{ color: C.text }}>Health Auto Export</strong> app → export last 30 days as JSON → paste below to import all metrics at once.
           </div>
+          <button onClick={() => { setBulkImportOpen(true); setBulkText(''); setBulkError(''); setBulkResult(''); }}
+            style={{ ...st.btn(C.blue), fontSize: 13 }}>
+            Import Health Auto Export JSON
+          </button>
         </div>
         {metricCards}
         {hrvCorrelation && (
@@ -4551,6 +4630,39 @@ function HealthView({ sessions, allExercises, healthData, setHealthData }) {
           </div>
         )}
       </div>
+
+      {bulkImportOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(23,33,43,0.45)', zIndex: 500,
+          display: 'flex', alignItems: 'flex-end', padding: 14 }}>
+          <div style={{ ...st.card(), width: '100%', maxWidth: 560, margin: '0 auto 10px', boxShadow: '0 18px 40px rgba(0,0,0,0.18)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div>
+                <div style={{ fontFamily: C.fDisplay, fontSize: 18, fontWeight: 800, color: C.text, textTransform: 'uppercase' }}>
+                  Health Auto Export
+                </div>
+                <div style={{ fontFamily: C.fMono, fontSize: 10, color: C.muted }}>HRV · Resting HR · Steps · Active Cal</div>
+              </div>
+              <button onClick={() => setBulkImportOpen(false)} style={{ background: C.dim, border: 'none', borderRadius: 6, width: 34, height: 34, color: C.text, cursor: 'pointer' }}>
+                <Icon name="x" size={18} />
+              </button>
+            </div>
+            <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.45, marginBottom: 8 }}>
+              Open the <strong style={{ color: C.text }}>Health Auto Export</strong> app, export last 30 days as JSON, then paste the full file contents here.
+            </div>
+            <textarea value={bulkText} onChange={e => setBulkText(e.target.value)} rows={8}
+              placeholder='{"data":{"metrics":[{"name":"heart_rate_variability",...}]}}'
+              style={{ ...st.inp, textAlign: 'left', padding: 12, resize: 'vertical', lineHeight: 1.4, fontSize: 12 }} />
+            {bulkError  && <div style={{ color: C.red,   fontSize: 12, marginTop: 8 }}>{bulkError}</div>}
+            {bulkResult && <div style={{ color: C.green, fontSize: 12, marginTop: 8 }}>{bulkResult}</div>}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 12 }}>
+              <button onClick={() => setBulkImportOpen(false)} style={{ ...st.ghost }}>Done</button>
+              <button onClick={confirmBulkImport} disabled={!bulkText.trim()} style={{ ...st.btn(), opacity: bulkText.trim() ? 1 : 0.45 }}>
+                Import
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {importMetric && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(23,33,43,0.45)', zIndex: 500,
