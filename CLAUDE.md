@@ -167,7 +167,7 @@ il_workout_hidden    → { A: [...hiddenIds], B: [...], C: [...] }
 
 | Tab | Screen | Purpose |
 |---|---|---|
-| Home | Dashboard | Next workout, coach note, week strip, stretch routine |
+| Home | Dashboard | Recovery dashboard (ring, metrics, trends, heatmap, recent workouts) + workout card |
 | Workout | ActiveWorkout | Session flow (see below) |
 | Log | History | Expandable session cards |
 | Stats | Progress | SVG line charts per exercise |
@@ -222,6 +222,34 @@ Energy check → Warm-up checklist → Exercises (weight/reps/RPE/pain per set) 
 - ✅ Auto-update indicator (↺ pulses amber when newer version deployed)
 - ✅ JSON export/import in Manage → Backup
 - ✅ PWA / iPhone home screen
+- ✅ Health Auto Export → Supabase pipeline (nightly automation, `ingest-health` Edge Function, `health_metrics` table)
+- ✅ Health tab Body section: charts for HRV, Resting HR, Steps, Active Cal with workout markers, badges, trend arrows
+- ✅ Recovery Dashboard on Home: greeting, recovery ring, fatigue bar, training load, Today's Training, 4-metric strip with area sparklines, Recovery Trends dual-axis chart (7D/30D/90D), Cycling/Strength week cards, Weekly Heatmap, Recent Workouts
+
+---
+
+## Health data pipeline — Supabase
+
+**Edge Function:** `https://bhlbebdmuodscdgcwkyb.supabase.co/functions/v1/ingest-health`
+- Accepts POST with Health Auto Export v1 JSON body
+- Maps: `heart_rate_variability→hrv`, `resting_heart_rate→resting_hr`, `step_count→steps`, `active_energy→active_cal` (÷4.184 kJ→kcal)
+- Upserts to `health_metrics(metric, date, value)` using service-role key
+
+**Table:** `health_metrics` — PRIMARY KEY (metric, date). RLS: anon SELECT, service-role write.
+
+**App functions:** `pullHealthMetrics()` called at startup; `pushHealthMetrics()` called after bulk import.
+
+**Metrics Phill exports from Health Auto Export (as of 2026-06-06):**
+Currently stored and displayed: `hrv`, `resting_hr`, `steps`, `active_cal`
+
+Currently exported but NOT YET stored/displayed (Edge Function would need extending):
+- `cycling_distance` (km)
+- `vo2_max` (mL/kg/min) — sparse, only updates after outdoor GPS activity
+- `blood_oxygen` (SpO2 %)
+- `respiratory_rate` (breaths/min)
+- `cardio_recovery` (bpm drop after 1 min)
+- `sleep_analysis` (hours)
+- `walking_heart_rate` (bpm avg)
 
 ---
 

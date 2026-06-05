@@ -4,6 +4,62 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-06-06 — Recovery Dashboard fixes and polish (Claude Sonnet 4.6)
+
+- Fixed StrengthWeekCard: was filtering out Iron Series sessions (`IRON_` exclusion). All completed sessions — A/B/C and Iron Series — now count toward weekly sessions, volume, and time
+- Moved Cycling/Strength week cards + Weekly Heatmap + Recent Workouts above the Selected Workout hero card, so all health/activity data is grouped together at the top of the Home screen
+- Metric cards: converted from 2×2 grid to horizontal 4-wide strip (all cards visible on screen without scrolling)
+- MetricSparkline: converted from plain polyline to SVG area chart with gradient fill, matching target mockup's shaded sparkline style
+- Added Lucide icons to each metric card (activity / heart / footprints / flame)
+- Active Cal comparison now shows 7-day average value ("581 avg") instead of "+X vs avg" delta
+- Today's Training cards: now use soft-blue icon box layout (Lucide dumbbell/bike) matching target mockup
+- Weekly Activity Heatmap + Recent Workouts displayed side by side (heatmap ~45%, recent ~55%)
+- Recovery ring capped at 100% visually — formula may exceed 100 but ring never overfills
+- Trend chart x-axis: shows 3–4 evenly-spaced date labels instead of only first/last
+- Strength week card stats in 3-column grid (Volume | Top Lift Increase | Total Time)
+- Added Readiness sub-row to Recovery Summary card (label + context text)
+- Today's Training shows regardless of whether health data is present
+
+## 2026-06-06 — Recovery Dashboard — initial build (Claude Sonnet 4.6)
+
+- New Home screen greeting: "Good morning/afternoon/evening, Phill" with today's date
+- Recovery Summary card: circular ring (green/amber/red, 0–100%), segmented fatigue bar, training load bar. Formula: `recoveryScore = round((hrvScore × 0.5) + (rhrScore × 0.5))` using 14-day rolling baseline
+- Today's Training: two recommendation boxes (Weight Training, Cycling) with Recommended / Take it steady / Recovery suggested based on recovery score
+- 4-metric sparkline grid: HRV, Resting HR, Steps, Active Cal — colour-coded vs 14-day rolling average
+- Recovery Trends: dual-axis line chart (HRV blue, Resting HR red) with 7D / 30D / 90D toggle; data points green/amber/red vs baseline; auto-generated insight text
+- Cycling This Week card: total km, % vs last week, longest ride, day-by-day bar chart
+- Strength This Week card: sessions, volume (tonnes), top lift increase, total time, day-by-day bar chart
+- Weekly Activity Heatmap: GitHub-style 5-week grid (Mon–Sun rows), colour-coded grey/blue-tint/blue/amber/green by steps+workout+goal status
+- Recent Workouts section: last 3 activities (sessions + rides combined), "View all" → Log tab, "+ Log Workout" CTA
+- New helpers: `computeRecovery()`, `computeFatigue()`, `computeTrainingLoad()`, `computeTrendInsight()`, `timeGreeting()`, `rollingAvg()`, `getLatestReading()`
+- New components: `RecoveryRing`, `FatigueBar`, `MetricSparkline`, `RecoveryTrendChart`, `CyclingWeekCard`, `StrengthWeekCard`, `WeeklyHeatmap`, `RecentWorkoutsSection`
+- All new sections hidden gracefully when no health data is present — existing workout flow unchanged
+- Dashboard now accepts `healthData` prop; App passes it from state
+
+## 2026-06-06 — Health tab chart improvements (Claude Sonnet 4.6)
+
+- X-axis date labels now show "May 30" / "Jun 5" instead of raw "05-30" / "06-05"
+- Workout day markers (amber ▲ triangles) on chart x-axis for days with completed sessions
+- HRV card: GOOD / FAIR / LOW recovery status badge + delta vs 30-day average
+- Resting HR card: ↓/↑ week-over-week trend with "improving ✓" / "trending up" label
+- Steps card: "X / N days hit target (XX%)" stat below chart
+- Active Cal card: 7-day average callout below chart
+- Import card demoted from prominent blue card to small text link at bottom of Body section
+- "No data" copy updated to mention nightly auto-sync
+
+## 2026-06-05 — Supabase health metrics pipeline (Claude Sonnet 4.6)
+
+- Deployed `ingest-health` Supabase Edge Function — accepts Health Auto Export v1 JSON via POST, upserts to `health_metrics` table. Maps: `heart_rate_variability→hrv`, `resting_heart_rate→resting_hr`, `step_count→steps`, `active_energy→active_cal`. Converts active_energy kJ→kcal (÷4.184). Handles CORS.
+- Created `health_metrics` Supabase table: columns `(metric text, date date, value numeric, updated_at timestamptz)`, PRIMARY KEY `(metric, date)`. RLS: anon SELECT, service-role INSERT/UPDATE.
+- Added `pullHealthMetrics()`: fetches all health_metrics rows, sorts by metric type, returns `{hrv, restingHr, steps, activeCal}` arrays. Called on app startup in parallel with sessions/rides pulls.
+- Added `pushHealthMetrics(healthData)`: upserts current health state to Supabase after bulk import. Fire-and-forget cloud backup.
+- Added `localDateStr()` helper: formats Date objects as YYYY-MM-DD in local timezone (fixes UTC mismatch bugs where early-morning workouts appeared on previous day)
+- Fixed consistency heatmap streak counter to start from today (not array end) — future cells no longer zero out streaks
+- Startup `useEffect` parallelised: `Promise.all([pullSessions, pullRides, pullHealthMetrics])`. Cloud health data takes precedence over localStorage cache.
+- Added `parseHealthAutoExport()`: parses Health Auto Export v1 JSON, extracts HRV/Resting HR/Steps/Active Cal, converts units, validates dates, returns merged readings
+- Health tab Body section: "Import Health Auto Export JSON" bulk import modal (accepts full export file, merges all metrics at once, syncs to cloud on confirm)
+- Health Auto Export automation configured: POST to Edge Function URL, 1-Day sync cadence, nightly auto-export
+
 ## 2026-06-05 — Shortcuts Health Import Compatibility
 
 - Health Body import now accepts Shortcuts-friendly `{"dates":"...","values":"..."}` JSON and zips newline-separated rows into readings

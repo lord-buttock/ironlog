@@ -6,6 +6,28 @@ Read README.md first for full project context, user profile, medical constraints
 
 ---
 
+## Current State (as of 2026-06-06)
+
+The app is in active daily use. All core workout features complete. Apple Watch health data now syncs automatically via Supabase. Home screen has a full recovery dashboard (ring, trends chart, activity heatmap, metric strip).
+
+### Health data pipeline — fully live
+- **Health Auto Export** (iPhone app) sends data nightly to Supabase Edge Function (`ingest-health`)
+- Supabase `health_metrics` table stores HRV, Resting HR, Steps, Active Cal by date
+- IronLog fetches on every load → drives Recovery Dashboard on Home screen
+- Manual import fallback available in Health tab → Body section (small text link)
+
+### Recovery Dashboard (Home screen)
+- Greeting + date header
+- Recovery Summary card: circular ring (0–100%, green/amber/red), fatigue bar, training load bar, Readiness label
+- Today's Training: recommendation boxes (Recommended / Take it steady / Recovery suggested)
+- 4-metric horizontal strip: HRV, Resting HR, Steps, Active Cal — icons, area sparklines, colour-coded vs 14-day baseline
+- Recovery Trends chart: dual-axis HRV + Resting HR, 7D/30D/90D toggle, auto-insight text
+- Cycling This Week + Strength This Week cards (side by side)
+- Weekly Activity Heatmap (5-week GitHub-style grid)
+- Recent Workouts (last 3 sessions+rides, "+ Log Workout" CTA)
+
+---
+
 ## Current State (as of 2026-05-25)
 
 The app is functional and in active daily use. Core features are complete:
@@ -328,12 +350,44 @@ Currently the user manually selects which workout to do. The app suggests the ne
 - [x] Exercise icons: 81 transparent PNGs in `assets/icons/` (108×108 and 324×324) — 2026-05-15/16
 - [x] Previous session notes reminder: 📝 banner above set rows — 2026-05-20
 - [x] Muscle diagram collapsed by default, tappable MUSCLES ▼/▲ toggle — 2026-05-20
+- [x] Supabase health_metrics table + ingest-health Edge Function — 2026-06-05
+- [x] pullHealthMetrics / pushHealthMetrics — cloud sync for HRV, Resting HR, Steps, Active Cal — 2026-06-05
+- [x] Health Auto Export nightly automation (iPhone → Supabase → IronLog) — 2026-06-05
+- [x] Health tab Body section: bulk import modal + per-metric badges (GOOD/FAIR/LOW, trend arrows, step targets, 7-day cal avg) — 2026-06-05/06
+- [x] Recovery Dashboard on Home screen: greeting, recovery ring, fatigue bar, training load, Today's Training, 4-metric strip, Recovery Trends chart, Cycling/Strength week cards, Weekly Heatmap, Recent Workouts — 2026-06-06
 
 ---
 
 ## Agent Notes & Feedback Log
 
 *Append notes here after any significant agent session — what was changed, what was decided, what was left for next time.*
+
+### 2026-06-06 — Recovery Dashboard + Health Pipeline (Claude Sonnet 4.6)
+
+**What was built (this session, across ~15 commits):**
+
+1. **Supabase health metrics pipeline** — `ingest-health` Edge Function deployed; `health_metrics` table created with RLS; `pullHealthMetrics` / `pushHealthMetrics` functions added to app; startup parallelised with `Promise.all`. Health Auto Export automation configured on Phill's iPhone (nightly 1-day cadence, POST to Edge Function URL).
+
+2. **Health tab improvements** — chart x-axis dates now "May 30" format; workout day ▲ markers on charts; HRV GOOD/FAIR/LOW badge; Resting HR week-over-week arrow; Steps "X/N days hit target"; Active Cal 7-day average; import card demoted to small text link.
+
+3. **Full Recovery Dashboard on Home screen** — new greeting header; Recovery Summary card (ring + fatigue bar + training load bar + Readiness); Today's Training recommendation boxes; 4-metric horizontal strip with area sparklines and Lucide icons; Recovery Trends dual-axis chart (7D/30D/90D); Cycling/Strength week cards; Weekly Activity Heatmap; Recent Workouts section.
+
+4. **Bug fixes** — Recovery ring capped at 100% visually; StrengthWeekCard now includes Iron Series sessions (was filtering them out); Cycling/Strength/Heatmap/Recent Workouts moved above workout hero card; trend chart shows 3–4 date labels not just first/last.
+
+**Architecture decisions made:**
+- `healthData` passed as prop to Dashboard (not fetched inside Dashboard)
+- Rolling 14-day average used as baseline for all recovery calculations
+- Recovery formula: `round((hrvScore × 0.5) + (rhrScore × 0.5))`, clamped 0–100 for display
+- StrengthWeekCard counts ALL completed sessions (including Iron Series) — not just A/B/C
+
+**Data available from Health Auto Export (now syncing to Supabase):**
+- HRV, Resting HR, Steps, Active Energy (→kcal) — live and populating charts
+- Cycling Distance, VO2 Max, Blood Oxygen, Respiratory Rate, Cardio Recovery, Sleep Analysis, Walking HR — user added these to export but NOT yet stored/displayed (Edge Function and DB schema would need extending)
+
+**What Codex could tackle next:**
+- Extend `ingest-health` Edge Function to handle the additional metrics (cycling_distance, vo2_max, sleep_duration, respiratory_rate, blood_oxygen) — see CLAUDE.md Health Export section for metric name mappings
+- Demo animation component (Priority 4) — still pending, all assets exist in `assets/demos/`
+- Exercise YouTube video IDs (Decision 1) — research pass pending per memory file
 
 ### 2026-05-20 — Claude Sonnet 4.6 + Codex (exercise view improvements + build/deploy fix)
 
