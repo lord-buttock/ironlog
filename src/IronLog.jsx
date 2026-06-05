@@ -1984,19 +1984,28 @@ function FatigueBar({ level, color }) {
   );
 }
 
-// Mini sparkline with no axes
+// Mini area sparkline with gradient fill — matches target mockup style
 function MetricSparkline({ data, color, height = 36 }) {
-  const vals = (data || []).slice(-10).map(d => Number(d.value)).filter(Number.isFinite);
+  const vals = (data || []).slice(-14).map(d => Number(d.value)).filter(Number.isFinite);
   if (vals.length < 2) return <div style={{ height }} />;
-  const W = 80, H = height;
+  const W = 100, H = height;
   const min = Math.min(...vals), max = Math.max(...vals);
   const span = max === min ? 1 : max - min;
   const xOf = i => (i / (vals.length - 1)) * W;
-  const yOf = v => H - 4 - ((v - min) / span) * (H - 8);
-  const pts = vals.map((v, i) => `${xOf(i)},${yOf(v)}`).join(' ');
+  const yOf = v => (H - 4) - ((v - min) / span) * (H - 8);
+  const linePath = vals.map((v, i) => `${i === 0 ? 'M' : 'L'}${xOf(i).toFixed(1)},${yOf(v).toFixed(1)}`).join(' ');
+  const areaPath = `${linePath} L${xOf(vals.length - 1).toFixed(1)},${H} L0,${H} Z`;
+  const gId = `sg${color.replace(/[^a-z0-9]/gi, '')}`;
   return (
     <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height, display: 'block' }}>
-      <polyline points={pts} fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+      <defs>
+        <linearGradient id={gId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity={0.28} />
+          <stop offset="100%" stopColor={color} stopOpacity={0} />
+        </linearGradient>
+      </defs>
+      <path d={areaPath} fill={`url(#${gId})`} />
+      <path d={linePath} fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -2358,12 +2367,12 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
   };
   const rec = trainingRec(recovery);
 
-  // Metric grid data
+  // Metric strip data — icons use Lucide names
   const hMetrics = [
-    { key: 'hrv',       title: 'HRV',             unit: 'ms',    color: C.green, data: hd.hrv,       higherBetter: true  },
-    { key: 'restingHr', title: 'Resting HR',       unit: 'bpm',   color: C.red,   data: hd.restingHr, higherBetter: false },
-    { key: 'steps',     title: 'Steps',            unit: 'steps', color: C.blue,  data: hd.steps,     target: 8000        },
-    { key: 'activeCal', title: 'Active Cal',       unit: 'kcal',  color: C.amber, data: hd.activeCal  },
+    { key: 'hrv',       title: 'HRV',        unit: 'ms',    color: C.green, data: hd.hrv,       higherBetter: true,  icon: 'activity' },
+    { key: 'restingHr', title: 'Resting HR',  unit: 'bpm',   color: C.red,   data: hd.restingHr, higherBetter: false, icon: 'heart'    },
+    { key: 'steps',     title: 'Steps',       unit: '',      color: C.blue,  data: hd.steps,     target: 8000,        icon: 'footprints' },
+    { key: 'activeCal', title: 'Active Cal',  unit: 'kcal',  color: C.amber, data: hd.activeCal,                      icon: 'flame'    },
   ];
   const wkt = WORKOUTS[selectedWorkout];
   const extraIds = workoutCustom[selectedWorkout] || [];
@@ -2461,21 +2470,26 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
       {/* ── Today's Training ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
         {[
-          { icon: '🏋️', label: 'Weight Training', focus: 'Strength' },
-          { icon: '🚴', label: 'Cycling', focus: 'Endurance' },
+          { icon: 'dumbbell', label: 'Weight Training', focus: 'Strength' },
+          { icon: 'bike',     label: 'Cycling',         focus: 'Endurance' },
         ].map(t => (
-          <div key={t.label} style={{ ...st.card(), padding: '10px 12px' }}>
-            <div style={{ fontSize: 18, marginBottom: 4 }}>{t.icon}</div>
-            <div style={{ fontFamily: C.fDisplay, fontSize: 13, fontWeight: 700, color: C.text, lineHeight: 1.2 }}>{t.label}</div>
-            <div style={{ fontFamily: C.fMono, fontSize: 10, color: rec.color, fontWeight: 700, marginTop: 3 }}>{rec.label}</div>
-            <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, marginTop: 2 }}>Focus: {t.focus}</div>
+          <div key={t.label} style={{ ...st.card(), padding: '12px 14px', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: C.blue + '18',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Icon name={t.icon} size={18} color={C.blue} />
+            </div>
+            <div>
+              <div style={{ fontFamily: C.fDisplay, fontSize: 14, fontWeight: 700, color: C.text, lineHeight: 1.2 }}>{t.label}</div>
+              <div style={{ fontFamily: C.fMono, fontSize: 10, color: rec.color, fontWeight: 700, marginTop: 2 }}>{rec.label}</div>
+              <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, marginTop: 1 }}>Focus: {t.focus}</div>
+            </div>
           </div>
         ))}
       </div>
 
-      {/* ── 4-Metric sparkline grid ── */}
+      {/* ── 4-Metric horizontal strip ── */}
       {hasHealthData && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', marginBottom: 12, WebkitOverflowScrolling: 'touch', paddingBottom: 2 }}>
           {hMetrics.map(m => {
             const latest = getLatestReading(m.data || []);
             const base   = rollingAvg(m.data || [], 14);
@@ -2486,23 +2500,41 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
               if (m.higherBetter === false) statusColor = val <= base * 1.05 ? C.green : val <= base * 1.10 ? C.amber : C.red;
               if (m.target)                 statusColor = val >= m.target ? C.green : val >= m.target * 0.75 ? C.amber : C.red;
             }
-            const delta = (base && val) ? (m.higherBetter === false ? base - val : val - base) : null;
-            const deltaLabel = m.target ? `${Math.round(val / m.target * 100)}% of ${m.target.toLocaleString()}` :
-              delta != null ? `${delta >= 0 ? '+' : ''}${Math.round(delta * 10) / 10} vs avg` : null;
+            // Comparison label — matches target mockup style
+            let compLabel = null;
+            if (m.target && val) {
+              const pct = Math.round(val / m.target * 100);
+              compLabel = { arrow: pct >= 100 ? '▲' : '▼', text: `${pct}% of ${(m.target/1000).toFixed(0)}k`, color: statusColor };
+            } else if (base && val && m.higherBetter !== undefined) {
+              const diff = m.higherBetter === false ? base - val : val - base;
+              compLabel = { arrow: diff >= 0 ? '▲' : '▼', text: `${Math.abs(Math.round(diff * 10) / 10)} vs avg`, color: statusColor };
+            } else if (base && val) {
+              // Active Cal — show 7-day average
+              compLabel = { arrow: '', text: `${Math.round(base)} avg`, color: C.muted };
+            }
             return (
-              <div key={m.key} style={{ ...st.card(), padding: '10px 12px' }}>
-                <div style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>{m.title}</div>
+              <div key={m.key} style={{ ...st.card(), flex: '1 0 0', minWidth: 82, padding: '8px 10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 6 }}>
+                  <Icon name={m.icon} size={13} color={statusColor} />
+                  <span style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted, textTransform: 'uppercase', letterSpacing: 1 }}>{m.title}</span>
+                </div>
                 {latest ? (
                   <>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
-                      <span style={{ fontFamily: C.fDisplay, fontSize: 20, fontWeight: 800, color: statusColor }}>{Number(val).toLocaleString()}</span>
-                      <span style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted }}>{m.unit}</span>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 2, marginBottom: 2, flexWrap: 'wrap' }}>
+                      <span style={{ fontFamily: C.fDisplay, fontSize: 18, fontWeight: 800, color: statusColor, lineHeight: 1 }}>
+                        {m.key === 'steps' ? Number(val).toLocaleString() : val % 1 === 0 ? val : (Math.round(val * 10) / 10)}
+                      </span>
+                      {m.unit && <span style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted }}>{m.unit}</span>}
                     </div>
-                    {deltaLabel && <div style={{ fontFamily: C.fMono, fontSize: 9, color: statusColor, marginTop: 2 }}>{deltaLabel}</div>}
-                    <MetricSparkline data={(m.data || []).slice(-10)} color={statusColor} height={32} />
+                    {compLabel && (
+                      <div style={{ fontFamily: C.fMono, fontSize: 8, color: compLabel.color, marginBottom: 4, lineHeight: 1.2 }}>
+                        {compLabel.arrow} {compLabel.text}
+                      </div>
+                    )}
+                    <MetricSparkline data={m.data || []} color={statusColor} height={30} />
                   </>
                 ) : (
-                  <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>No data</div>
+                  <div style={{ fontSize: 11, color: C.muted }}>No data</div>
                 )}
               </div>
             );
@@ -2762,11 +2794,15 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
         <StrengthWeekCard sessions={sessions} allExercises={allExercises} />
       </div>
 
-      {/* ── Weekly Activity Heatmap ── */}
-      <WeeklyHeatmap sessions={sessions} rides={rides} healthData={hd} />
-
-      {/* ── Recent Workouts ── */}
-      <RecentWorkoutsSection sessions={sessions} rides={rides} setView={setView} />
+      {/* ── Weekly Activity + Recent Workouts side by side ── */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-start' }}>
+        <div style={{ flex: '0 0 auto', width: 'calc(45% - 4px)' }}>
+          <WeeklyHeatmap sessions={sessions} rides={rides} healthData={hd} />
+        </div>
+        <div style={{ flex: '1 1 auto', minWidth: 0 }}>
+          <RecentWorkoutsSection sessions={sessions} rides={rides} setView={setView} />
+        </div>
+      </div>
 
       {/* Cloud sync status */}
       {driveSync && (
