@@ -2023,8 +2023,6 @@ function TrainingLoadBar({ load }) {
   const pct = Math.min(100, Math.max(0, load));
   // Colour of the indicator dot — tracks position along the gradient
   const dotColor = pct < 35 ? '#5A9DF8' : pct < 55 ? '#42B85C' : pct < 72 ? '#F6C623' : pct < 85 ? '#F6A623' : '#F04444';
-  const rangeLabel = pct < 30 ? 'Low' : pct < 70 ? 'Optimal range' : pct < 85 ? 'High load' : 'Excessive';
-  const rangeColor = pct < 30 ? C.muted : pct < 70 ? C.green : pct < 85 ? C.amber : C.red;
   return (
     <div>
       <div style={{ fontFamily: C.fDisplay, fontSize: 26, fontWeight: 800, color: dotColor, marginBottom: 10 }}>
@@ -2045,10 +2043,10 @@ function TrainingLoadBar({ load }) {
           zIndex: 1,
         }} />
       </div>
-      {/* Labels */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 }}>
+      {/* Fixed zone labels */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
         <span style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted }}>Low</span>
-        <span style={{ fontFamily: C.fMono, fontSize: 9, color: rangeColor, fontWeight: 700 }}>{rangeLabel}</span>
+        <span style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted }}>Optimal</span>
         <span style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted }}>High</span>
       </div>
     </div>
