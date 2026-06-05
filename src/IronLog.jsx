@@ -1926,25 +1926,68 @@ function computeRecovery(healthData) {
   };
 }
 
+// Fatigue — measures accumulated workload, NOT the same signals as recovery score.
+// 4 independent components from session data:
+//
+//  1. Recent density  (0–35 pts): sessions in the last 4 days
+//  2. Consecutive run (0–25 pts): days in a row from the LAST session backward
+//  3. Recent RPE      (0–25 pts): average effort across last 3 sessions' sets
+//  4. Pain flag       (0–15 pts): any pain ≥ 2 logged in last 3 sessions
+//
+// Low < 30 · Moderate 30–59 · High ≥ 60
 function computeFatigue(healthData, sessions) {
-  const hrv = healthData?.hrv || [];
-  const rhr = healthData?.restingHr || [];
-  const cal = healthData?.activeCal || [];
-  const todayHRV = Number(getLatestReading(hrv)?.value) || 0;
-  const baseHRV  = rollingAvg(hrv, 14) || 0;
-  const todayRHR = Number(getLatestReading(rhr)?.value) || 0;
-  const baseRHR  = rollingAvg(rhr, 14) || 0;
-  const todayCal = Number(getLatestReading(cal)?.value) || 0;
-  const baseCal  = rollingAvg(cal, 7) || 0;
-  const trained  = new Set(sessions.filter(s => s.completed).map(s => s.date ? localDateStr(new Date(s.date)) : null).filter(Boolean));
+  const now = new Date();
+
+  const completedSessions = sessions.filter(s => s.completed);
+  const trainedSet = new Set(
+    completedSessions.map(s => s.date ? localDateStr(new Date(s.date)) : null).filter(Boolean)
+  );
+
+  // --- 1. Sessions in the last 4 days (0–35 pts, 9 pts each) ---
+  let recent4 = 0;
+  for (let i = 0; i < 4; i++) {
+    const d = new Date(now); d.setDate(now.getDate() - i);
+    if (trainedSet.has(localDateStr(d))) recent4++;
+  }
+  const densityPts = Math.min(35, recent4 * 9);
+
+  // --- 2. Consecutive days from last training session, counted backward (0–25 pts) ---
+  // Counts from the most recent training day, not from today —
+  // so a rest day after a training streak doesn't reset the count.
+  const sortedTrainDates = [...trainedSet].sort().reverse();
   let consec = 0;
-  for (let i = 0; i < 7; i++) { const d = new Date(); d.setDate(d.getDate() - i); if (trained.has(localDateStr(d))) consec++; else break; }
-  let f = 0;
-  if (todayHRV && baseHRV) f += Math.max(0, (baseHRV - todayHRV) / baseHRV * 40);
-  if (todayRHR && baseRHR) f += Math.max(0, (todayRHR - baseRHR) / baseRHR * 40);
-  if (todayCal && baseCal && todayCal > baseCal) f += Math.min(15, (todayCal - baseCal) / baseCal * 15);
-  f += Math.min(20, consec * 5);
-  const level = Math.min(100, Math.round(f));
+  if (sortedTrainDates.length) {
+    const lastTrain = new Date(sortedTrainDates[0] + 'T00:00:00');
+    for (let i = 0; i < 14; i++) {
+      const d = new Date(lastTrain); d.setDate(lastTrain.getDate() - i);
+      if (trainedSet.has(localDateStr(d))) consec++;
+      else break;
+    }
+  }
+  const consecPts = Math.min(25, consec * 5);
+
+  // --- 3. Average RPE across all sets in last 3 sessions (0–25 pts) ---
+  const last3 = [...completedSessions]
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .slice(0, 3);
+  const allRPEs = last3.flatMap(s =>
+    (s.exercises || []).flatMap(ex =>
+      ex.sets.filter(set => set.done && Number(set.rpe) > 0).map(set => Number(set.rpe))
+    )
+  );
+  const avgRPE = allRPEs.length ? allRPEs.reduce((s, v) => s + v, 0) / allRPEs.length : 0;
+  // RPE 5 → 0 pts, RPE 7.5 → 12.5 pts, RPE 10 → 25 pts
+  const rpePts = avgRPE > 0 ? Math.min(25, Math.max(0, ((avgRPE - 5) / 5) * 25)) : 0;
+
+  // --- 4. Pain flag in last 3 sessions (0–15 pts) ---
+  const maxPain = last3.flatMap(s =>
+    (s.exercises || []).flatMap(ex =>
+      ex.sets.filter(set => set.done).map(set => Number(set.pain) || 0)
+    )
+  ).reduce((max, v) => Math.max(max, v), 0);
+  const painPts = maxPain >= 3 ? 15 : maxPain >= 2 ? 8 : 0;
+
+  const level = Math.min(100, Math.round(densityPts + consecPts + rpePts + painPts));
   const label = level < 30 ? 'Low' : level < 60 ? 'Moderate' : 'High';
   const color = level < 30 ? C.green : level < 60 ? C.amber : C.red;
   return { level, label, color };
