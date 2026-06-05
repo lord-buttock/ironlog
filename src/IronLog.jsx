@@ -2490,13 +2490,20 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
   const insight   = hasHealthData ? computeTrendInsight(hd) : null;
 
   // Training recommendation — thresholds aligned to new SD-band scoring
-  const trainingRec = (r) => {
-    if (!r) return { label: 'Scheduled', color: C.blue };
-    if (r.score >= 60) return { label: 'Recommended', color: C.green };
-    if (r.score >= 38) return { label: 'Take it steady', color: C.amber };
-    return { label: 'Recovery suggested', color: C.red };
+  // Readiness combines recovery score (physiology) AND fatigue (workload)
+  const trainingRec = (r, f) => {
+    if (!r) return { label: 'Scheduled', color: C.blue, detail: 'Log workouts to get a recommendation.' };
+    const highFatigue = f && f.level >= 60;
+    const modFatigue  = f && f.level >= 30;
+    if (r.score >= 60) {
+      if (highFatigue)  return { label: 'Moderate today',  color: C.amber, detail: 'Body is ready, but load is high — consider a lighter session.' };
+      if (modFatigue)   return { label: 'Good to train',   color: C.green, detail: 'Ready to train. Keep effort controlled.' };
+      return                   { label: 'Good to train',   color: C.green, detail: 'You can push hard today.' };
+    }
+    if (r.score >= 38) return  { label: 'Take it steady',  color: C.amber, detail: 'Moderate effort. Keep RPE below 8.' };
+    return                     { label: 'Recovery day',    color: C.red,   detail: 'Prioritise rest or very light movement.' };
   };
-  const rec = trainingRec(recovery);
+  const rec = trainingRec(recovery, fatigue);
 
   // Metric strip data — icons use Lucide names
   const hMetrics = [
@@ -2575,10 +2582,8 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
               {fatigue && <FatigueBar level={fatigue.level} color={fatigue.color} />}
               <div style={{ marginTop: 10 }}>
                 <div style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Readiness</div>
-                <div style={{ fontFamily: C.fBody, fontSize: 13, fontWeight: 700, color: rec.color }}>{rec.label === 'Recommended' ? 'Good to train' : rec.label}</div>
-                <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, marginTop: 2 }}>
-                  {rec.label === 'Recommended' ? 'You can push hard today.' : rec.label === 'Take it steady' ? 'Moderate effort today.' : 'Prioritise recovery.'}
-                </div>
+                <div style={{ fontFamily: C.fBody, fontSize: 13, fontWeight: 700, color: rec.color }}>{rec.label}</div>
+                <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, marginTop: 2 }}>{rec.detail}</div>
               </div>
             </div>
           </div>
@@ -2614,7 +2619,7 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
             <div>
               <div style={{ fontFamily: C.fDisplay, fontSize: 14, fontWeight: 700, color: C.text, lineHeight: 1.2 }}>{t.label}</div>
               <div style={{ fontFamily: C.fMono, fontSize: 10, color: rec.color, fontWeight: 700, marginTop: 2 }}>{rec.label}</div>
-              <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, marginTop: 1 }}>Focus: {t.focus}</div>
+              <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, marginTop: 1 }}>Focus: {t.focus}{rec.label === 'Moderate today' ? ' · lighter' : ''}</div>
             </div>
           </div>
         ))}
