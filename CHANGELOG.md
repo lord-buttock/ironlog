@@ -4,6 +4,14 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-06-05 — Apple Health Body Import
+
+- Added Health → Body section for Apple Watch / Apple Health imports
+- Added localStorage-backed imports for HRV, Resting HR, Steps, Active Calories, Cardio Fitness, and Sleep
+- Added paste-JSON import modal per metric with validation, date dedupe, newest-value merge, imported count, and error feedback
+- Added Body charts: HRV and Resting HR 30-day lines, Steps / Active Calories / Sleep 14-day bars, and sparse Cardio Fitness line chart
+- Added HRV workout-day vs rest-day comparison for the last 30 days when enough HRV data exists
+
 ## 2026-06-05 — Health Tab (Training section)
 
 - Added ❤️ Health tab (7th nav tab)

@@ -1372,6 +1372,149 @@ function healthRPETrend(sessions) {
     .filter(d => d.avgRpe !== null);
 }
 
+const HEALTH_METRICS = [
+  { id: 'hrv', key: 'hrv', storage: 'il_health_hrv', title: 'HRV', subtitle: 'Heart Rate Variability', unit: 'ms', type: 'line', days: 30, color: C.green, note: 'Higher HRV usually means better recovery.', avgLine: true },
+  { id: 'resting_hr', key: 'restingHr', storage: 'il_health_resting_hr', title: 'Resting HR', subtitle: 'Resting Heart Rate', unit: 'bpm', type: 'line', days: 30, color: C.blue, lowBetter: true },
+  { id: 'steps', key: 'steps', storage: 'il_health_steps', title: 'Steps', subtitle: 'Daily Total', unit: 'steps', type: 'bar', days: 14, color: C.green, target: 8000 },
+  { id: 'active_cal', key: 'activeCal', storage: 'il_health_active_cal', title: 'Active Calories', subtitle: 'Daily Total', unit: 'kcal', type: 'bar', days: 14, color: C.amber },
+  { id: 'cardio', key: 'cardio', storage: 'il_health_cardio', title: 'Cardio Fitness', subtitle: 'VO2 Max Estimate', unit: 'mL/kg/min', type: 'line', days: 180, color: C.purple, sparse: true },
+  { id: 'sleep', key: 'sleep', storage: 'il_health_sleep', title: 'Sleep', subtitle: 'Nightly Duration', unit: 'h', type: 'bar', days: 14, color: C.blue, target: 7.5 },
+];
+
+function normaliseHealthReadings(input) {
+  if (!Array.isArray(input)) throw new Error('JSON must be an array of {date, value} objects.');
+  return input.map((item, i) => {
+    if (!item || typeof item !== 'object') throw new Error(`Reading ${i + 1} is not an object.`);
+    const date = typeof item.date === 'string' ? item.date.slice(0, 10) : '';
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error(`Reading ${i + 1} needs a YYYY-MM-DD date.`);
+    const value = Number(item.value);
+    if (!Number.isFinite(value)) throw new Error(`Reading ${i + 1} needs a single numeric value.`);
+    return { date, value: Math.round(value * 100) / 100 };
+  }).sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function mergeHealthReadings(existing, incoming) {
+  const byDate = {};
+  (existing || []).forEach(r => {
+    if (r?.date && Number.isFinite(Number(r.value))) byDate[r.date] = { date: r.date, value: Number(r.value) };
+  });
+  incoming.forEach(r => { byDate[r.date] = r; });
+  return Object.values(byDate).sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function lastNDaysReadings(readings, days) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const start = new Date(today.getTime() - (days - 1) * 86400000);
+  return (readings || []).filter(r => {
+    const d = new Date(r.date + 'T00:00:00');
+    return d >= start && d <= today;
+  });
+}
+
+function healthSevenDayTrend(readings) {
+  const recent = lastNDaysReadings(readings, 14);
+  const prev = recent.slice(0, Math.max(0, recent.length - 7));
+  const last = recent.slice(-7);
+  const avg = arr => arr.length ? arr.reduce((s, r) => s + Number(r.value), 0) / arr.length : null;
+  const prevAvg = avg(prev);
+  const lastAvg = avg(last);
+  if (prevAvg == null || lastAvg == null) return null;
+  return Math.round((lastAvg - prevAvg) * 10) / 10;
+}
+
+function healthWorkoutCorrelation(sessions, hrvReadings) {
+  const byDate = new Map((hrvReadings || []).map(r => [r.date, Number(r.value)]));
+  const trained = new Set(sessions.filter(s => s.completed).map(s => s.date?.slice(0, 10)).filter(Boolean));
+  const recent = lastNDaysReadings(hrvReadings, 30).filter(r => byDate.has(r.date));
+  const workout = recent.filter(r => trained.has(r.date)).map(r => Number(r.value));
+  const rest = recent.filter(r => !trained.has(r.date)).map(r => Number(r.value));
+  const avg = arr => arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : null;
+  const workoutAvg = avg(workout);
+  const restAvg = avg(rest);
+  if (workoutAvg == null || restAvg == null || !restAvg) return null;
+  return {
+    workoutAvg: Math.round(workoutAvg * 10) / 10,
+    restAvg: Math.round(restAvg * 10) / 10,
+    pct: Math.round(((workoutAvg - restAvg) / restAvg) * 100),
+  };
+}
+
+function HealthLineChart({ data, metric, height = 136 }) {
+  const vals = data.map(d => Number(d.value)).filter(Number.isFinite);
+  if (!vals.length) return null;
+  const W = 320, H = height, pad = { top: 14, right: 14, bottom: 24, left: 34 };
+  const rawMin = Math.min(...vals), rawMax = Math.max(...vals);
+  const span = rawMax === rawMin ? 1 : rawMax - rawMin;
+  const yMin = rawMin - span * 0.12;
+  const yMax = rawMax + span * 0.12;
+  const xOf = i => pad.left + (data.length < 2 ? 0.5 : i / (data.length - 1)) * (W - pad.left - pad.right);
+  const yOf = v => pad.top + (H - pad.top - pad.bottom) - ((v - yMin) / (yMax - yMin)) * (H - pad.top - pad.bottom);
+  const points = data.map((d, i) => `${xOf(i)},${yOf(Number(d.value))}`);
+  const avg = vals.reduce((s, v) => s + v, 0) / vals.length;
+  const avgY = yOf(avg);
+  return (
+    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height, display: 'block' }}>
+      <line x1={pad.left} y1={pad.top} x2={pad.left} y2={H - pad.bottom} stroke={C.border} />
+      <line x1={pad.left} y1={H - pad.bottom} x2={W - pad.right} y2={H - pad.bottom} stroke={C.border} />
+      {metric.avgLine && (
+        <>
+          <line x1={pad.left} y1={avgY} x2={W - pad.right} y2={avgY} stroke={C.muted} strokeDasharray="4,4" />
+          <text x={W - pad.right} y={avgY - 4} fill={C.muted} fontSize={8} textAnchor="end" fontFamily={C.fMono}>avg</text>
+        </>
+      )}
+      {points.length >= 2 && <polyline points={points.join(' ')} fill="none" stroke={metric.color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />}
+      {data.map((d, i) => {
+        const val = Number(d.value);
+        const better = metric.lowBetter ? val <= avg : val >= avg;
+        const fill = metric.avgLine ? (better ? C.green : val < avg * 0.85 ? C.red : C.amber) : metric.color;
+        return <circle key={d.date} cx={xOf(i)} cy={yOf(val)} r={4} fill={fill} />;
+      })}
+      <text x={pad.left} y={11} fill={C.muted} fontSize={8} fontFamily={C.fMono}>{Math.round(yMax * 10) / 10}</text>
+      <text x={pad.left} y={H - 4} fill={C.muted} fontSize={8} fontFamily={C.fMono}>{Math.round(yMin * 10) / 10}</text>
+      {data.length > 1 && (
+        <>
+          <text x={pad.left} y={H - 5} fill={C.muted} fontSize={8} fontFamily={C.fMono}>{data[0].date.slice(5)}</text>
+          <text x={W - pad.right} y={H - 5} fill={C.muted} fontSize={8} textAnchor="end" fontFamily={C.fMono}>{data[data.length - 1].date.slice(5)}</text>
+        </>
+      )}
+    </svg>
+  );
+}
+
+function HealthBarChart({ data, metric, height = 136 }) {
+  const vals = data.map(d => Number(d.value)).filter(Number.isFinite);
+  if (!vals.length) return null;
+  const W = 320, H = height, pad = { top: 12, right: 12, bottom: 24, left: 28 };
+  const target = metric.target;
+  const maxVal = Math.max(...vals, target || 0, 1);
+  const innerH = H - pad.top - pad.bottom;
+  const yOf = v => pad.top + innerH - (v / maxVal) * innerH;
+  const gap = 4;
+  const barW = ((W - pad.left - pad.right) - gap * (data.length - 1)) / Math.max(data.length, 1);
+  return (
+    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height, display: 'block' }}>
+      <line x1={pad.left} y1={H - pad.bottom} x2={W - pad.right} y2={H - pad.bottom} stroke={C.border} />
+      {target && (
+        <>
+          <line x1={pad.left} y1={yOf(target)} x2={W - pad.right} y2={yOf(target)} stroke={C.muted} strokeDasharray="4,4" />
+          <text x={W - pad.right} y={yOf(target) - 4} fill={C.muted} fontSize={8} textAnchor="end" fontFamily={C.fMono}>{target.toLocaleString()}</text>
+        </>
+      )}
+      {data.map((d, i) => {
+        const val = Number(d.value);
+        const x = pad.left + i * (barW + gap);
+        const y = yOf(val);
+        const ratio = target ? val / target : 1;
+        const fill = target ? (ratio >= 1 ? C.green : ratio >= 0.7 ? C.amber : C.red) : metric.color;
+        return <rect key={d.date} x={x} y={y} width={Math.max(2, barW)} height={Math.max(2, H - pad.bottom - y)} rx={3} fill={fill} />;
+      })}
+      <text x={pad.left} y={H - 5} fill={C.muted} fontSize={8} fontFamily={C.fMono}>{data[0].date.slice(5)}</text>
+      <text x={W - pad.right} y={H - 5} fill={C.muted} fontSize={8} textAnchor="end" fontFamily={C.fMono}>{data[data.length - 1].date.slice(5)}</text>
+    </svg>
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // STYLE HELPERS
 // ═══════════════════════════════════════════════════════════════════════
@@ -4086,25 +4229,21 @@ function Progress({ sessions, allExercises = EXERCISES }) {
 // ═══════════════════════════════════════════════════════════════════════
 // HEALTH VIEW
 // ═══════════════════════════════════════════════════════════════════════
-function HealthView({ sessions, allExercises }) {
+function HealthView({ sessions, allExercises, healthData, setHealthData }) {
+  const [importMetric, setImportMetric] = useState(null);
+  const [importText, setImportText] = useState('');
+  const [importError, setImportError] = useState('');
+  const [importResult, setImportResult] = useState('');
+
+  const completed   = sessions.filter(s => s.completed);
   const weeklyVol   = healthWeeklyVolume(sessions);
   const groupVol    = healthVolumeByGroup(sessions);
   const consistency = healthConsistency(sessions);
   const recentPRs   = healthRecentPRs(sessions, allExercises);
   const rpeTrend    = healthRPETrend(sessions);
   const maxWeekVol  = Math.max(...weeklyVol.map(w => w.volume), 1);
+  const hrvCorrelation = healthWorkoutCorrelation(sessions, healthData.hrv || []);
 
-  if (!sessions.filter(s => s.completed).length) {
-    return (
-      <div style={{ padding: 16, textAlign: 'center', color: C.muted, paddingTop: 64 }}>
-        <div style={{ fontSize: 48, marginBottom: 12 }}>❤️</div>
-        <div style={{ fontFamily: C.fDisplay, fontSize: 16, textTransform: 'uppercase' }}>No data yet</div>
-        <div style={{ fontSize: 12, marginTop: 8 }}>Complete your first session to see stats here.</div>
-      </div>
-    );
-  }
-
-  // RPE line chart path
   const rpeW = 280, rpeH = 56;
   const rpeMin = 4, rpeMax = 10;
   const rpePts = rpeTrend.map((d, i) => {
@@ -4114,24 +4253,44 @@ function HealthView({ sessions, allExercises }) {
   });
   const rpePath = rpePts.length >= 2 ? `M${rpePts.join('L')}` : null;
 
-  const sectionHeader = (label, emoji) => (
+  const sectionHeader = (label, icon) => (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-      <span style={{ fontSize: 16 }}>{emoji}</span>
+      <Icon name={icon} size={16} color={C.muted} />
       <span style={{ fontFamily: C.fDisplay, fontSize: 13, fontWeight: 700, color: C.muted,
         textTransform: 'uppercase', letterSpacing: 1.5 }}>{label}</span>
     </div>
   );
 
-  return (
-    <div style={{ padding: 16, paddingBottom: 100 }}>
-      <div style={{ fontFamily: C.fDisplay, fontSize: 22, fontWeight: 900, letterSpacing: 2,
-        textTransform: 'uppercase', color: C.text, marginBottom: 20 }}>
-        Health
-      </div>
+  function openImport(metric) {
+    setImportMetric(metric);
+    setImportText('');
+    setImportError('');
+    setImportResult('');
+  }
 
-      {/* ── 1. Weekly Volume ─────────────────────────────────────────── */}
+  function confirmImport() {
+    try {
+      const parsed = JSON.parse(importText);
+      const incoming = normaliseHealthReadings(parsed);
+      setHealthData(prev => ({ ...prev, [importMetric.key]: mergeHealthReadings(prev[importMetric.key], incoming) }));
+      setImportResult(`${incoming.length} readings imported`);
+      setImportError('');
+      setImportText('');
+    } catch (e) {
+      setImportError(e.message || 'Could not import this JSON.');
+      setImportResult('');
+    }
+  }
+
+  const renderTraining = () => !completed.length ? (
+    <div style={{ ...st.card(), marginBottom: 16, textAlign: 'center', color: C.muted }}>
+      <div style={{ fontFamily: C.fDisplay, fontSize: 15, fontWeight: 700, textTransform: 'uppercase' }}>No training data yet</div>
+      <div style={{ fontSize: 12, marginTop: 6 }}>Complete your first session to see training stats here.</div>
+    </div>
+  ) : (
+    <>
       <div style={{ ...st.card(), marginBottom: 16 }}>
-        {sectionHeader('Weekly Volume', '📊')}
+        {sectionHeader('Weekly Volume', 'bar-chart-2')}
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 72, marginBottom: 8 }}>
           {weeklyVol.map((w, i) => {
             const pct = maxWeekVol > 0 ? w.volume / maxWeekVol : 0;
@@ -4162,7 +4321,7 @@ function HealthView({ sessions, allExercises }) {
               This week: <span style={{ color: C.text }}>{curr.toLocaleString()} kg·reps</span>
               {pct !== null && (
                 <span>{'  '}<span style={{ color: pct >= 0 ? C.green : C.red }}>
-                  {pct >= 0 ? '↑' : '↓'} {Math.abs(pct)}% vs avg
+                  {pct >= 0 ? 'up ' : 'down '}{Math.abs(pct)}% vs avg
                 </span></span>
               )}
             </div>
@@ -4170,10 +4329,9 @@ function HealthView({ sessions, allExercises }) {
         })()}
       </div>
 
-      {/* ── 2. Volume by Workout Type ─────────────────────────────────── */}
       {groupVol.length > 0 && (
         <div style={{ ...st.card(), marginBottom: 16 }}>
-          {sectionHeader('This Week by Type', '💪')}
+          {sectionHeader('This Week by Type', 'dumbbell')}
           {groupVol.map(g => (
             <div key={g.key} style={{ marginBottom: 10 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
@@ -4193,36 +4351,22 @@ function HealthView({ sessions, allExercises }) {
         </div>
       )}
 
-      {/* ── 3. Consistency ───────────────────────────────────────────── */}
       <div style={{ ...st.card(), marginBottom: 16 }}>
-        {sectionHeader('Consistency', '🗓')}
+        {sectionHeader('Consistency', 'calendar')}
         <div style={{ display: 'flex', justifyContent: 'space-around', marginBottom: 16 }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontFamily: C.fDisplay, fontSize: 28, fontWeight: 900, color: C.amber, lineHeight: 1 }}>
-              {consistency.streak}
+          {[
+            [consistency.streak, 'Streak', C.amber],
+            [consistency.totalThisMonth, 'Sessions 28 days', C.text],
+            [Math.round((consistency.totalThisMonth / 4) * 10) / 10, 'Per week', C.text],
+          ].map(([value, label, color]) => (
+            <div key={label} style={{ textAlign: 'center' }}>
+              <div style={{ fontFamily: C.fDisplay, fontSize: 28, fontWeight: 900, color, lineHeight: 1 }}>{value}</div>
+              <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, textTransform: 'uppercase', marginTop: 4, lineHeight: 1.4 }}>
+                {label}
+              </div>
             </div>
-            <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, textTransform: 'uppercase', marginTop: 4, lineHeight: 1.4 }}>
-              Streak
-            </div>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontFamily: C.fDisplay, fontSize: 28, fontWeight: 900, color: C.text, lineHeight: 1 }}>
-              {consistency.totalThisMonth}
-            </div>
-            <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, textTransform: 'uppercase', marginTop: 4, lineHeight: 1.4 }}>
-              Sessions<br/>28 days
-            </div>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontFamily: C.fDisplay, fontSize: 28, fontWeight: 900, color: C.text, lineHeight: 1 }}>
-              {Math.round((consistency.totalThisMonth / 4) * 10) / 10}
-            </div>
-            <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, textTransform: 'uppercase', marginTop: 4, lineHeight: 1.4 }}>
-              Per<br/>week
-            </div>
-          </div>
+          ))}
         </div>
-        {/* 4 weeks × 7 days heatmap */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
           {['M','T','W','T','F','S','S'].map((d, i) => (
             <div key={i} style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted,
@@ -4241,10 +4385,9 @@ function HealthView({ sessions, allExercises }) {
         </div>
       </div>
 
-      {/* ── 4. Recent PRs ─────────────────────────────────────────────── */}
       {recentPRs.length > 0 && (
         <div style={{ ...st.card(), marginBottom: 16 }}>
-          {sectionHeader('Recent PRs', '🏆')}
+          {sectionHeader('Recent PRs', 'trophy')}
           {recentPRs.map((pr, i) => (
             <div key={i} style={{ display: 'flex', justifyContent: 'space-between',
               alignItems: 'center', paddingBottom: 8, marginBottom: 8,
@@ -4261,11 +4404,10 @@ function HealthView({ sessions, allExercises }) {
         </div>
       )}
 
-      {/* ── 5. RPE Trend ──────────────────────────────────────────────── */}
       {rpeTrend.length >= 2 && (
         <div style={{ ...st.card(), marginBottom: 16 }}>
-          {sectionHeader('Effort Trend', '🔥')}
-          <svg width="100%" viewBox={`0 0 ${rpeW} ${rpeH + 20}`} style={{ display: 'block', overflow: 'visible' }}>
+          {sectionHeader('Effort Trend', 'flame')}
+          <svg width="100%" viewBox={`0 0 ${rpeW} ${rpeH + 20}`} style={{ width: '100%', height: rpeH + 20, display: 'block', overflow: 'visible' }}>
             {[6, 7, 8].map(v => {
               const y = rpeH - ((v - rpeMin) / (rpeMax - rpeMin)) * rpeH;
               return (
@@ -4296,6 +4438,122 @@ function HealthView({ sessions, allExercises }) {
           </svg>
           <div style={{ fontFamily: C.fMono, fontSize: 10, color: C.muted, marginTop: 4, textAlign: 'center' }}>
             Avg RPE per session · last {rpeTrend.length} sessions
+          </div>
+        </div>
+      )}
+    </>
+  );
+
+  const metricCards = HEALTH_METRICS.map(metric => {
+    const readings = healthData[metric.key] || [];
+    const chartData = metric.sparse ? readings.slice(-12) : lastNDaysReadings(readings, metric.days);
+    const latest = readings[readings.length - 1];
+    const trend = metric.key === 'restingHr' ? healthSevenDayTrend(readings) : null;
+    return (
+      <div key={metric.id} style={{ ...st.card(), marginBottom: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', marginBottom: 10 }}>
+          <div>
+            <div style={{ fontFamily: C.fDisplay, fontSize: 18, fontWeight: 800, color: C.text, textTransform: 'uppercase' }}>{metric.title}</div>
+            <div style={{ fontFamily: C.fMono, fontSize: 10, color: C.muted, textTransform: 'uppercase', marginTop: 2 }}>{metric.subtitle}</div>
+          </div>
+          <button onClick={() => openImport(metric)} style={{ ...st.btnSm(C.dim, C.text), width: 'auto', display: 'flex', alignItems: 'center', gap: 6, padding: '8px 10px' }}>
+            <Icon name="upload" size={14} /> Import
+          </button>
+        </div>
+        {latest && (
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 8 }}>
+            <span style={{ fontFamily: C.fDisplay, fontSize: 26, fontWeight: 900, color: metric.color }}>{latest.value.toLocaleString()}</span>
+            <span style={{ fontFamily: C.fMono, fontSize: 11, color: C.muted }}>{metric.unit}</span>
+            <span style={{ fontFamily: C.fMono, fontSize: 10, color: C.muted, marginLeft: 'auto' }}>{latest.date}</span>
+          </div>
+        )}
+        {!readings.length ? (
+          <div style={{ background: C.dim, borderRadius: 6, padding: 16, textAlign: 'center', color: C.muted, fontSize: 12 }}>
+            No readings imported yet.
+          </div>
+        ) : chartData.length < (metric.type === 'line' && !metric.sparse ? 2 : 1) ? (
+          <div style={{ background: C.dim, borderRadius: 6, padding: 16, textAlign: 'center', color: C.muted, fontSize: 12 }}>
+            Import more readings to draw this chart.
+          </div>
+        ) : metric.type === 'line' ? (
+          <HealthLineChart data={chartData} metric={metric} />
+        ) : (
+          <HealthBarChart data={chartData} metric={metric} />
+        )}
+        {metric.note && <div style={{ fontSize: 12, color: C.muted, marginTop: 8 }}>{metric.note}</div>}
+        {metric.target && <div style={{ fontFamily: C.fMono, fontSize: 10, color: C.muted, marginTop: 8 }}>Target: {metric.target.toLocaleString()} {metric.unit}/day</div>}
+        {trend != null && trend > 0 && (
+          <div style={{ fontFamily: C.fMono, fontSize: 10, color: C.amber, marginTop: 8 }}>
+            7-day average is up {trend} bpm.
+          </div>
+        )}
+        {metric.sparse && <div style={{ fontSize: 12, color: C.muted, marginTop: 8 }}>Apple updates this estimate infrequently.</div>}
+      </div>
+    );
+  });
+
+  return (
+    <div style={{ padding: 16, paddingBottom: 100 }}>
+      <div style={{ fontFamily: C.fDisplay, fontSize: 22, fontWeight: 900, letterSpacing: 2,
+        textTransform: 'uppercase', color: C.text, marginBottom: 20 }}>
+        Health
+      </div>
+
+      {sectionHeader('Training', 'activity')}
+      {renderTraining()}
+
+      <div style={{ marginTop: 24 }}>
+        {sectionHeader('Body', 'heart')}
+        <div style={{ ...st.card(C.blue + '0f'), borderColor: C.blue + '33', marginBottom: 16, padding: '12px 14px' }}>
+          <div style={{ fontFamily: C.fDisplay, fontSize: 16, fontWeight: 800, color: C.text, textTransform: 'uppercase', marginBottom: 4 }}>
+            Import Health Data
+          </div>
+          <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.45 }}>
+            Export each Apple Health Shortcut as JSON, then import the matching file below.
+          </div>
+        </div>
+        {metricCards}
+        {hrvCorrelation && (
+          <div style={{ ...st.card(), marginBottom: 16, borderColor: hrvCorrelation.pct >= 0 ? C.green + '55' : C.amber + '55' }}>
+            {sectionHeader('Workout Correlation', 'activity')}
+            <div style={{ fontSize: 13, color: C.text, lineHeight: 1.45 }}>
+              Your HRV was <span style={{ color: hrvCorrelation.pct >= 0 ? C.green : C.amber, fontWeight: 700 }}>
+                {Math.abs(hrvCorrelation.pct)}% {hrvCorrelation.pct >= 0 ? 'higher' : 'lower'}
+              </span> on workout days this month.
+            </div>
+            <div style={{ fontFamily: C.fMono, fontSize: 10, color: C.muted, marginTop: 8 }}>
+              Workout avg {hrvCorrelation.workoutAvg} ms · Rest avg {hrvCorrelation.restAvg} ms
+            </div>
+          </div>
+        )}
+      </div>
+
+      {importMetric && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(23,33,43,0.45)', zIndex: 500,
+          display: 'flex', alignItems: 'flex-end', padding: 14 }}>
+          <div style={{ ...st.card(), width: '100%', maxWidth: 560, margin: '0 auto 10px', boxShadow: '0 18px 40px rgba(0,0,0,0.18)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div>
+                <div style={{ fontFamily: C.fDisplay, fontSize: 18, fontWeight: 800, color: C.text, textTransform: 'uppercase' }}>
+                  Import {importMetric.title}
+                </div>
+                <div style={{ fontFamily: C.fMono, fontSize: 10, color: C.muted }}>{importMetric.storage}</div>
+              </div>
+              <button onClick={() => setImportMetric(null)} style={{ background: C.dim, border: 'none', borderRadius: 6, width: 34, height: 34, color: C.text, cursor: 'pointer' }}>
+                <Icon name="x" size={18} />
+              </button>
+            </div>
+            <textarea value={importText} onChange={e => setImportText(e.target.value)} rows={8}
+              placeholder='[{"date":"2026-05-06","value":19.05}]'
+              style={{ ...st.inp, textAlign: 'left', padding: 12, resize: 'vertical', lineHeight: 1.4, fontSize: 12 }} />
+            {importError && <div style={{ color: C.red, fontSize: 12, marginTop: 8 }}>{importError}</div>}
+            {importResult && <div style={{ color: C.green, fontSize: 12, marginTop: 8 }}>{importResult}</div>}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 12 }}>
+              <button onClick={() => setImportMetric(null)} style={{ ...st.ghost }}>Done</button>
+              <button onClick={confirmImport} disabled={!importText.trim()} style={{ ...st.btn(), opacity: importText.trim() ? 1 : 0.45 }}>
+                Confirm
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -5521,6 +5779,9 @@ export default function App() {
   const [showWhy, setShowWhy] = useState(false);
   const [preStartSwaps, setPreStartSwaps] = useState({});
   const [ironView, setIronView] = useState(false);
+  const [healthData, setHealthData] = useState({
+    hrv: [], restingHr: [], steps: [], activeCal: [], cardio: [], sleep: [],
+  });
 
   // Keep a ref to current data so export always uses the latest state
   const dataRef = useRef({});
@@ -5534,9 +5795,11 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
-      const [s, r, a, ce, wc, wh] = await Promise.all([
+      const [s, r, a, ce, wc, wh, hrv, restingHr, steps, activeCal, cardio, sleep] = await Promise.all([
         load('il_sessions'), load('il_rides'), load('il_active'),
         load('il_custom_exercises'), load('il_workout_custom'), load('il_workout_hidden'),
+        load('il_health_hrv'), load('il_health_resting_hr'), load('il_health_steps'),
+        load('il_health_active_cal'), load('il_health_cardio'), load('il_health_sleep'),
       ]);
       const localSessions = s || [];
       const localRides    = r || [];
@@ -5553,6 +5816,14 @@ export default function App() {
       if (ce) setCustomExercises(ce);
       if (wc) setWorkoutCustom(wc);
       if (wh) setWorkoutHidden(wh);
+      setHealthData({
+        hrv: hrv || [],
+        restingHr: restingHr || [],
+        steps: steps || [],
+        activeCal: activeCal || [],
+        cardio: cardio || [],
+        sleep: sleep || [],
+      });
       setSelectedWorkout(nextWorkout(finalSessions));
       setReady(true);
     })();
@@ -5571,6 +5842,12 @@ export default function App() {
   useEffect(() => { if (ready) save('il_custom_exercises', customExercises); }, [customExercises, ready]);
   useEffect(() => { if (ready) save('il_workout_custom', workoutCustom); }, [workoutCustom, ready]);
   useEffect(() => { if (ready) save('il_workout_hidden', workoutHidden); }, [workoutHidden, ready]);
+  useEffect(() => { if (ready) save('il_health_hrv', healthData.hrv); }, [healthData.hrv, ready]);
+  useEffect(() => { if (ready) save('il_health_resting_hr', healthData.restingHr); }, [healthData.restingHr, ready]);
+  useEffect(() => { if (ready) save('il_health_steps', healthData.steps); }, [healthData.steps, ready]);
+  useEffect(() => { if (ready) save('il_health_active_cal', healthData.activeCal); }, [healthData.activeCal, ready]);
+  useEffect(() => { if (ready) save('il_health_cardio', healthData.cardio); }, [healthData.cardio, ready]);
+  useEffect(() => { if (ready) save('il_health_sleep', healthData.sleep); }, [healthData.sleep, ready]);
 
   function handleExport() {
     exportData(dataRef.current);
@@ -5720,7 +5997,7 @@ export default function App() {
         {view === 'stretch_active' && <StretchActive onDone={() => setView('dashboard')} />}
         {view === 'history' && <History sessions={sessions} setSessions={setSessions} allExercises={allExercises} />}
         {view === 'progress' && <Progress sessions={sessions} allExercises={allExercises} />}
-        {view === 'health'   && <HealthView sessions={sessions} allExercises={allExercises} />}
+        {view === 'health'   && <HealthView sessions={sessions} allExercises={allExercises} healthData={healthData} setHealthData={setHealthData} />}
         {view === 'rides' && <Rides rides={rides} setRides={setRides} />}
         {view === 'manage' && (
           <Manage
