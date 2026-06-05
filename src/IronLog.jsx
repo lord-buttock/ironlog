@@ -2017,6 +2017,44 @@ function RecoveryRing({ score, color, label, size = 90 }) {
   );
 }
 
+// Gradient training load bar with circular position indicator
+function TrainingLoadBar({ load }) {
+  if (load == null) return <div style={{ fontSize: 11, color: C.muted }}>—</div>;
+  const pct = Math.min(100, Math.max(0, load));
+  // Colour of the indicator dot — tracks position along the gradient
+  const dotColor = pct < 35 ? '#5A9DF8' : pct < 55 ? '#42B85C' : pct < 72 ? '#F6C623' : pct < 85 ? '#F6A623' : '#F04444';
+  const rangeLabel = pct < 30 ? 'Low' : pct < 70 ? 'Optimal range' : pct < 85 ? 'High load' : 'Excessive';
+  const rangeColor = pct < 30 ? C.muted : pct < 70 ? C.green : pct < 85 ? C.amber : C.red;
+  return (
+    <div>
+      <div style={{ fontFamily: C.fDisplay, fontSize: 26, fontWeight: 800, color: dotColor, marginBottom: 10 }}>
+        {pct}%
+      </div>
+      {/* Gradient bar with indicator dot */}
+      <div style={{ position: 'relative', height: 10, borderRadius: 5, marginBottom: 6,
+        background: 'linear-gradient(to right, #5A9DF8 0%, #42B85C 35%, #F6C623 55%, #F6A623 72%, #F04444 100%)' }}>
+        <div style={{
+          position: 'absolute',
+          left: `clamp(9px, calc(${pct}% - 0px), calc(100% - 9px))`,
+          top: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 18, height: 18, borderRadius: '50%',
+          background: dotColor,
+          border: '3px solid #ffffff',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.22)',
+          zIndex: 1,
+        }} />
+      </div>
+      {/* Labels */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 }}>
+        <span style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted }}>Low</span>
+        <span style={{ fontFamily: C.fMono, fontSize: 9, color: rangeColor, fontWeight: 700 }}>{rangeLabel}</span>
+        <span style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted }}>High</span>
+      </div>
+    </div>
+  );
+}
+
 // Segmented fatigue bar
 function FatigueBar({ level, color }) {
   const segs = 10;
@@ -2471,46 +2509,30 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
         {updateAvailable && <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}`}</style>}
       </div>
 
-      {/* ── Recovery Summary Card ── */}
+      {/* ── Recovery Summary Card (Recovery + Fatigue) ── */}
       {hasHealthData && recovery && (
-        <div style={{ ...st.card(), marginBottom: 12 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+        <div style={{ ...st.card(), marginBottom: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {/* Recovery Score */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Recovery</div>
-              <RecoveryRing score={recovery.score} color={recovery.color} label={recovery.label} size={82} />
-              <div style={{ fontFamily: C.fMono, fontSize: 7, color: C.muted, marginTop: 4, textAlign: 'center' }}>
+              <div style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Recovery Score</div>
+              <RecoveryRing score={recovery.score} color={recovery.color} label={recovery.label} size={90} />
+              <div style={{ fontFamily: C.fMono, fontSize: 7, color: C.muted, marginTop: 5, textAlign: 'center' }}>
                 HRV {recovery.zHRV > 0 ? '↑' : '↓'}{Math.abs(recovery.zHRV)}σ · RHR {recovery.zRHR > 0 ? '↓' : '↑'}{Math.abs(Math.round((recovery.meanRHR - recovery.todayRHR) * 10) / 10)}
               </div>
             </div>
             {/* Fatigue + Readiness */}
-            <div>
+            <div style={{ paddingTop: 4 }}>
               <div style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Fatigue</div>
-              <div style={{ fontFamily: C.fDisplay, fontSize: 15, fontWeight: 700, color: fatigue?.color || C.muted }}>{fatigue?.label || '—'}</div>
+              <div style={{ fontFamily: C.fDisplay, fontSize: 17, fontWeight: 700, color: fatigue?.color || C.muted }}>{fatigue?.label || '—'}</div>
               {fatigue && <FatigueBar level={fatigue.level} color={fatigue.color} />}
-              <div style={{ marginTop: 8 }}>
+              <div style={{ marginTop: 10 }}>
                 <div style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Readiness</div>
-                <div style={{ fontFamily: C.fBody, fontSize: 12, fontWeight: 600, color: rec.color }}>{rec.label}</div>
+                <div style={{ fontFamily: C.fBody, fontSize: 13, fontWeight: 700, color: rec.color }}>{rec.label === 'Recommended' ? 'Good to train' : rec.label}</div>
                 <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, marginTop: 2 }}>
                   {rec.label === 'Recommended' ? 'You can push hard today.' : rec.label === 'Take it steady' ? 'Moderate effort today.' : 'Prioritise recovery.'}
                 </div>
               </div>
-            </div>
-            {/* Training Load */}
-            <div>
-              <div style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Training Load</div>
-              {trainLoad != null ? (
-                <>
-                  <div style={{ fontFamily: C.fDisplay, fontSize: 16, fontWeight: 700, color: trainLoad > 75 ? C.amber : C.blue }}>{trainLoad}%</div>
-                  <div style={{ height: 6, background: C.border, borderRadius: 3, marginTop: 6, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${trainLoad}%`, background: trainLoad > 75 ? C.amber : C.blue, borderRadius: 3 }} />
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3 }}>
-                    <span style={{ fontFamily: C.fMono, fontSize: 7, color: C.muted }}>Low</span>
-                    <span style={{ fontFamily: C.fMono, fontSize: 7, color: C.muted }}>High</span>
-                  </div>
-                </>
-              ) : <div style={{ fontSize: 11, color: C.muted }}>—</div>}
             </div>
           </div>
           <div style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted, marginTop: 10, paddingTop: 8, borderTop: `1px solid ${C.border}` }}>
@@ -2518,6 +2540,16 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
               ? `HRV (40%) · Resting HR (30%) · Sleep ${recovery.todaySleep?.toFixed(1)}h (30%) · 7-day baseline`
               : 'Estimate · HRV (70%) + Resting HR (30%) · no sleep reading for last night'}
           </div>
+        </div>
+      )}
+
+      {/* ── Training Load — own card with gradient bar ── */}
+      {trainLoad != null && (
+        <div style={{ ...st.card(), marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+            <div style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted, textTransform: 'uppercase', letterSpacing: 1 }}>Training Load</div>
+          </div>
+          <TrainingLoadBar load={trainLoad} />
         </div>
       )}
 
