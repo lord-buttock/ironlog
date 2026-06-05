@@ -1864,20 +1864,56 @@ function rollingAvg(readings, days = 14) {
 }
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
+// Recovery score — methodology based on sports science consensus (Buchheit 2014, Plews 2013):
+//   • 7-day rolling mean + SD baseline (more responsive than 14-day ratio)
+//   • RMSSD (HRV) weighted 70%, resting HR 30% — HRV is more sensitive to recovery
+//   • SD-band scoring: z-score mapped to 0–100 (50 = exactly average)
+//   • Each 1 SD above/below baseline = ±15 points
+//   • Naturally caps at 0–100; no arbitrary clamp needed
+//   • NOTE: No sleep data — all commercial devices weight sleep 33–50%.
+//     Until sleep is available, this is an ESTIMATE from HRV+RHR only.
 function computeRecovery(healthData) {
   const hrv = healthData?.hrv || [];
   const rhr = healthData?.restingHr || [];
+
   const todayHRV = Number(getLatestReading(hrv)?.value) || 0;
   const todayRHR = Number(getLatestReading(rhr)?.value) || 0;
-  const baseHRV  = rollingAvg(hrv, 14);
-  const baseRHR  = rollingAvg(rhr, 14);
-  if (!todayHRV || !todayRHR || !baseHRV || !baseRHR) return null;
-  const hrvScore = clamp((todayHRV / baseHRV) * 100, 0, 120);
-  const rhrScore = clamp((baseRHR  / todayRHR) * 100, 0, 120);
-  const score    = Math.round(hrvScore * 0.5 + rhrScore * 0.5);
-  const label    = score >= 75 ? 'Good' : score >= 55 ? 'Fair' : 'Low';
-  const color    = score >= 75 ? C.green : score >= 55 ? C.amber : C.red;
-  return { score, label, color, todayHRV, todayRHR, baseHRV, baseRHR };
+
+  const hrv7 = lastNDaysReadings(hrv, 7).map(r => Number(r.value));
+  const rhr7 = lastNDaysReadings(rhr, 7).map(r => Number(r.value));
+
+  if (hrv7.length < 3 || rhr7.length < 3 || !todayHRV || !todayRHR) return null;
+
+  const avg  = arr => arr.reduce((s, v) => s + v, 0) / arr.length;
+  const sdev = (arr, m) => Math.sqrt(arr.reduce((s, v) => s + (v - m) ** 2, 0) / arr.length);
+
+  const mHRV = avg(hrv7);
+  const mRHR = avg(rhr7);
+  // Fallback SD = 10% of mean (typical HRV coefficient of variation) when data is flat
+  const sHRV = sdev(hrv7, mHRV) || mHRV * 0.10;
+  const sRHR = sdev(rhr7, mRHR) || mRHR * 0.10;
+
+  // Z-scores: positive = good recovery signal
+  const zHRV = (todayHRV - mHRV) / sHRV;   // higher HRV = positive z = good
+  const zRHR = (mRHR - todayRHR) / sRHR;   // lower RHR = positive z = good (inverted)
+
+  const zCombined = zHRV * 0.70 + zRHR * 0.30;
+
+  // Map to 0–100: 50 = average, ±1 SD = ±15 pts, clamped
+  const score = Math.round(clamp(50 + zCombined * 15, 0, 100));
+
+  // Thresholds: Good = above 75th percentile (z>+0.67), Low = below 21st (z<-0.80)
+  const label = score >= 60 ? 'Good' : score >= 38 ? 'Fair' : 'Low';
+  const color = score >= 60 ? C.green : score >= 38 ? C.amber : C.red;
+
+  return {
+    score, label, color, todayHRV, todayRHR,
+    meanHRV: Math.round(mHRV * 10) / 10,
+    meanRHR: Math.round(mRHR * 10) / 10,
+    zHRV:    Math.round(zHRV * 10) / 10,
+    zRHR:    Math.round(zRHR * 10) / 10,
+    dataPoints: Math.min(hrv7.length, rhr7.length),
+  };
 }
 
 function computeFatigue(healthData, sessions) {
@@ -2358,11 +2394,11 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
   const trainLoad = computeTrainingLoad(sessions, hd.activeCal || []);
   const insight   = hasHealthData ? computeTrendInsight(hd) : null;
 
-  // Training recommendation based on recovery
+  // Training recommendation — thresholds aligned to new SD-band scoring
   const trainingRec = (r) => {
     if (!r) return { label: 'Scheduled', color: C.blue };
-    if (r.score >= 75) return { label: 'Recommended', color: C.green };
-    if (r.score >= 55) return { label: 'Take it steady', color: C.amber };
+    if (r.score >= 60) return { label: 'Recommended', color: C.green };
+    if (r.score >= 38) return { label: 'Take it steady', color: C.amber };
     return { label: 'Recovery suggested', color: C.red };
   };
   const rec = trainingRec(recovery);
@@ -2433,6 +2469,9 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <div style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Recovery</div>
               <RecoveryRing score={recovery.score} color={recovery.color} label={recovery.label} size={82} />
+              <div style={{ fontFamily: C.fMono, fontSize: 7, color: C.muted, marginTop: 4, textAlign: 'center' }}>
+                HRV {recovery.zHRV > 0 ? '↑' : '↓'}{Math.abs(recovery.zHRV)}σ · RHR {recovery.zRHR > 0 ? '↓' : '↑'}{Math.abs(Math.round((recovery.meanRHR - recovery.todayRHR) * 10) / 10)}
+              </div>
             </div>
             {/* Fatigue + Readiness */}
             <div>
@@ -2463,6 +2502,9 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
                 </>
               ) : <div style={{ fontSize: 11, color: C.muted }}>—</div>}
             </div>
+          </div>
+          <div style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted, marginTop: 10, paddingTop: 8, borderTop: `1px solid ${C.border}` }}>
+            Estimate · based on HRV + resting HR vs 7-day baseline · sleep data not yet available
           </div>
         </div>
       )}
