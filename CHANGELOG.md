@@ -4,6 +4,19 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-06-06 — Recovery score methodology overhaul (Claude Sonnet 4.6)
+
+- Replaced simple ratio formula with science-based SD-band approach (Buchheit 2014, Plews 2013, Altini/HRV4Training methodology)
+- Baseline: 7-day rolling mean + standard deviation (was: 14-day mean ratio)
+- Weighting: HRV 70%, resting HR 30% (was: 50/50 — HRV is more sensitive to recovery)
+- Scoring: `score = clamp(50 + zCombined × 15, 0, 100)` where 50 = exactly at your average; each ±1 SD = ±15 pts
+- Thresholds: Good ≥ 60, Fair 38–59, Low < 38 (was: Good ≥ 75, Fair ≥ 55)
+- Real-data result for June 5/6: was 100% Good (inflated), now correctly 46% Fair (HRV 0.45σ below 7-day mean)
+- Recovery ring now shows z-score context: "HRV ↑1.9σ · RHR ↓2.2"
+- Added disclaimer: "Estimate · based on HRV + resting HR vs 7-day baseline · sleep data not yet available"
+- Training recommendation thresholds updated to match new scale
+- Requires ≥3 data points in 7-day window; fallback SD = 10% of mean (typical HRV CV)
+
 ## 2026-06-06 — Recovery Dashboard fixes and polish (Claude Sonnet 4.6)
 
 - Fixed StrengthWeekCard: was filtering out Iron Series sessions (`IRON_` exclusion). All completed sessions — A/B/C and Iron Series — now count toward weekly sessions, volume, and time

@@ -18,13 +18,26 @@ The app is in active daily use. All core workout features complete. Apple Watch 
 
 ### Recovery Dashboard (Home screen)
 - Greeting + date header
-- Recovery Summary card: circular ring (0–100%, green/amber/red), fatigue bar, training load bar, Readiness label
+- Recovery Summary card: circular ring (0–100%, green/amber/red), fatigue bar, training load bar, Readiness label + z-score context + "estimate" disclaimer
 - Today's Training: recommendation boxes (Recommended / Take it steady / Recovery suggested)
-- 4-metric horizontal strip: HRV, Resting HR, Steps, Active Cal — icons, area sparklines, colour-coded vs 14-day baseline
+- 4-metric horizontal strip: HRV, Resting HR, Steps, Active Cal — icons, area sparklines, colour-coded vs 7-day baseline
 - Recovery Trends chart: dual-axis HRV + Resting HR, 7D/30D/90D toggle, auto-insight text
 - Cycling This Week + Strength This Week cards (side by side)
 - Weekly Activity Heatmap (5-week GitHub-style grid)
 - Recent Workouts (last 3 sessions+rides, "+ Log Workout" CTA)
+
+### Recovery score formula (as of 2026-06-06)
+Based on Buchheit 2014, Plews 2013, Altini/HRV4Training methodology:
+```
+hrv7  = 7-day rolling mean + SD of HRV readings
+rhr7  = 7-day rolling mean + SD of resting HR readings
+zHRV  = (todayHRV - mean7HRV) / sd7HRV        // higher = good
+zRHR  = (mean7RHR - todayRHR) / sd7RHR        // lower = good (inverted)
+zComb = zHRV × 0.70 + zRHR × 0.30             // HRV weighted more heavily
+score = clamp(50 + zComb × 15, 0, 100)        // 50=average, ±1SD=±15pts
+```
+Thresholds: Good ≥ 60, Fair 38–59, Low < 38
+**Known limitation:** sleep data not yet stored. All commercial devices weight sleep 33–50%. Score is an estimate until Sleep Analysis is wired in (data already being exported by Health Auto Export — needs Edge Function + DB extension).
 
 ---
 
@@ -384,8 +397,16 @@ Currently the user manually selects which workout to do. The app suggests the ne
 - HRV, Resting HR, Steps, Active Energy (→kcal) — live and populating charts
 - Cycling Distance, VO2 Max, Blood Oxygen, Respiratory Rate, Cardio Recovery, Sleep Analysis, Walking HR — user added these to export but NOT yet stored/displayed (Edge Function and DB schema would need extending)
 
+**Recovery score methodology change (same session):**
+- Researched WHOOP, Oura, Garmin, and sports science literature (Buchheit, Plews, Altini)
+- Replaced simple ratio formula with SD-band z-score approach
+- 7-day baseline, HRV 70% / RHR 30% weighting, score = 50 + z×15
+- Real-data result: was inflated 100% Good → now honest 46% Fair
+- See CHANGELOG.md 2026-06-06 entry and `computeRecovery()` comment block in source
+
 **What Codex could tackle next:**
-- Extend `ingest-health` Edge Function to handle the additional metrics (cycling_distance, vo2_max, sleep_duration, respiratory_rate, blood_oxygen) — see CLAUDE.md Health Export section for metric name mappings
+- **High priority: Add sleep data to recovery score.** Sleep Analysis is already being exported by Health Auto Export. Steps: (1) extend `ingest-health` Edge Function to parse `sleep_analysis` metric, (2) add `sleep` column to `health_metrics` table or use existing schema with metric='sleep', (3) add `pullHealthMetrics` to return sleep array, (4) update `computeRecovery()` to include sleep score at 30% weight (formula in ROADMAP.md Recovery score section). When sleep is available, formula becomes: `score = zHRV×0.40 + zRHR×0.30 + zSleep×0.30`
+- Extend `ingest-health` Edge Function for remaining metrics: cycling_distance, vo2_max, respiratory_rate, blood_oxygen — see CLAUDE.md Health Export section for metric name mappings
 - Demo animation component (Priority 4) — still pending, all assets exist in `assets/demos/`
 - Exercise YouTube video IDs (Decision 1) — research pass pending per memory file
 
