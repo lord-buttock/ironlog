@@ -4,6 +4,12 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-06-05 — Shortcuts Health Import Compatibility
+
+- Health Body import now accepts Shortcuts-friendly `{"dates":"...","values":"..."}` JSON and zips newline-separated rows into readings
+- Existing `[{date,value}]` health import format still works
+- Removed Sleep from the Body metrics; retained HRV, Resting HR, Steps, Active Calories, and Cardio Fitness
+
 ## 2026-06-05 — Apple Health Body Import
 
 - Added Health → Body section for Apple Watch / Apple Health imports
