@@ -982,8 +982,8 @@ async function pullHealthMetrics() {
       .select('metric, date, value')
       .order('date', { ascending: true });
     if (error || !data || !data.length) return null;
-    const result = { hrv: [], restingHr: [], steps: [], activeCal: [], cardio: [] };
-    const keyMap = { hrv: 'hrv', resting_hr: 'restingHr', steps: 'steps', active_cal: 'activeCal' };
+    const result = { hrv: [], restingHr: [], steps: [], activeCal: [], cardio: [], sleep: [] };
+    const keyMap = { hrv: 'hrv', resting_hr: 'restingHr', steps: 'steps', active_cal: 'activeCal', sleep: 'sleep' };
     data.forEach(row => {
       const key = keyMap[row.metric];
       if (key) result[key].push({ date: row.date, value: Number(row.value) });
@@ -996,7 +996,7 @@ async function pullHealthMetrics() {
 async function pushHealthMetrics(healthData) {
   if (!db) return;
   try {
-    const keyMap = { hrv: 'hrv', restingHr: 'resting_hr', steps: 'steps', activeCal: 'active_cal' };
+    const keyMap = { hrv: 'hrv', restingHr: 'resting_hr', steps: 'steps', activeCal: 'active_cal', sleep: 'sleep' };
     const rows = [];
     const now = new Date().toISOString();
     Object.entries(keyMap).forEach(([stateKey, metricName]) => {
@@ -1865,53 +1865,63 @@ function rollingAvg(readings, days = 14) {
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
 // Recovery score — methodology based on sports science consensus (Buchheit 2014, Plews 2013):
-//   • 7-day rolling mean + SD baseline (more responsive than 14-day ratio)
-//   • RMSSD (HRV) weighted 70%, resting HR 30% — HRV is more sensitive to recovery
-//   • SD-band scoring: z-score mapped to 0–100 (50 = exactly average)
-//   • Each 1 SD above/below baseline = ±15 points
-//   • Naturally caps at 0–100; no arbitrary clamp needed
-//   • NOTE: No sleep data — all commercial devices weight sleep 33–50%.
-//     Until sleep is available, this is an ESTIMATE from HRV+RHR only.
+//   • 7-day rolling mean + SD baseline
+//   • SD-band z-score: score = clamp(50 + zCombined × 15, 0–100)
+//   • Automatically uses a 3-factor formula when sleep data is present,
+//     falls back to 2-factor when it isn't (e.g. watch not worn overnight)
+//
+//   WITH sleep:    HRV 40% + RHR 30% + Sleep 30%  (matches Oura/WHOOP weighting)
+//   WITHOUT sleep: HRV 70% + RHR 30%              (estimate only)
 function computeRecovery(healthData) {
-  const hrv = healthData?.hrv || [];
-  const rhr = healthData?.restingHr || [];
+  const hrv   = healthData?.hrv       || [];
+  const rhr   = healthData?.restingHr || [];
+  const slp   = healthData?.sleep     || [];
 
-  const todayHRV = Number(getLatestReading(hrv)?.value) || 0;
-  const todayRHR = Number(getLatestReading(rhr)?.value) || 0;
+  const todayHRV   = Number(getLatestReading(hrv)?.value) || 0;
+  const todayRHR   = Number(getLatestReading(rhr)?.value) || 0;
+  const todaySleep = Number(getLatestReading(slp)?.value) || 0;
 
   const hrv7 = lastNDaysReadings(hrv, 7).map(r => Number(r.value));
   const rhr7 = lastNDaysReadings(rhr, 7).map(r => Number(r.value));
+  const slp7 = lastNDaysReadings(slp, 7).map(r => Number(r.value));
 
   if (hrv7.length < 3 || rhr7.length < 3 || !todayHRV || !todayRHR) return null;
 
   const avg  = arr => arr.reduce((s, v) => s + v, 0) / arr.length;
   const sdev = (arr, m) => Math.sqrt(arr.reduce((s, v) => s + (v - m) ** 2, 0) / arr.length);
 
-  const mHRV = avg(hrv7);
-  const mRHR = avg(rhr7);
-  // Fallback SD = 10% of mean (typical HRV coefficient of variation) when data is flat
-  const sHRV = sdev(hrv7, mHRV) || mHRV * 0.10;
-  const sRHR = sdev(rhr7, mRHR) || mRHR * 0.10;
+  const mHRV = avg(hrv7);  const sHRV = sdev(hrv7, mHRV) || mHRV * 0.10;
+  const mRHR = avg(rhr7);  const sRHR = sdev(rhr7, mRHR) || mRHR * 0.10;
 
-  // Z-scores: positive = good recovery signal
-  const zHRV = (todayHRV - mHRV) / sHRV;   // higher HRV = positive z = good
-  const zRHR = (mRHR - todayRHR) / sRHR;   // lower RHR = positive z = good (inverted)
+  const zHRV = (todayHRV - mHRV) / sHRV;  // higher HRV = positive = good
+  const zRHR = (mRHR - todayRHR) / sRHR;  // lower  RHR = positive = good (inverted)
 
-  const zCombined = zHRV * 0.70 + zRHR * 0.30;
+  // Use sleep if we have at least 3 nights of data AND a reading for today/last night
+  const hasSleep = slp7.length >= 3 && todaySleep > 0;
 
-  // Map to 0–100: 50 = average, ±1 SD = ±15 pts, clamped
+  let zCombined, formula;
+  if (hasSleep) {
+    const mSleep = avg(slp7);
+    const sSleep = sdev(slp7, mSleep) || mSleep * 0.15; // sleep CV ~15%
+    const zSleep = (todaySleep - mSleep) / sSleep;       // higher sleep = positive = good
+    zCombined = zHRV * 0.40 + zRHR * 0.30 + zSleep * 0.30;
+    formula   = 'hrv+rhr+sleep';
+  } else {
+    zCombined = zHRV * 0.70 + zRHR * 0.30;
+    formula   = 'hrv+rhr';
+  }
+
   const score = Math.round(clamp(50 + zCombined * 15, 0, 100));
-
-  // Thresholds: Good = above 75th percentile (z>+0.67), Low = below 21st (z<-0.80)
   const label = score >= 60 ? 'Good' : score >= 38 ? 'Fair' : 'Low';
   const color = score >= 60 ? C.green : score >= 38 ? C.amber : C.red;
 
   return {
-    score, label, color, todayHRV, todayRHR,
-    meanHRV: Math.round(mHRV * 10) / 10,
-    meanRHR: Math.round(mRHR * 10) / 10,
-    zHRV:    Math.round(zHRV * 10) / 10,
-    zRHR:    Math.round(zRHR * 10) / 10,
+    score, label, color, formula,
+    todayHRV, todayRHR, todaySleep: hasSleep ? todaySleep : null,
+    meanHRV:  Math.round(mHRV * 10) / 10,
+    meanRHR:  Math.round(mRHR * 10) / 10,
+    zHRV:     Math.round(zHRV * 10) / 10,
+    zRHR:     Math.round(zRHR * 10) / 10,
     dataPoints: Math.min(hrv7.length, rhr7.length),
   };
 }
@@ -2504,7 +2514,9 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
             </div>
           </div>
           <div style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted, marginTop: 10, paddingTop: 8, borderTop: `1px solid ${C.border}` }}>
-            Estimate · based on HRV + resting HR vs 7-day baseline · sleep data not yet available
+            {recovery.formula === 'hrv+rhr+sleep'
+              ? `HRV (40%) · Resting HR (30%) · Sleep ${recovery.todaySleep?.toFixed(1)}h (30%) · 7-day baseline`
+              : 'Estimate · HRV (70%) + Resting HR (30%) · no sleep reading for last night'}
           </div>
         </div>
       )}
@@ -6751,7 +6763,7 @@ export default function App() {
   const [preStartSwaps, setPreStartSwaps] = useState({});
   const [ironView, setIronView] = useState(false);
   const [healthData, setHealthData] = useState({
-    hrv: [], restingHr: [], steps: [], activeCal: [], cardio: [],
+    hrv: [], restingHr: [], steps: [], activeCal: [], cardio: [], sleep: [],
   });
 
   // Keep a ref to current data so export always uses the latest state
@@ -6766,11 +6778,11 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
-      const [s, r, a, ce, wc, wh, hrv, restingHr, steps, activeCal, cardio] = await Promise.all([
+      const [s, r, a, ce, wc, wh, hrv, restingHr, steps, activeCal, cardio, sleep] = await Promise.all([
         load('il_sessions'), load('il_rides'), load('il_active'),
         load('il_custom_exercises'), load('il_workout_custom'), load('il_workout_hidden'),
         load('il_health_hrv'), load('il_health_resting_hr'), load('il_health_steps'),
-        load('il_health_active_cal'), load('il_health_cardio'),
+        load('il_health_active_cal'), load('il_health_cardio'), load('il_health_sleep'),
       ]);
       const localSessions = s || [];
       const localRides    = r || [];
@@ -6798,6 +6810,7 @@ export default function App() {
         steps:     (cloudHealth?.steps     || steps     || []),
         activeCal: (cloudHealth?.activeCal || activeCal || []),
         cardio:    (cardio || []),
+        sleep:     (cloudHealth?.sleep     || sleep     || []),
       });
       setSelectedWorkout(nextWorkout(finalSessions));
       setReady(true);
