@@ -974,6 +974,43 @@ async function pullRides(localRides) {
   return null;
 }
 
+async function pullHealthMetrics() {
+  if (!db) return null;
+  try {
+    const { data, error } = await db
+      .from('health_metrics')
+      .select('metric, date, value')
+      .order('date', { ascending: true });
+    if (error || !data || !data.length) return null;
+    const result = { hrv: [], restingHr: [], steps: [], activeCal: [], cardio: [] };
+    const keyMap = { hrv: 'hrv', resting_hr: 'restingHr', steps: 'steps', active_cal: 'activeCal' };
+    data.forEach(row => {
+      const key = keyMap[row.metric];
+      if (key) result[key].push({ date: row.date, value: Number(row.value) });
+    });
+    return result;
+  } catch (e) { console.warn('IronLog restore (health):', e); }
+  return null;
+}
+
+async function pushHealthMetrics(healthData) {
+  if (!db) return;
+  try {
+    const keyMap = { hrv: 'hrv', restingHr: 'resting_hr', steps: 'steps', activeCal: 'active_cal' };
+    const rows = [];
+    const now = new Date().toISOString();
+    Object.entries(keyMap).forEach(([stateKey, metricName]) => {
+      (healthData[stateKey] || []).forEach(r => {
+        if (r?.date && Number.isFinite(Number(r.value))) {
+          rows.push({ metric: metricName, date: r.date, value: Number(r.value), updated_at: now });
+        }
+      });
+    });
+    if (!rows.length) return;
+    await db.from('health_metrics').upsert(rows, { onConflict: 'metric,date' });
+  } catch (e) { console.warn('IronLog sync (health):', e); }
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // STORAGE  (localStorage — works in any browser)
 // ═══════════════════════════════════════════════════════════════════════
@@ -4363,16 +4400,20 @@ function HealthView({ sessions, allExercises, healthData, setHealthData }) {
       const bulk = parseHealthAutoExport(parsed);
       if (!bulk) throw new Error('Not a Health Auto Export JSON file. Expected {"data":{"metrics":[...]}}.');
       const counts = {};
+      let merged;
       setHealthData(prev => {
         const next = { ...prev };
         Object.entries(bulk).forEach(([key, entries]) => {
           next[key] = mergeHealthReadings(prev[key], entries);
           counts[key] = entries.length;
         });
+        merged = next;
         return next;
       });
+      // Push to Supabase so it auto-loads next time (fire and forget)
+      if (merged) pushHealthMetrics(merged);
       const summary = Object.entries(counts).map(([k, n]) => `${n} ${k}`).join(', ');
-      setBulkResult(`Imported: ${summary}`);
+      setBulkResult(`Imported: ${summary} — synced to cloud`);
       setBulkError('');
       setBulkText('');
     } catch (e) {
@@ -5944,8 +5985,11 @@ export default function App() {
       const localRides    = r || [];
 
       // Attempt cloud restore — only replaces local if cloud has more records
-      const cloudSessions = await pullSessions(localSessions);
-      const cloudRides    = await pullRides(localRides);
+      const [cloudSessions, cloudRides, cloudHealth] = await Promise.all([
+        pullSessions(localSessions),
+        pullRides(localRides),
+        pullHealthMetrics(),
+      ]);
       const finalSessions = cloudSessions || localSessions;
       const finalRides    = cloudRides    || localRides;
 
@@ -5955,12 +5999,14 @@ export default function App() {
       if (ce) setCustomExercises(ce);
       if (wc) setWorkoutCustom(wc);
       if (wh) setWorkoutHidden(wh);
+
+      // Cloud health data takes precedence over localStorage cache
       setHealthData({
-        hrv: hrv || [],
-        restingHr: restingHr || [],
-        steps: steps || [],
-        activeCal: activeCal || [],
-        cardio: cardio || [],
+        hrv:       (cloudHealth?.hrv       || hrv       || []),
+        restingHr: (cloudHealth?.restingHr || restingHr || []),
+        steps:     (cloudHealth?.steps     || steps     || []),
+        activeCal: (cloudHealth?.activeCal || activeCal || []),
+        cardio:    (cardio || []),
       });
       setSelectedWorkout(nextWorkout(finalSessions));
       setReady(true);
