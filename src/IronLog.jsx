@@ -1850,11 +1850,351 @@ function PreStartScreen({ selectedWorkout, coachRec, preStartSwaps, setPreStartS
 // ═══════════════════════════════════════════════════════════════════════
 // DASHBOARD
 // ═══════════════════════════════════════════════════════════════════════
-function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, setSelectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, driveSync, onCloudSync, updateAvailable, onWarmupOpen, onDemoOpen, coachRec, showWhy, setShowWhy }) {
+// ═══════════════════════════════════════════════════════════════════════
+// RECOVERY DASHBOARD — computations + components
+// ═══════════════════════════════════════════════════════════════════════
+
+function getLatestReading(readings) {
+  return readings?.length ? readings[readings.length - 1] : null;
+}
+function rollingAvg(readings, days = 14) {
+  const recent = lastNDaysReadings(readings, days);
+  if (!recent.length) return null;
+  return recent.reduce((s, r) => s + Number(r.value), 0) / recent.length;
+}
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+function computeRecovery(healthData) {
+  const hrv = healthData?.hrv || [];
+  const rhr = healthData?.restingHr || [];
+  const todayHRV = Number(getLatestReading(hrv)?.value) || 0;
+  const todayRHR = Number(getLatestReading(rhr)?.value) || 0;
+  const baseHRV  = rollingAvg(hrv, 14);
+  const baseRHR  = rollingAvg(rhr, 14);
+  if (!todayHRV || !todayRHR || !baseHRV || !baseRHR) return null;
+  const hrvScore = clamp((todayHRV / baseHRV) * 100, 0, 120);
+  const rhrScore = clamp((baseRHR  / todayRHR) * 100, 0, 120);
+  const score    = Math.round(hrvScore * 0.5 + rhrScore * 0.5);
+  const label    = score >= 75 ? 'Good' : score >= 55 ? 'Fair' : 'Low';
+  const color    = score >= 75 ? C.green : score >= 55 ? C.amber : C.red;
+  return { score, label, color, todayHRV, todayRHR, baseHRV, baseRHR };
+}
+
+function computeFatigue(healthData, sessions) {
+  const hrv = healthData?.hrv || [];
+  const rhr = healthData?.restingHr || [];
+  const cal = healthData?.activeCal || [];
+  const todayHRV = Number(getLatestReading(hrv)?.value) || 0;
+  const baseHRV  = rollingAvg(hrv, 14) || 0;
+  const todayRHR = Number(getLatestReading(rhr)?.value) || 0;
+  const baseRHR  = rollingAvg(rhr, 14) || 0;
+  const todayCal = Number(getLatestReading(cal)?.value) || 0;
+  const baseCal  = rollingAvg(cal, 7) || 0;
+  const trained  = new Set(sessions.filter(s => s.completed).map(s => s.date ? localDateStr(new Date(s.date)) : null).filter(Boolean));
+  let consec = 0;
+  for (let i = 0; i < 7; i++) { const d = new Date(); d.setDate(d.getDate() - i); if (trained.has(localDateStr(d))) consec++; else break; }
+  let f = 0;
+  if (todayHRV && baseHRV) f += Math.max(0, (baseHRV - todayHRV) / baseHRV * 40);
+  if (todayRHR && baseRHR) f += Math.max(0, (todayRHR - baseRHR) / baseRHR * 40);
+  if (todayCal && baseCal && todayCal > baseCal) f += Math.min(15, (todayCal - baseCal) / baseCal * 15);
+  f += Math.min(20, consec * 5);
+  const level = Math.min(100, Math.round(f));
+  const label = level < 30 ? 'Low' : level < 60 ? 'Moderate' : 'High';
+  const color = level < 30 ? C.green : level < 60 ? C.amber : C.red;
+  return { level, label, color };
+}
+
+function computeTrainingLoad(sessions, activeCal) {
+  const ws = weekMondayStart();
+  const weekSessions = sessions.filter(s => s.completed && new Date(s.date) >= ws);
+  let weekVol = 0;
+  weekSessions.forEach(sess => {
+    (sess.exercises || []).forEach(ex => {
+      ex.sets.filter(s => s.done).forEach(s => { weekVol += (Number(s.weight) || 0) * (Number(s.reps) || 0); });
+    });
+  });
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 28);
+  let totalVol = 0;
+  sessions.filter(s => s.completed && new Date(s.date) >= cutoff).forEach(sess => {
+    (sess.exercises || []).forEach(ex => {
+      ex.sets.filter(s => s.done).forEach(s => { totalVol += (Number(s.weight) || 0) * (Number(s.reps) || 0); });
+    });
+  });
+  const avgWeekVol = totalVol / 4;
+  if (avgWeekVol > 0) return Math.min(100, Math.round((weekVol / avgWeekVol) * 50));
+  // Fallback: active calories proxy
+  const todayCal = Number(getLatestReading(activeCal)?.value) || 0;
+  const avgCal   = rollingAvg(activeCal, 7) || 0;
+  if (todayCal && avgCal) return Math.min(100, Math.round((todayCal / avgCal) * 50));
+  return null;
+}
+
+function computeTrendInsight(healthData) {
+  const hrv = healthData?.hrv || [];
+  const rhr = healthData?.restingHr || [];
+  const tHRV = Number(getLatestReading(hrv)?.value) || 0;
+  const bHRV = rollingAvg(hrv, 14) || 0;
+  const tRHR = Number(getLatestReading(rhr)?.value) || 0;
+  const bRHR = rollingAvg(rhr, 14) || 0;
+  if (!tHRV || !bHRV || !tRHR || !bRHR) return null;
+  const hrvOk = tHRV >= bHRV * 0.95;
+  const rhrOk = tRHR <= bRHR * 1.05;
+  if (hrvOk && rhrOk)   return 'HRV is above your average and resting HR is stable. You are ready to train.';
+  if (!hrvOk && rhrOk)  return 'HRV is slightly below your average. Consider a moderate session today.';
+  if (hrvOk && !rhrOk)  return 'Resting HR is elevated. Listen to your body and consider reducing intensity.';
+  return 'HRV is below average and resting HR is elevated. Consider lighter movement or a recovery day.';
+}
+
+function timeGreeting() {
+  const h = new Date().getHours();
+  if (h >= 5  && h < 12) return 'Good morning';
+  if (h >= 12 && h < 17) return 'Good afternoon';
+  if (h >= 17 && h < 21) return 'Good evening';
+  return 'Hey';
+}
+
+// SVG circular recovery ring
+function RecoveryRing({ score, color, label, size = 90 }) {
+  const r = (size - 16) / 2, cx = size / 2;
+  const circ = 2 * Math.PI * r;
+  const dash = circ * clamp(score / 100, 0, 1);
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ display: 'block', flexShrink: 0 }}>
+      <circle cx={cx} cy={cx} r={r} fill="none" stroke={C.border} strokeWidth={9} />
+      <circle cx={cx} cy={cx} r={r} fill="none" stroke={color} strokeWidth={9}
+        strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
+        transform={`rotate(-90 ${cx} ${cx})`} />
+      <text x={cx} y={cx - 2} textAnchor="middle" fill={color} fontSize={19} fontWeight={800} fontFamily={C.fDisplay}>{score}%</text>
+      <text x={cx} y={cx + 14} textAnchor="middle" fill={C.muted} fontSize={10} fontFamily={C.fMono}>{label}</text>
+    </svg>
+  );
+}
+
+// Segmented fatigue bar
+function FatigueBar({ level, color }) {
+  const segs = 10;
+  const filled = Math.round(level / 10);
+  return (
+    <div style={{ display: 'flex', gap: 3, marginTop: 6 }}>
+      {Array.from({ length: segs }, (_, i) => (
+        <div key={i} style={{ flex: 1, height: 6, borderRadius: 3, background: i < filled ? color : C.border }} />
+      ))}
+    </div>
+  );
+}
+
+// Mini sparkline with no axes
+function MetricSparkline({ data, color, height = 36 }) {
+  const vals = (data || []).slice(-10).map(d => Number(d.value)).filter(Number.isFinite);
+  if (vals.length < 2) return <div style={{ height }} />;
+  const W = 80, H = height;
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const span = max === min ? 1 : max - min;
+  const xOf = i => (i / (vals.length - 1)) * W;
+  const yOf = v => H - 4 - ((v - min) / span) * (H - 8);
+  const pts = vals.map((v, i) => `${xOf(i)},${yOf(v)}`).join(' ');
+  return (
+    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height, display: 'block' }}>
+      <polyline points={pts} fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+// Dual-axis HRV + Resting HR chart with 7D/30D/90D
+function RecoveryTrendChart({ healthData, days }) {
+  const hrv = lastNDaysReadings(healthData?.hrv || [], days);
+  const rhr = lastNDaysReadings(healthData?.restingHr || [], days);
+  if (!hrv.length && !rhr.length) return null;
+  const W = 320, H = 160, pL = 34, pR = 38, pT = 12, pB = 28;
+  const iW = W - pL - pR, iH = H - pT - pB;
+  const bHRV = rollingAvg(healthData?.hrv || [], 14);
+  const bRHR = rollingAvg(healthData?.restingHr || [], 14);
+  const hrvVals = hrv.map(d => Number(d.value));
+  const rhrVals = rhr.map(d => Number(d.value));
+  const hrvMin = Math.min(...(hrvVals.length ? hrvVals : [0]));
+  const hrvMax = Math.max(...(hrvVals.length ? hrvVals : [1]));
+  const rhrMin = Math.min(...(rhrVals.length ? rhrVals : [0]));
+  const rhrMax = Math.max(...(rhrVals.length ? rhrVals : [1]));
+  const pad = 0.1;
+  const hLo = hrvMin - (hrvMax - hrvMin) * pad, hHi = hrvMax + (hrvMax - hrvMin) * pad || hrvMax + 1;
+  const rLo = rhrMin - (rhrMax - rhrMin) * pad, rHi = rhrMax + (rhrMax - rhrMin) * pad || rhrMax + 1;
+  const xOf = (i, n) => pL + (n < 2 ? 0.5 : i / (n - 1)) * iW;
+  const yHRV = v => pT + iH - ((v - hLo) / (hHi - hLo)) * iH;
+  const yRHR = v => pT + iH - ((v - rLo) / (rHi - rLo)) * iH;
+  const hrvPts = hrv.map((d, i) => `${xOf(i, hrv.length)},${yHRV(Number(d.value))}`).join(' ');
+  const rhrPts = rhr.map((d, i) => `${xOf(i, rhr.length)},${yRHR(Number(d.value))}`).join(' ');
+  const first = [...hrv, ...rhr].map(d => d.date).sort()[0];
+  const last  = [...hrv, ...rhr].map(d => d.date).sort().reverse()[0];
+  return (
+    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: H, display: 'block' }}>
+      {[0.25, 0.5, 0.75].map((v, i) => (
+        <line key={i} x1={pL} y1={pT + iH * v} x2={W - pR} y2={pT + iH * v} stroke={C.border} strokeWidth={1} strokeDasharray="3,3" />
+      ))}
+      {hrvPts.length > 1 && <polyline points={hrvPts} fill="none" stroke={C.blue} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />}
+      {hrv.map((d, i) => {
+        const v = Number(d.value);
+        const col = bHRV ? (v >= bHRV * 0.95 ? C.green : v >= bHRV * 0.88 ? C.amber : C.red) : C.blue;
+        return <circle key={d.date} cx={xOf(i, hrv.length)} cy={yHRV(v)} r={4} fill={col} />;
+      })}
+      {rhrPts.length > 1 && <polyline points={rhrPts} fill="none" stroke={C.red} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" opacity={0.8} />}
+      {rhr.map((d, i) => {
+        const v = Number(d.value);
+        const col = bRHR ? (v <= bRHR * 1.05 ? C.green : v <= bRHR * 1.1 ? C.amber : C.red) : C.red;
+        return <circle key={d.date} cx={xOf(i, rhr.length)} cy={yRHR(v)} r={4} fill={col} opacity={0.9} />;
+      })}
+      {/* Axis labels */}
+      <text x={pL - 4} y={pT + 10} fill={C.blue} fontSize={8} textAnchor="end" fontFamily={C.fMono}>{Math.round(hHi)}</text>
+      <text x={pL - 4} y={H - pB + 4} fill={C.blue} fontSize={8} textAnchor="end" fontFamily={C.fMono}>{Math.round(hLo)}</text>
+      <text x={W - pR + 4} y={pT + 10} fill={C.red} fontSize={8} fontFamily={C.fMono}>{Math.round(rHi)}</text>
+      <text x={W - pR + 4} y={H - pB + 4} fill={C.red} fontSize={8} fontFamily={C.fMono}>{Math.round(rLo)}</text>
+      <text x={pL} y={H - 4} fill={C.muted} fontSize={8} fontFamily={C.fMono}>{fmtHealthDate(first)}</text>
+      <text x={W - pR} y={H - 4} fill={C.muted} fontSize={8} textAnchor="end" fontFamily={C.fMono}>{fmtHealthDate(last)}</text>
+    </svg>
+  );
+}
+
+// Cycling This Week card
+function CyclingWeekCard({ rides }) {
+  const ws = weekMondayStart();
+  const weekRides = rides.filter(r => new Date(r.date) >= ws && r.distance);
+  const prevStart = new Date(ws); prevStart.setDate(prevStart.getDate() - 7);
+  const prevRides = rides.filter(r => { const d = new Date(r.date); return d >= prevStart && d < ws && r.distance; });
+  const totalDist  = weekRides.reduce((s, r) => s + (r.distance || 0), 0);
+  const prevDist   = prevRides.reduce((s, r) => s + (r.distance || 0), 0);
+  const pct = prevDist > 0 ? Math.round(((totalDist - prevDist) / prevDist) * 100) : null;
+  const longest = weekRides.length ? Math.max(...weekRides.map(r => r.distance || 0)) : 0;
+  const weekDays = Array.from({ length: 7 }, (_, i) => { const d = new Date(ws); d.setDate(ws.getDate() + i); return localDateStr(d); });
+  const byDay = {};
+  weekRides.forEach(r => { const k = localDateStr(new Date(r.date)); byDay[k] = (byDay[k] || 0) + (r.distance || 0); });
+  const maxDay = Math.max(...weekDays.map(d => byDay[d] || 0), 1);
+  const W = 140, H = 44, pad = { l: 0, r: 0, b: 8 }, barW = Math.floor((W - 6) / 7) - 2;
+  if (!weekRides.length) return (
+    <div style={{ ...st.card(), flex: 1 }}>
+      <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>🚴 Cycling</div>
+      <div style={{ fontSize: 12, color: C.muted }}>No rides this week</div>
+    </div>
+  );
+  return (
+    <div style={{ ...st.card(), flex: 1 }}>
+      <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>🚴 Cycling this week</div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 2 }}>
+        <span style={{ fontFamily: C.fDisplay, fontSize: 22, fontWeight: 800, color: C.blue }}>{totalDist.toFixed(1)}</span>
+        <span style={{ fontFamily: C.fMono, fontSize: 10, color: C.muted }}>km</span>
+      </div>
+      {pct !== null && <div style={{ fontFamily: C.fMono, fontSize: 9, color: pct >= 0 ? C.green : C.amber, marginBottom: 6 }}>
+        {pct >= 0 ? '▲' : '▼'} {Math.abs(pct)}% vs last week
+      </div>}
+      {longest > 0 && <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, marginBottom: 8 }}>Longest: {longest.toFixed(1)} km</div>}
+      <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: H, display: 'block' }}>
+        {weekDays.map((d, i) => {
+          const val = byDay[d] || 0;
+          const bH = Math.max(2, (val / maxDay) * (H - pad.b));
+          const x = i * (barW + 2);
+          return <rect key={d} x={x} y={H - pad.b - bH} width={barW} height={bH} rx={2} fill={val > 0 ? C.blue : C.border} />;
+        })}
+        {['M','T','W','T','F','S','S'].map((l, i) => (
+          <text key={i} x={i * (barW + 2) + barW / 2} y={H} fill={C.muted} fontSize={7} textAnchor="middle" fontFamily={C.fMono}>{l}</text>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+// Strength This Week card
+function StrengthWeekCard({ sessions, allExercises }) {
+  const ws = weekMondayStart();
+  const weekSess = sessions.filter(s => s.completed && new Date(s.date) >= ws && !s.workout?.startsWith('IRON_'));
+  let totalVol = 0, totalTime = 0;
+  weekSess.forEach(s => {
+    totalTime += s.duration || 0;
+    (s.exercises || []).forEach(ex => {
+      ex.sets.filter(set => set.done).forEach(set => {
+        totalVol += (Number(set.weight) || 0) * (Number(set.reps) || 0);
+      });
+    });
+  });
+  // Top lift increase this week vs all-time best before this week
+  let topLift = null;
+  weekSess.forEach(s => {
+    (s.exercises || []).forEach(ex => {
+      const def = allExercises[ex.id];
+      if (!def || def.unit !== 'kg') return;
+      const wMax = Math.max(0, ...ex.sets.filter(set => set.done).map(set => Number(set.weight) || 0));
+      if (!wMax) return;
+      const prev = sessions.filter(ps => ps.completed && ps.id !== s.id && new Date(ps.date) < ws)
+        .flatMap(ps => (ps.exercises || []).filter(e => e.id === ex.id))
+        .flatMap(e => e.sets.filter(set => set.done).map(set => Number(set.weight) || 0));
+      const prevMax = prev.length ? Math.max(...prev) : 0;
+      const gain = wMax - prevMax;
+      if (gain > 0 && (!topLift || gain > topLift.gain)) topLift = { name: def.name, gain, weight: wMax };
+    });
+  });
+  const weekDays = Array.from({ length: 7 }, (_, i) => { const d = new Date(ws); d.setDate(ws.getDate() + i); return localDateStr(d); });
+  const byDay = {};
+  weekSess.forEach(s => { const k = localDateStr(new Date(s.date)); byDay[k] = (byDay[k] || 0) + 1; });
+  const W = 140, H = 44, pad = { b: 8 }, barW = Math.floor((W - 6) / 7) - 2;
+  if (!weekSess.length) return (
+    <div style={{ ...st.card(), flex: 1 }}>
+      <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>🏋️ Strength</div>
+      <div style={{ fontSize: 12, color: C.muted }}>No sessions this week</div>
+    </div>
+  );
+  return (
+    <div style={{ ...st.card(), flex: 1 }}>
+      <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>🏋️ Strength this week</div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 2 }}>
+        <span style={{ fontFamily: C.fDisplay, fontSize: 22, fontWeight: 800, color: C.amber }}>{weekSess.length}</span>
+        <span style={{ fontFamily: C.fMono, fontSize: 10, color: C.muted }}>sessions</span>
+      </div>
+      {totalVol > 0 && <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, marginBottom: 2 }}>Vol: {Math.round(totalVol).toLocaleString()} kg</div>}
+      {totalTime > 0 && <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, marginBottom: 2 }}>{Math.floor(totalTime / 60)}h {totalTime % 60}m total</div>}
+      {topLift && <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.green, marginBottom: 6 }}>▲ {topLift.name} +{topLift.gain} kg</div>}
+      <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: H, display: 'block' }}>
+        {weekDays.map((d, i) => {
+          const val = byDay[d] || 0;
+          const bH = val > 0 ? H - pad.b : 2;
+          const x = i * (barW + 2);
+          return <rect key={d} x={x} y={H - pad.b - (val > 0 ? H - pad.b : 2)} width={barW} height={val > 0 ? H - pad.b : 2} rx={2} fill={val > 0 ? C.amber : C.border} />;
+        })}
+        {['M','T','W','T','F','S','S'].map((l, i) => (
+          <text key={i} x={i * (barW + 2) + barW / 2} y={H} fill={C.muted} fontSize={7} textAnchor="middle" fontFamily={C.fMono}>{l}</text>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, setSelectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, driveSync, onCloudSync, updateAvailable, onWarmupOpen, onDemoOpen, coachRec, showWhy, setShowWhy, healthData }) {
   const [showExercises, setShowExercises] = useState(false);
   const [showWarmup, setShowWarmup] = useState(false);
   const [showCooldown, setShowCooldown] = useState(false);
+  const [trendDays, setTrendDays] = useState(7);
   const suggested = nextWorkout(sessions);
+
+  // Recovery computations (only when health data present)
+  const hd = healthData || {};
+  const hasHealthData = (hd.hrv?.length || hd.restingHr?.length || 0) > 0;
+  const recovery  = hasHealthData ? computeRecovery(hd) : null;
+  const fatigue   = hasHealthData ? computeFatigue(hd, sessions) : null;
+  const trainLoad = computeTrainingLoad(sessions, hd.activeCal || []);
+  const insight   = hasHealthData ? computeTrendInsight(hd) : null;
+
+  // Training recommendation based on recovery
+  const trainingRec = (r) => {
+    if (!r) return { label: 'Scheduled', color: C.blue };
+    if (r.score >= 75) return { label: 'Recommended', color: C.green };
+    if (r.score >= 55) return { label: 'Take it steady', color: C.amber };
+    return { label: 'Recovery suggested', color: C.red };
+  };
+  const rec = trainingRec(recovery);
+
+  // Metric grid data
+  const hMetrics = [
+    { key: 'hrv',       title: 'HRV',             unit: 'ms',    color: C.green, data: hd.hrv,       higherBetter: true  },
+    { key: 'restingHr', title: 'Resting HR',       unit: 'bpm',   color: C.red,   data: hd.restingHr, higherBetter: false },
+    { key: 'steps',     title: 'Steps',            unit: 'steps', color: C.blue,  data: hd.steps,     target: 8000        },
+    { key: 'activeCal', title: 'Active Cal',       unit: 'kcal',  color: C.amber, data: hd.activeCal  },
+  ];
   const wkt = WORKOUTS[selectedWorkout];
   const extraIds = workoutCustom[selectedWorkout] || [];
   const hiddenIds = new Set((workoutHidden || {})[selectedWorkout] || []);
@@ -1884,22 +2224,155 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
       : `Supabase auto-sync on · Last synced ${lastSyncTime}`;
 
   return (
-    <div style={{ padding: '20px 16px 8px' }}>
-      <div style={{ marginBottom: 24, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+    <div style={{ padding: '16px 16px 8px' }}>
+
+      {/* ── Greeting header ── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
         <div>
-          <div style={{ ...st.label, marginBottom: 6 }}>Training Log</div>
-          <div style={{ ...st.h1 }}>IRON<span style={{ color: C.amber }}>LOG</span></div>
+          <div style={{ fontFamily: C.fBody, fontSize: 22, fontWeight: 700, color: C.text, lineHeight: 1.2 }}>
+            {timeGreeting()}, Phill
+          </div>
+          <div style={{ fontFamily: C.fMono, fontSize: 11, color: C.muted, marginTop: 3 }}>
+            {new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}
+          </div>
         </div>
-        <button
-          onClick={() => window.location.reload(true)}
-          title={updateAvailable ? 'Update available — tap to reload' : 'Check for updates'}
-          style={{
-            background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0 4px 12px',
-            color: updateAvailable ? C.amber : C.muted, fontSize: 20, lineHeight: 1,
-            animation: updateAvailable ? 'pulse 1.5s ease-in-out infinite' : 'none',
-          }}
-        >↺</button>
+        <button onClick={() => window.location.reload(true)}
+          title={updateAvailable ? 'Update available' : 'Check for updates'}
+          style={{ background: C.dim, border: 'none', borderRadius: 20, width: 34, height: 34, cursor: 'pointer',
+            color: updateAvailable ? C.amber : C.muted, fontSize: 18,
+            animation: updateAvailable ? 'pulse 1.5s ease-in-out infinite' : 'none' }}>
+          ↺
+        </button>
         {updateAvailable && <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}`}</style>}
+      </div>
+
+      {/* ── Recovery Summary Card ── */}
+      {hasHealthData && recovery && (
+        <div style={{ ...st.card(), marginBottom: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+            {/* Recovery Score */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Recovery</div>
+              <RecoveryRing score={recovery.score} color={recovery.color} label={recovery.label} size={82} />
+            </div>
+            {/* Fatigue */}
+            <div>
+              <div style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Fatigue</div>
+              <div style={{ fontFamily: C.fDisplay, fontSize: 16, fontWeight: 700, color: fatigue?.color || C.muted }}>{fatigue?.label || '—'}</div>
+              {fatigue && <FatigueBar level={fatigue.level} color={fatigue.color} />}
+            </div>
+            {/* Training Load */}
+            <div>
+              <div style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Training Load</div>
+              {trainLoad != null ? (
+                <>
+                  <div style={{ fontFamily: C.fDisplay, fontSize: 16, fontWeight: 700, color: trainLoad > 75 ? C.amber : C.blue }}>{trainLoad}%</div>
+                  <div style={{ height: 6, background: C.border, borderRadius: 3, marginTop: 6, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${trainLoad}%`, background: trainLoad > 75 ? C.amber : C.blue, borderRadius: 3 }} />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3 }}>
+                    <span style={{ fontFamily: C.fMono, fontSize: 7, color: C.muted }}>Low</span>
+                    <span style={{ fontFamily: C.fMono, fontSize: 7, color: C.muted }}>High</span>
+                  </div>
+                </>
+              ) : <div style={{ fontSize: 11, color: C.muted }}>—</div>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Today's Training ── */}
+      {hasHealthData && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+          {[
+            { icon: '🏋️', label: 'Weight Training', focus: 'Strength' },
+            { icon: '🚴', label: 'Cycling', focus: 'Endurance' },
+          ].map(t => (
+            <div key={t.label} style={{ ...st.card(), padding: '10px 12px' }}>
+              <div style={{ fontSize: 18, marginBottom: 4 }}>{t.icon}</div>
+              <div style={{ fontFamily: C.fDisplay, fontSize: 13, fontWeight: 700, color: C.text, lineHeight: 1.2 }}>{t.label}</div>
+              <div style={{ fontFamily: C.fMono, fontSize: 10, color: rec.color, fontWeight: 700, marginTop: 3 }}>{rec.label}</div>
+              <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, marginTop: 2 }}>Focus: {t.focus}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── 4-Metric sparkline grid ── */}
+      {hasHealthData && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+          {hMetrics.map(m => {
+            const latest = getLatestReading(m.data || []);
+            const base   = rollingAvg(m.data || [], 14);
+            const val    = Number(latest?.value);
+            let statusColor = m.color;
+            if (base && val) {
+              if (m.higherBetter === true)  statusColor = val >= base * 0.95 ? C.green : val >= base * 0.88 ? C.amber : C.red;
+              if (m.higherBetter === false) statusColor = val <= base * 1.05 ? C.green : val <= base * 1.10 ? C.amber : C.red;
+              if (m.target)                 statusColor = val >= m.target ? C.green : val >= m.target * 0.75 ? C.amber : C.red;
+            }
+            const delta = (base && val) ? (m.higherBetter === false ? base - val : val - base) : null;
+            const deltaLabel = m.target ? `${Math.round(val / m.target * 100)}% of ${m.target.toLocaleString()}` :
+              delta != null ? `${delta >= 0 ? '+' : ''}${Math.round(delta * 10) / 10} vs avg` : null;
+            return (
+              <div key={m.key} style={{ ...st.card(), padding: '10px 12px' }}>
+                <div style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>{m.title}</div>
+                {latest ? (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
+                      <span style={{ fontFamily: C.fDisplay, fontSize: 20, fontWeight: 800, color: statusColor }}>{Number(val).toLocaleString()}</span>
+                      <span style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted }}>{m.unit}</span>
+                    </div>
+                    {deltaLabel && <div style={{ fontFamily: C.fMono, fontSize: 9, color: statusColor, marginTop: 2 }}>{deltaLabel}</div>}
+                    <MetricSparkline data={(m.data || []).slice(-10)} color={statusColor} height={32} />
+                  </>
+                ) : (
+                  <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>No data</div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Recovery Trends Chart ── */}
+      {hasHealthData && (hd.hrv?.length > 1 || hd.restingHr?.length > 1) && (
+        <div style={{ ...st.card(), marginBottom: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <div style={{ fontFamily: C.fDisplay, fontSize: 14, fontWeight: 800, textTransform: 'uppercase', color: C.text }}>Recovery Trends</div>
+            <div style={{ display: 'flex', gap: 4 }}>
+              {[7, 30, 90].map(d => (
+                <button key={d} onClick={() => setTrendDays(d)} style={{
+                  fontFamily: C.fMono, fontSize: 10, border: 'none', borderRadius: 4, cursor: 'pointer', padding: '3px 8px',
+                  background: trendDays === d ? C.blue : C.dim, color: trendDays === d ? '#fff' : C.muted,
+                }}>{d}D</button>
+              ))}
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div style={{ width: 20, height: 2.5, background: C.blue, borderRadius: 2 }} />
+              <span style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted }}>HRV (ms)</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div style={{ width: 20, height: 2.5, background: C.red, borderRadius: 2 }} />
+              <span style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted }}>Resting HR (bpm)</span>
+            </div>
+          </div>
+          <RecoveryTrendChart healthData={hd} days={trendDays} />
+          {insight && (
+            <div style={{ marginTop: 10, padding: '8px 10px', background: C.dim, borderRadius: 6, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+              <span style={{ fontSize: 13, flexShrink: 0 }}>💡</span>
+              <span style={{ fontFamily: C.fBody, fontSize: 12, color: C.muted, lineHeight: 1.45 }}>{insight}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── OLD title (hidden now that we have greeting) ── */}
+      <div style={{ display: 'none' }}>
+        <div style={{ ...st.label, marginBottom: 6 }}>Training Log</div>
+        <div style={{ ...st.h1 }}>IRON<span style={{ color: C.amber }}>LOG</span></div>
       </div>
 
       {/* Selected workout hero */}
@@ -2108,19 +2581,10 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
         </button>
       </div>
 
-      {/* Stats row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 16 }}>
-        {[
-          { label: 'Total sessions', value: sessions.length, icon: 'dumbbell' },
-          { label: 'Sessions this week', value: weekSessions.length + '/3', icon: 'calendar' },
-          { label: 'Rides this week', value: weekRides.length, icon: 'bike' },
-        ].map((s, i) => (
-          <div key={i} style={{ ...st.card(), textAlign: 'center', padding: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-            <Icon name={s.icon} size={22} color={C.amber} />
-            <div style={{ fontFamily: C.fMono, fontSize: 22, color: C.amber, lineHeight: 1 }}>{s.value}</div>
-            <div style={{ ...st.label, fontSize: 9, marginTop: 5, lineHeight: 1.4 }}>{s.label}</div>
-          </div>
-        ))}
+      {/* ── Cycling + Strength week ── */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+        <CyclingWeekCard rides={rides} />
+        <StrengthWeekCard sessions={sessions} allExercises={allExercises} />
       </div>
 
       {/* Cloud sync status */}
@@ -6197,7 +6661,8 @@ export default function App() {
             driveSync={driveSync} onCloudSync={handleCloudSync}
             updateAvailable={updateAvailable} onWarmupOpen={setWarmupDemoItem}
             onDemoOpen={setDemoExId}
-            coachRec={coachRec} showWhy={showWhy} setShowWhy={setShowWhy} />
+            coachRec={coachRec} showWhy={showWhy} setShowWhy={setShowWhy}
+            healthData={healthData} />
         )}
         {view === 'workout' && (
           <>
