@@ -1548,10 +1548,27 @@ function healthWorkoutCorrelation(sessions, hrvReadings) {
   };
 }
 
-function HealthLineChart({ data, metric, height = 136 }) {
+// "2026-05-30" → "May 30"
+function fmtHealthDate(dateStr) {
+  if (!dateStr) return '';
+  const [, m, d] = dateStr.split('-');
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${months[parseInt(m, 10) - 1]} ${parseInt(d, 10)}`;
+}
+
+// HRV recovery status relative to rolling average
+function hrvStatus(latest, avg) {
+  if (!latest || !avg) return null;
+  const ratio = latest / avg;
+  if (ratio >= 1.05) return { label: 'GOOD', color: C.green };
+  if (ratio >= 0.88) return { label: 'FAIR', color: C.amber };
+  return { label: 'LOW', color: C.red };
+}
+
+function HealthLineChart({ data, metric, height = 136, trainedDates }) {
   const vals = data.map(d => Number(d.value)).filter(Number.isFinite);
   if (!vals.length) return null;
-  const W = 320, H = height, pad = { top: 14, right: 14, bottom: 24, left: 34 };
+  const W = 320, H = height, pad = { top: 14, right: 14, bottom: 28, left: 34 };
   const rawMin = Math.min(...vals), rawMax = Math.max(...vals);
   const span = rawMax === rawMin ? 1 : rawMax - rawMin;
   const yMin = rawMin - span * 0.12;
@@ -1576,24 +1593,29 @@ function HealthLineChart({ data, metric, height = 136 }) {
         const val = Number(d.value);
         const better = metric.lowBetter ? val <= avg : val >= avg;
         const fill = metric.avgLine ? (better ? C.green : val < avg * 0.85 ? C.red : C.amber) : metric.color;
-        return <circle key={d.date} cx={xOf(i)} cy={yOf(val)} r={4} fill={fill} />;
+        const isWorkout = trainedDates?.has(d.date);
+        return (
+          <g key={d.date}>
+            <circle cx={xOf(i)} cy={yOf(val)} r={4} fill={fill} />
+            {isWorkout && <polygon points={`${xOf(i)},${H - pad.bottom + 6} ${xOf(i) - 4},${H - pad.bottom + 14} ${xOf(i) + 4},${H - pad.bottom + 14}`} fill={C.amber} opacity={0.8} />}
+          </g>
+        );
       })}
       <text x={pad.left} y={11} fill={C.muted} fontSize={8} fontFamily={C.fMono}>{Math.round(yMax * 10) / 10}</text>
-      <text x={pad.left} y={H - 4} fill={C.muted} fontSize={8} fontFamily={C.fMono}>{Math.round(yMin * 10) / 10}</text>
       {data.length > 1 && (
         <>
-          <text x={pad.left} y={H - 5} fill={C.muted} fontSize={8} fontFamily={C.fMono}>{data[0].date.slice(5)}</text>
-          <text x={W - pad.right} y={H - 5} fill={C.muted} fontSize={8} textAnchor="end" fontFamily={C.fMono}>{data[data.length - 1].date.slice(5)}</text>
+          <text x={pad.left} y={H - 3} fill={C.muted} fontSize={8} fontFamily={C.fMono}>{fmtHealthDate(data[0].date)}</text>
+          <text x={W - pad.right} y={H - 3} fill={C.muted} fontSize={8} textAnchor="end" fontFamily={C.fMono}>{fmtHealthDate(data[data.length - 1].date)}</text>
         </>
       )}
     </svg>
   );
 }
 
-function HealthBarChart({ data, metric, height = 136 }) {
+function HealthBarChart({ data, metric, height = 136, trainedDates }) {
   const vals = data.map(d => Number(d.value)).filter(Number.isFinite);
   if (!vals.length) return null;
-  const W = 320, H = height, pad = { top: 12, right: 12, bottom: 24, left: 28 };
+  const W = 320, H = height, pad = { top: 12, right: 12, bottom: 28, left: 28 };
   const target = metric.target;
   const maxVal = Math.max(...vals, target || 0, 1);
   const innerH = H - pad.top - pad.bottom;
@@ -1611,14 +1633,21 @@ function HealthBarChart({ data, metric, height = 136 }) {
       )}
       {data.map((d, i) => {
         const val = Number(d.value);
+        const cx = pad.left + i * (barW + gap) + barW / 2;
         const x = pad.left + i * (barW + gap);
         const y = yOf(val);
         const ratio = target ? val / target : 1;
         const fill = target ? (ratio >= 1 ? C.green : ratio >= 0.7 ? C.amber : C.red) : metric.color;
-        return <rect key={d.date} x={x} y={y} width={Math.max(2, barW)} height={Math.max(2, H - pad.bottom - y)} rx={3} fill={fill} />;
+        const isWorkout = trainedDates?.has(d.date);
+        return (
+          <g key={d.date}>
+            <rect x={x} y={y} width={Math.max(2, barW)} height={Math.max(2, H - pad.bottom - y)} rx={3} fill={fill} />
+            {isWorkout && <polygon points={`${cx},${H - pad.bottom + 6} ${cx - 4},${H - pad.bottom + 14} ${cx + 4},${H - pad.bottom + 14}`} fill={C.amber} opacity={0.8} />}
+          </g>
+        );
       })}
-      <text x={pad.left} y={H - 5} fill={C.muted} fontSize={8} fontFamily={C.fMono}>{data[0].date.slice(5)}</text>
-      <text x={W - pad.right} y={H - 5} fill={C.muted} fontSize={8} textAnchor="end" fontFamily={C.fMono}>{data[data.length - 1].date.slice(5)}</text>
+      <text x={pad.left} y={H - 3} fill={C.muted} fontSize={8} fontFamily={C.fMono}>{fmtHealthDate(data[0].date)}</text>
+      <text x={W - pad.right} y={H - 3} fill={C.muted} fontSize={8} textAnchor="end" fontFamily={C.fMono}>{fmtHealthDate(data[data.length - 1].date)}</text>
     </svg>
   );
 }
@@ -4584,11 +4613,63 @@ function HealthView({ sessions, allExercises, healthData, setHealthData }) {
     </>
   );
 
+  // Trained dates set for workout markers on charts
+  const trainedDates = new Set(
+    sessions.filter(s => s.completed).map(s => s.date ? localDateStr(new Date(s.date)) : null).filter(Boolean)
+  );
+
   const metricCards = HEALTH_METRICS.map(metric => {
     const readings = healthData[metric.key] || [];
     const chartData = metric.sparse ? readings.slice(-12) : lastNDaysReadings(readings, metric.days);
     const latest = readings[readings.length - 1];
-    const trend = metric.key === 'restingHr' ? healthSevenDayTrend(readings) : null;
+
+    // Per-metric annotations
+    let annotation = null;
+    if (metric.key === 'hrv' && latest) {
+      const avg = readings.length ? readings.reduce((s, r) => s + Number(r.value), 0) / readings.length : null;
+      const status = hrvStatus(Number(latest.value), avg);
+      if (status) annotation = (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+          <span style={{ ...st.pill(status.color), fontSize: 11, fontWeight: 700 }}>{status.label}</span>
+          <span style={{ fontFamily: C.fMono, fontSize: 10, color: C.muted }}>
+            {Number(latest.value) > avg ? '+' : ''}{Math.round((Number(latest.value) - avg) * 10) / 10} ms vs avg
+          </span>
+        </div>
+      );
+    }
+    if (metric.key === 'restingHr') {
+      const trend = healthSevenDayTrend(readings);
+      if (trend != null) {
+        const improving = trend < 0; // lower HR = better
+        annotation = (
+          <div style={{ fontFamily: C.fMono, fontSize: 11, color: improving ? C.green : C.amber, marginTop: 8 }}>
+            {improving ? '↓' : '↑'} {Math.abs(trend)} bpm this week — {improving ? 'improving ✓' : 'trending up'}
+          </div>
+        );
+      }
+    }
+    if (metric.key === 'steps' && metric.target) {
+      const recent = lastNDaysReadings(readings, metric.days);
+      const hit = recent.filter(r => Number(r.value) >= metric.target).length;
+      annotation = (
+        <div style={{ fontFamily: C.fMono, fontSize: 10, color: C.muted, marginTop: 8 }}>
+          {hit} / {recent.length} days hit {metric.target.toLocaleString()} target
+          {recent.length > 0 && <span style={{ color: hit / recent.length >= 0.7 ? C.green : C.amber }}>{' '}({Math.round(hit / recent.length * 100)}%)</span>}
+        </div>
+      );
+    }
+    if (metric.key === 'activeCal') {
+      const recent = lastNDaysReadings(readings, 7);
+      if (recent.length) {
+        const avg = Math.round(recent.reduce((s, r) => s + Number(r.value), 0) / recent.length);
+        annotation = (
+          <div style={{ fontFamily: C.fMono, fontSize: 10, color: C.muted, marginTop: 8 }}>
+            7-day avg: <span style={{ color: C.text }}>{avg.toLocaleString()} kcal</span>
+          </div>
+        );
+      }
+    }
+
     return (
       <div key={metric.id} style={{ ...st.card(), marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', marginBottom: 10 }}>
@@ -4602,32 +4683,31 @@ function HealthView({ sessions, allExercises, healthData, setHealthData }) {
         </div>
         {latest && (
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 8 }}>
-            <span style={{ fontFamily: C.fDisplay, fontSize: 26, fontWeight: 900, color: metric.color }}>{latest.value.toLocaleString()}</span>
+            <span style={{ fontFamily: C.fDisplay, fontSize: 26, fontWeight: 900, color: metric.color }}>{Number(latest.value).toLocaleString()}</span>
             <span style={{ fontFamily: C.fMono, fontSize: 11, color: C.muted }}>{metric.unit}</span>
-            <span style={{ fontFamily: C.fMono, fontSize: 10, color: C.muted, marginLeft: 'auto' }}>{latest.date}</span>
+            <span style={{ fontFamily: C.fMono, fontSize: 10, color: C.muted, marginLeft: 'auto' }}>{fmtHealthDate(latest.date)}</span>
           </div>
         )}
         {!readings.length ? (
           <div style={{ background: C.dim, borderRadius: 6, padding: 16, textAlign: 'center', color: C.muted, fontSize: 12 }}>
-            No readings imported yet.
+            No data yet — auto-syncs nightly via Health Auto Export.
           </div>
         ) : chartData.length < (metric.type === 'line' && !metric.sparse ? 2 : 1) ? (
           <div style={{ background: C.dim, borderRadius: 6, padding: 16, textAlign: 'center', color: C.muted, fontSize: 12 }}>
             Import more readings to draw this chart.
           </div>
         ) : metric.type === 'line' ? (
-          <HealthLineChart data={chartData} metric={metric} />
+          <HealthLineChart data={chartData} metric={metric} trainedDates={trainedDates} />
         ) : (
-          <HealthBarChart data={chartData} metric={metric} />
+          <HealthBarChart data={chartData} metric={metric} trainedDates={trainedDates} />
         )}
-        {metric.note && <div style={{ fontSize: 12, color: C.muted, marginTop: 8 }}>{metric.note}</div>}
-        {metric.target && <div style={{ fontFamily: C.fMono, fontSize: 10, color: C.muted, marginTop: 8 }}>Target: {metric.target.toLocaleString()} {metric.unit}/day</div>}
-        {trend != null && trend > 0 && (
-          <div style={{ fontFamily: C.fMono, fontSize: 10, color: C.amber, marginTop: 8 }}>
-            7-day average is up {trend} bpm.
+        {annotation}
+        {metric.sparse && <div style={{ fontSize: 12, color: C.muted, marginTop: 8 }}>Apple updates this estimate infrequently — requires outdoor GPS activity.</div>}
+        {trainedDates.size > 0 && chartData.length > 0 && (
+          <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, marginTop: 6 }}>
+            ▲ workout days
           </div>
         )}
-        {metric.sparse && <div style={{ fontSize: 12, color: C.muted, marginTop: 8 }}>Apple updates this estimate infrequently.</div>}
       </div>
     );
   });
@@ -4644,18 +4724,6 @@ function HealthView({ sessions, allExercises, healthData, setHealthData }) {
 
       <div style={{ marginTop: 24 }}>
         {sectionHeader('Body', 'heart')}
-        <div style={{ ...st.card(C.blue + '0f'), borderColor: C.blue + '33', marginBottom: 16, padding: '12px 14px' }}>
-          <div style={{ fontFamily: C.fDisplay, fontSize: 16, fontWeight: 800, color: C.text, textTransform: 'uppercase', marginBottom: 4 }}>
-            Import Health Data
-          </div>
-          <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.45, marginBottom: 10 }}>
-            Use <strong style={{ color: C.text }}>Health Auto Export</strong> app → export last 30 days as JSON → paste below to import all metrics at once.
-          </div>
-          <button onClick={() => { setBulkImportOpen(true); setBulkText(''); setBulkError(''); setBulkResult(''); }}
-            style={{ ...st.btn(C.blue), fontSize: 13 }}>
-            Import Health Auto Export JSON
-          </button>
-        </div>
         {metricCards}
         {hrvCorrelation && (
           <div style={{ ...st.card(), marginBottom: 16, borderColor: hrvCorrelation.pct >= 0 ? C.green + '55' : C.amber + '55' }}>
@@ -4670,6 +4738,12 @@ function HealthView({ sessions, allExercises, healthData, setHealthData }) {
             </div>
           </div>
         )}
+        <div style={{ textAlign: 'center', marginBottom: 8 }}>
+          <button onClick={() => { setBulkImportOpen(true); setBulkText(''); setBulkError(''); setBulkResult(''); }}
+            style={{ background: 'none', border: 'none', color: C.muted, fontSize: 11, fontFamily: C.fMono, cursor: 'pointer', textDecoration: 'underline' }}>
+            Manual import (Health Auto Export JSON)
+          </button>
+        </div>
       </div>
 
       {bulkImportOpen && (
