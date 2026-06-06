@@ -3982,6 +3982,31 @@ function IronSeriesView({ sessions, allExercises, onStart, onDemoOpen }) {
           />
         )}
 
+        {/* Equipment checklist */}
+        {wkt.equipment && wkt.equipment.length > 0 && (() => {
+          const EQUIP_ICON = { 'Dumbbells': '🏋️', 'Exercise Mat': '🟦', 'Chair or Bench': '🪑', 'Yoga Block': '🧱', 'Glute Band': '🔴' };
+          return (
+            <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 10, marginBottom: 10 }}>
+              <div style={{ fontSize: 10, fontFamily: C.fMono, color: C.muted, letterSpacing: '0.8px', textTransform: 'uppercase', marginBottom: 6 }}>
+                You'll need
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {wkt.equipment.map(item => (
+                  <span key={item} style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                    background: C.dim, border: `1px solid ${C.border}`,
+                    borderRadius: 8, padding: '4px 10px',
+                    fontSize: 12, color: C.text, fontFamily: C.fBase,
+                  }}>
+                    {EQUIP_ICON[item] || '●'} {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* YouTube link */}
         {wkt.ytId ? (
           <button
             onClick={() => setYtModal(true)}

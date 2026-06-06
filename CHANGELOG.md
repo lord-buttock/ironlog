@@ -4,6 +4,15 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-06-07 — Iron Series icons, equipment list, exercise library (Claude Sonnet 4.6)
+
+- Iron Series exercise library: all 40 `IRON_EXERCISES` now appear in Manage → Library → Exercises, searchable by name
+- Added `Quads` and `Hamstrings` to `MUSCLE_FILTERS`; filter now checks `ex.primaryMuscle` in addition to `ex.muscle` so Iron exercises sort correctly into anatomical filter pills
+- Added `equipment` arrays to all 30 `IRON_WORKOUTS` entries (sourced from original video descriptions): Dumbbells, Exercise Mat, Chair or Bench, Yoga Block, Glute Band as applicable per day
+- IronSeriesView: equipment checklist renders below exercise list — emoji-tagged chips (🏋️ Dumbbells / 🟦 Mat / 🪑 Chair or Bench / 🧱 Yoga Block / 🔴 Glute Band) under a "YOU'LL NEED" header, divider above YouTube link
+- Codex icon generation: Batches 1–3 complete and pushed (exercises 1–15: heel-elevated squat → bench dip); Batch 4 in progress (exercises 16–20)
+- Iron Series tap-to-animate: ExerciseIcon components in IronSeriesView now pass `onDemoOpen` handler — tapping an icon opens ExerciseDemoModal
+
 ## 2026-06-06 — Sleep-aware recovery score (Claude Sonnet 4.6)
 
 - `computeRecovery()` now adapts automatically based on sleep data availability
