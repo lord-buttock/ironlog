@@ -40,18 +40,22 @@ A personal fitness tracking PWA for Phill (age 51, male, returning to training a
 
 ## Document map — what to read and when
 
-| Document | Purpose | When to read |
-|---|---|---|
-| **CLAUDE.md** (this file) | Canonical session guide — paths, rules, working protocol | First, every session |
-| **CHANGELOG.md** | Every change ever made, reverse-chronological | Before starting any work |
-| **BUGS.md** | Open and closed bugs with IDs | Before starting any work |
-| **ROADMAP.md** | Planned features, priorities, agent notes | Before starting any work |
-| **README.md** | Detailed architecture, user profile, medical constraints | When you need deeper context |
-| **DECISIONS.md** | Technical decisions and why they were made | When making architectural choices |
+| Document | Purpose | When to read | When to update |
+|---|---|---|---|
+| **CLAUDE.md** (this file) | Canonical session guide — paths, rules, working protocol | First, every session | When rules or architecture change |
+| **CHANGELOG.md** | Every change ever made, reverse-chronological | Before starting any work | **After every meaningful change** |
+| **BUGS.md** | Open and closed bugs with IDs | Before starting any work | When bugs are found or fixed |
+| **ROADMAP.md** | Planned features, priorities, agent notes | Before starting any work | **After every session — reflect current state** |
+| **README.md** | Detailed architecture, user profile, medical constraints | When you need deeper context | When architecture changes significantly |
+| **DECISIONS.md** | Technical decisions and why they were made | When making architectural choices | When a significant technical decision is made |
+
+> **Ground truth rule:** CHANGELOG.md and ROADMAP.md are how the next agent session knows what happened. If they are not updated, the next session starts blind. **Always update these before closing a session** — even a one-liner in CHANGELOG.md is enough. If you opened ROADMAP.md at the start of a session, update it at the end.
 | `docs/superpowers/specs/` | Feature design specs (Claude-authored, Phill-approved) | When implementing a feature — read the relevant spec |
 | `CODEX_COACH_BRIEF_R4.md` | AI Coach debug brief — feature now complete and deployed | Historical reference only |
 
 **Do not rely on memory of previous sessions.** Always read CHANGELOG.md, BUGS.md, and ROADMAP.md fresh — they are the ground truth for what has and hasn't been done.
+
+**These documents must also be kept current.** Every session that makes a change must update them before closing. This is how the next session — whether Claude, Codex, or a fresh context — knows what happened. A session that doesn't update the docs has left the project in a worse state than it found it.
 
 ---
 
