@@ -2408,6 +2408,87 @@ function MetricSparkline({ data, color, height = 36 }) {
   );
 }
 
+function metricStatusColor(metric, value, baseline) {
+  if (!Number.isFinite(value) || !baseline) return metric?.color || C.blue;
+  if (metric?.key === 'steps' && metric?.target) return value >= metric.target ? C.green : value >= metric.target * 0.65 ? C.amber : C.red;
+  if (metric?.higherBetter === true) return value >= baseline * 0.95 ? C.green : value >= baseline * 0.88 ? C.amber : C.red;
+  if (metric?.higherBetter === false) return value <= baseline * 1.05 ? C.green : value <= baseline * 1.1 ? C.amber : C.red;
+  return value <= baseline * 1.15 ? C.green : value <= baseline * 1.3 ? C.amber : C.red;
+}
+
+function MetricInsightChart({ metric, data, baseline }) {
+  const points = (data || []).slice(-14)
+    .map(d => ({ date: d.date, value: Number(d.value) }))
+    .filter(d => d.date && Number.isFinite(d.value));
+  if (points.length < 2) return <div style={{ height: 150, display: 'grid', placeItems: 'center', color: C.muted, fontSize: 12 }}>More readings needed for a trend chart.</div>;
+  const W = 360, H = 178, pL = 42, pR = 12, pT = 14, pB = 34;
+  const iW = W - pL - pR, iH = H - pT - pB;
+  const values = points.map(p => p.value);
+  const allValues = baseline ? [...values, baseline] : values;
+  const min = Math.min(...allValues);
+  const max = Math.max(...allValues);
+  const span = max === min ? Math.max(1, max * 0.08) : max - min;
+  const lo = Math.max(0, min - span * 0.18);
+  const hi = max + span * 0.18;
+  const xOf = i => pL + (i / Math.max(points.length - 1, 1)) * iW;
+  const yOf = v => pT + iH - ((v - lo) / Math.max(hi - lo, 1)) * iH;
+  const axisLabel = metric?.unit ? `${metric.title} (${metric.unit})` : metric?.title;
+  const yTicks = [hi, (hi + lo) / 2, lo];
+  const labelIdx = [...new Set([0, Math.floor((points.length - 1) / 2), points.length - 1])];
+  const baseY = baseline ? yOf(baseline) : null;
+  return (
+    <div>
+      <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 190, display: 'block' }}>
+        <text x={pL} y={9} fill={C.muted} fontSize={8} fontFamily={C.fMono}>{axisLabel}</text>
+        <line x1={pL} y1={pT} x2={pL} y2={H - pB} stroke={C.border} strokeWidth={1.2} />
+        <line x1={pL} y1={H - pB} x2={W - pR} y2={H - pB} stroke={C.border} strokeWidth={1.2} />
+        {yTicks.map((tick, i) => {
+          const y = yOf(tick);
+          return (
+            <g key={i}>
+              <line x1={pL} y1={y} x2={W - pR} y2={y} stroke={C.border} strokeWidth={1} strokeDasharray="4,4" opacity={i === 2 ? 0 : 1} />
+              <text x={pL - 7} y={y + 3} fill={C.muted} fontSize={8} textAnchor="end" fontFamily={C.fMono}>{Math.round(tick * 10) / 10}</text>
+            </g>
+          );
+        })}
+        {baseY != null && (
+          <g>
+            <line x1={pL} y1={baseY} x2={W - pR} y2={baseY} stroke={C.blue} strokeWidth={1.5} strokeDasharray="5,4" opacity={0.65} />
+            <rect x={W - 74} y={Math.max(12, baseY - 16)} width={62} height={14} rx={4} fill="#fff" opacity={0.92} />
+            <text x={W - 43} y={Math.max(22, baseY - 6)} fill={C.blue} fontSize={8} textAnchor="middle" fontFamily={C.fMono}>Baseline</text>
+          </g>
+        )}
+        {points.slice(1).map((p, i) => {
+          const prev = points[i];
+          const color = metricStatusColor(metric, p.value, baseline);
+          return <line key={`${prev.date}-${p.date}`} x1={xOf(i)} y1={yOf(prev.value)} x2={xOf(i + 1)} y2={yOf(p.value)} stroke={color} strokeWidth={3} strokeLinecap="round" />;
+        })}
+        {points.map((p, i) => {
+          const color = metricStatusColor(metric, p.value, baseline);
+          return <circle key={p.date} cx={xOf(i)} cy={yOf(p.value)} r={4} fill={color} stroke="#fff" strokeWidth={1.5} />;
+        })}
+        {labelIdx.map(i => (
+          <text key={points[i].date} x={xOf(i)} y={H - 10} fill={C.muted} fontSize={8} textAnchor={i === 0 ? 'start' : i === points.length - 1 ? 'end' : 'middle'} fontFamily={C.fMono}>
+            {fmtHealthDate(points[i].date)}
+          </text>
+        ))}
+      </svg>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginTop: -4 }}>
+        {[
+          { label: 'Good / normal', color: C.green },
+          { label: 'Caution', color: C.amber },
+          { label: 'High strain', color: C.red },
+        ].map(item => (
+          <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: C.fMono, fontSize: 8, color: C.muted }}>
+            <span style={{ width: 8, height: 8, borderRadius: 4, background: item.color, display: 'inline-block' }} />
+            {item.label}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // Dual-axis HRV + Resting HR chart with 7D/30D/90D
 function RecoveryTrendChart({ healthData, days }) {
   const hrv = lastNDaysReadings(healthData?.hrv || [], days);
@@ -2982,39 +3063,6 @@ function ReadinessSummaryCard({ recovery, fatigue, healthData, watchSummary, set
   );
 }
 
-function TrainingRecommendationTiles({ recovery, fatigue, sessions, setView }) {
-  const verdict = readinessVerdict(recovery, fatigue, {});
-  const ironDay = nextIronDay(sessions);
-  const strengthMode = verdict.title.includes('lighter') || verdict.title.includes('steady') ? 'Moderate' : verdict.title.includes('Recovery') ? 'Recovery' : 'Recommended';
-  const cyclingMode = verdict.title.includes('Recovery') ? 'Recovery ride' : 'Easy endurance';
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
-      {[
-        { icon: 'dumbbell', title: 'Strength', status: strengthMode, lines: [`Iron Day ${ironDay}`, strengthMode === 'Moderate' ? 'Reduce load 10%' : strengthMode === 'Recovery' ? 'Mobility only' : 'Normal plan'], action: 'View plan', color: C.blue },
-        { icon: 'bike', title: 'Cycling', status: cyclingMode, lines: [cyclingMode === 'Recovery ride' ? '15-20 min' : '25-35 min', 'Zone 2'], action: 'Plan ride', color: C.green },
-      ].map(tile => (
-        <button key={tile.title} onClick={() => setView(tile.title === 'Strength' ? 'workout' : 'rides')} style={{
-          ...dash.card({ padding: 12, textAlign: 'left', cursor: 'pointer', minHeight: 96 }),
-          borderColor: tile.title === 'Cycling' ? C.green + '30' : C.border,
-          background: tile.title === 'Cycling' ? 'linear-gradient(135deg,#fff,#f3fff6)' : C.card,
-        }}>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-            <div style={dash.iconBox(tile.color)}><Icon name={tile.icon} size={19} color={tile.color} /></div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ ...dash.label, color: tile.color }}>{tile.title}</div>
-              <div style={{ fontFamily: C.fBody, fontSize: 15, fontWeight: 800, color: '#0d1838', marginTop: 3 }}>{tile.status}</div>
-              {tile.lines.map(line => <div key={line} style={{ fontFamily: C.fBody, fontSize: 12, color: C.muted, lineHeight: 1.2 }}>{line}</div>)}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 7, color: tile.color, fontSize: 12, fontWeight: 800 }}>
-                <span>{tile.action}</span><Icon name="chevron-right" size={14} color={tile.color} />
-              </div>
-            </div>
-          </div>
-        </button>
-      ))}
-    </div>
-  );
-}
-
 function HomeInsightShell({ title, tone = C.blue, onClose, children }) {
   return (
     <div style={{
@@ -3084,7 +3132,7 @@ function HomeMetricInsightModal({ metric, healthData, onClose }) {
       </div>
       <div style={{ ...st.card(), marginBottom: 12 }}>
         <div style={{ ...st.label, marginBottom: 8 }}>Recent trend</div>
-        <MetricSparkline data={data} color={metric.color} height={64} />
+        <MetricInsightChart metric={metric} data={data} baseline={base} />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10 }}>
           <div style={{ background: C.dim, borderRadius: 8, padding: 9 }}>
             <div style={{ ...st.label, fontSize: 8 }}>7-day baseline</div>
@@ -3401,7 +3449,6 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
       {homeInsight?.type === 'trend' && (
         <TrendInsightModal healthData={hd} trendDays={trendDays} onClose={() => setHomeInsight(null)} />
       )}
-      <TrainingRecommendationTiles recovery={recovery} fatigue={fatigue} sessions={sessions} setView={setView} />
       {hasHealthData && <DailySignalsStrip healthData={hd} onMetricTap={metric => setHomeInsight({ type: 'metric', metric })} />}
       {hasHealthData && (hd.hrv?.length > 1 || hd.restingHr?.length > 1) && (
         <RecoveryTrendCard healthData={hd} trendDays={trendDays} setTrendDays={setTrendDays} onTrendTap={() => setHomeInsight({ type: 'trend' })} />

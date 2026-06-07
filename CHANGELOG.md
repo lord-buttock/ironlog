@@ -4,6 +4,11 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-06-07 — Home metric chart clarity (Codex)
+
+- Removed the Strength and Cycling recommendation tiles from Home because they only navigated to other tabs without adding insight
+- Replaced the HRV/resting HR modal sparkline with a wider labelled chart showing axes, dates, 7-day baseline, and green/amber/red status context
+
 ## 2026-06-07 — Readiness chip modal routing fix (Codex)
 
 - HRV and resting HR readiness chips now open metric-specific insight modals instead of the overall readiness plan
