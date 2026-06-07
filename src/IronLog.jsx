@@ -2955,19 +2955,21 @@ function ReadinessSummaryCard({ recovery, fatigue, healthData, watchSummary, set
           </div>
         ))}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10, marginTop: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: primaryOpensInsight ? '1fr' : '2fr 1fr', gap: 10, marginTop: 12 }}>
         <button onClick={() => primaryOpensInsight ? onSeeWhy() : setView('workout')} style={{
           border: 'none', borderRadius: 9, padding: '12px 14px', background: C.blue, color: '#fff',
           fontFamily: C.fBody, fontSize: 14, fontWeight: 800, display: 'flex', alignItems: 'center',
           justifyContent: 'space-between', cursor: 'pointer', boxShadow: '0 8px 18px rgba(91,157,245,.24)',
         }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}><Icon name="dumbbell" size={18} color="#fff" />{verdict.action}</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}><Icon name="dumbbell" size={18} color="#fff" />{primaryOpensInsight ? 'View recovery plan' : verdict.action}</span>
           <Icon name="chevron-right" size={18} color="#fff" />
         </button>
-        <button onClick={onSeeWhy} style={{
-          border: `1px solid ${C.border}`, borderRadius: 9, padding: '12px 10px', background: '#fff', color: '#0d1838',
-          fontFamily: C.fBody, fontSize: 14, fontWeight: 700, cursor: 'pointer',
-        }}>See why</button>
+        {!primaryOpensInsight && (
+          <button onClick={onSeeWhy} style={{
+            border: `1px solid ${C.border}`, borderRadius: 9, padding: '12px 10px', background: '#fff', color: '#0d1838',
+            fontFamily: C.fBody, fontSize: 14, fontWeight: 700, cursor: 'pointer',
+          }}>See why</button>
+        )}
       </div>
     </div>
   );
@@ -3482,24 +3484,26 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
 // ═══════════════════════════════════════════════════════════════════════
 // SET ROW
 // ═══════════════════════════════════════════════════════════════════════
-function SetRow({ num, set, def, onUpdate, onDone }) {
+function SetRow({ num, set, def, onUpdate, onStart, onDone, nowMs }) {
   const done = set.done;
+  const started = !!set.setStartedAt && !done;
+  const setElapsed = started ? Math.max(0, Math.floor((nowMs - new Date(set.setStartedAt).getTime()) / 1000)) : 0;
   const isTimed = def.isTimed;
   const isBW = def.unit === 'bw' || def.unit === 'band';
   const isPullup = !!def.pullupTracking;
   const pullupMode = set.mode || 'bw'; // 'bw' | 'band' | 'neg'
 
   const gridCols = isTimed
-    ? '28px minmax(52px,1fr) 56px 56px 38px'
+    ? '36px minmax(52px,1fr) 56px 56px 64px'
     : (isBW && !isPullup)
-      ? '28px minmax(48px,.8fr) minmax(48px,1fr) 56px 56px 38px'
+      ? '36px minmax(48px,.8fr) minmax(48px,1fr) 56px 56px 64px'
       : isPullup && pullupMode === 'band'
-        ? '28px minmax(0,1.2fr) minmax(48px,.8fr) 56px 56px 38px'
+        ? '36px minmax(0,1.2fr) minmax(48px,.8fr) 56px 56px 64px'
         : isPullup && pullupMode === 'neg'
-          ? '28px minmax(48px,.8fr) minmax(48px,.8fr) 56px 56px 38px'
+          ? '36px minmax(48px,.8fr) minmax(48px,.8fr) 56px 56px 64px'
           : isPullup
-            ? '28px minmax(48px,.8fr) minmax(48px,1fr) 56px 56px 38px'
-            : '28px minmax(0,1fr) minmax(0,1fr) 56px 56px 38px';
+            ? '36px minmax(48px,.8fr) minmax(48px,1fr) 56px 56px 64px'
+            : '36px minmax(0,1fr) minmax(0,1fr) 56px 56px 64px';
   const loadLabel = def.unit === 'band' ? 'BAND' : 'BW';
 
   return (
@@ -3521,8 +3525,8 @@ function SetRow({ num, set, def, onUpdate, onDone }) {
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: gridCols, gap: 5, alignItems: 'center' }}>
-        <div style={{ fontFamily: C.fMono, fontSize: 13, color: done ? C.green : C.muted, textAlign: 'center', fontWeight: 600 }}>
-          {done ? '✓' : num}
+        <div style={{ fontFamily: C.fMono, fontSize: started ? 10 : 13, color: done ? C.green : started ? C.blue : C.muted, textAlign: 'center', fontWeight: 700, lineHeight: 1.1 }}>
+          {done ? '✓' : started ? fmtTimer(setElapsed) : num}
         </div>
 
         {isTimed ? (
@@ -3562,16 +3566,22 @@ function SetRow({ num, set, def, onUpdate, onDone }) {
           {[0,1,2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n}>{n}</option>)}
         </select>
 
-        <button onClick={onDone} disabled={done} style={{
-          background: done ? C.green + '33' : C.amber, border: 'none', borderRadius: 4,
-          padding: '7px 0', cursor: done ? 'default' : 'pointer', fontSize: 14, width: '100%',
+        <button onClick={done ? undefined : started ? onDone : onStart} disabled={done} style={{
+          background: done ? C.green + '33' : started ? C.blue : C.amber, border: 'none', borderRadius: 4,
+          padding: '7px 0', cursor: done ? 'default' : 'pointer', fontSize: 11, width: '100%',
+          color: started ? '#fff' : '#0a0f28', fontFamily: C.fMono, fontWeight: 800, textTransform: 'uppercase',
         }}>
-          {done ? '✓' : '›'}
+          {done ? '✓' : started ? 'Done' : 'Start'}
         </button>
       </div>
+      {started && (
+        <div style={{ ...st.mono(10, C.blue), marginTop: 5, textAlign: 'right' }}>
+          Set running · tap Done when finished
+        </div>
+      )}
 
       {!isTimed && !isBW && (
-        <div style={{ display: 'grid', gridTemplateColumns: '28px 1fr 1fr 56px 56px 38px', gap: 5, marginTop: 3 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: gridCols, gap: 5, marginTop: 3 }}>
           <div/><div style={{ ...st.label, fontSize: 9, textAlign: 'center' }}>kg</div>
           <div style={{ ...st.label, fontSize: 9, textAlign: 'center' }}>reps</div>
           <div style={{ ...st.label, fontSize: 9, textAlign: 'center' }}>rpe</div>
@@ -4748,8 +4758,28 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
           ...ex,
           sets: ex.sets.map((s, si) => {
             if (si !== sIdx) return s;
-            const shouldStart = field !== 'done' && !s.setStartedAt;
-            return { ...s, ...(shouldStart ? { setStartedAt: nowIso } : {}), [field]: val };
+            return { ...s, [field]: val };
+          }),
+        }),
+      };
+      setActiveSession(updated);
+      return updated;
+    });
+  }
+
+  function startSet(eIdx, sIdx) {
+    setSession(prev => {
+      const nowIso = new Date().toISOString();
+      const started = stampExerciseStart(prev, eIdx, nowIso);
+      const updated = {
+        ...started,
+        exercises: started.exercises.map((ex, ei) => ei !== eIdx ? ex : {
+          ...ex,
+          sets: ex.sets.map((set, si) => si !== sIdx ? set : {
+            ...set,
+            setStartedAt: set.setStartedAt || nowIso,
+            setCompletedAt: null,
+            done: false,
           }),
         }),
       };
@@ -5150,6 +5180,8 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
           {exData.sets.map((set, si) => (
             <SetRow key={si} num={si + 1} set={set} def={def}
               onUpdate={(f, v) => updateSet(exIdx, si, f, v)}
+              onStart={() => startSet(exIdx, si)}
+              nowMs={session.startTime ? session.startTime + elapsed * 1000 : Date.now()}
               onDone={() => doneSet(exIdx, si)} />
           ))}
         </div>

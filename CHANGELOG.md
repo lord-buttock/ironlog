@@ -4,6 +4,12 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-06-07 — Explicit Start Set timing and recovery CTA cleanup (Codex)
+
+- Recovery-day Home card now shows one primary action: "View recovery plan", which opens the readiness modal; duplicate top-card "See why" is hidden in that state
+- Set rows now use explicit `Start` → running timer → `Done` states so `setStartedAt` reflects when Phill starts the set, not when a field is edited
+- Completing a running set records `setCompletedAt`; completing without Start still has the conservative fallback for older/edge flows
+
 ## 2026-06-07 — Insight modal usability fixes (Codex)
 
 - Fixed Exercise InsightModal layering/scrolling so the bottom content is reachable above the app nav, including shorter mobile viewports
