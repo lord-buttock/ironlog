@@ -20,6 +20,7 @@ Iron Series programme fully integrated. 30-day Caroline Girvan dumbbell programm
 - ✅ Home screen redesigned toward approved polished mockup — Codex: readiness verdict card, training tiles, compact signals, recovery trend, and weekly summary now use Watch effort as one reason signal; ECG stays quiet unless an abnormal recent reading exists
 - ✅ Exercise effort intelligence foundation — Codex: forward-looking exercise/set timestamps, Watch sample fetch, confidence-scored effort helpers, and first rule-based "NEXT TIME" exercise recommendations
 - ✅ Exercise InsightModal — Codex: tappable exercise detail with recent performance chart, Watch effort confidence/status, and progression explanation
+- 🔄 Set start timing + recovery CTA cleanup in progress — Codex: simplify recovery-day Home actions and add explicit Start/Done set timing
 - 🔄 Next: add tappable Home health InsightModal screens for readiness, HRV, resting HR, Watch effort, and recovery trend
 - 🔄 Next: live-device polish after Phill tests Safari/PWA cache, first-screen fit, and whether the recommendation language feels useful during actual training days
 
