@@ -4,6 +4,11 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-06-07 — Smooth blended Home charts (Codex)
+
+- Updated Home metric sparklines, HRV/resting HR insight charts, and Recovery Trend lines to use smoothed SVG curves with blended status-colour strokes
+- Added green/blue/yellow/orange/red colour keys to the detailed trend surfaces so chart colours explain recovery signal severity
+
 ## 2026-06-07 — Home metric chart clarity (Codex)
 
 - Removed the Strength and Cycling recommendation tiles from Home because they only navigated to other tabs without adding insight

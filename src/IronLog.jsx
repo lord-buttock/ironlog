@@ -2382,18 +2382,61 @@ function FatigueBar({ level, color }) {
   );
 }
 
+function smoothLinePath(points, tension = 0.9) {
+  if (!points?.length) return '';
+  if (points.length === 1) return `M${points[0].x},${points[0].y}`;
+  const c = tension / 6;
+  return points.map((p, i) => {
+    if (i === 0) return `M${p.x.toFixed(1)},${p.y.toFixed(1)}`;
+    const p0 = points[i - 2] || points[i - 1];
+    const p1 = points[i - 1];
+    const p2 = p;
+    const p3 = points[i + 1] || p2;
+    const cp1x = p1.x + (p2.x - p0.x) * c;
+    const cp1y = p1.y + (p2.y - p0.y) * c;
+    const cp2x = p2.x - (p3.x - p1.x) * c;
+    const cp2y = p2.y - (p3.y - p1.y) * c;
+    return `C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
+  }).join(' ');
+}
+
+function chartColorKey() {
+  return [
+    { label: 'Good / normal', color: C.green },
+    { label: 'Near baseline', color: '#45a8f5' },
+    { label: 'Caution', color: '#f4d735' },
+    { label: 'Elevated caution', color: '#ff9f1c' },
+    { label: 'High strain', color: C.red },
+  ];
+}
+
+function gradientStopsForPoints(points, metric, baseline, fallbackColor) {
+  const safePoints = points || [];
+  if (safePoints.length < 2) return [{ offset: '0%', color: fallbackColor || metric?.color || C.blue }];
+  return safePoints.map((p, i) => ({
+    offset: `${Math.round((i / (safePoints.length - 1)) * 100)}%`,
+    color: metricStatusColor(metric, p.value, baseline),
+  }));
+}
+
 // Mini area sparkline with gradient fill — matches target mockup style
-function MetricSparkline({ data, color, height = 36 }) {
-  const vals = (data || []).slice(-14).map(d => Number(d.value)).filter(Number.isFinite);
+function MetricSparkline({ data, color, height = 36, metric, baseline }) {
+  const vals = (data || []).slice(-14)
+    .map(d => ({ date: d.date, value: Number(d.value) }))
+    .filter(d => Number.isFinite(d.value));
   if (vals.length < 2) return <div style={{ height }} />;
   const W = 100, H = height;
-  const min = Math.min(...vals), max = Math.max(...vals);
+  const rawVals = vals.map(d => d.value);
+  const min = Math.min(...rawVals), max = Math.max(...rawVals);
   const span = max === min ? 1 : max - min;
   const xOf = i => (i / (vals.length - 1)) * W;
   const yOf = v => (H - 4) - ((v - min) / span) * (H - 8);
-  const linePath = vals.map((v, i) => `${i === 0 ? 'M' : 'L'}${xOf(i).toFixed(1)},${yOf(v).toFixed(1)}`).join(' ');
+  const linePoints = vals.map((d, i) => ({ x: xOf(i), y: yOf(d.value), value: d.value }));
+  const linePath = smoothLinePath(linePoints, 0.75);
   const areaPath = `${linePath} L${xOf(vals.length - 1).toFixed(1)},${H} L0,${H} Z`;
-  const gId = `sg${color.replace(/[^a-z0-9]/gi, '')}`;
+  const gId = `sg${(metric?.key || color).replace(/[^a-z0-9]/gi, '')}${vals.length}`;
+  const strokeId = `${gId}stroke`;
+  const stops = gradientStopsForPoints(linePoints, metric, baseline, color);
   return (
     <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height, display: 'block' }}>
       <defs>
@@ -2401,19 +2444,44 @@ function MetricSparkline({ data, color, height = 36 }) {
           <stop offset="0%" stopColor={color} stopOpacity={0.28} />
           <stop offset="100%" stopColor={color} stopOpacity={0} />
         </linearGradient>
+        <linearGradient id={strokeId} x1="0" y1="0" x2="1" y2="0">
+          {stops.map((stop, i) => <stop key={i} offset={stop.offset} stopColor={stop.color} />)}
+        </linearGradient>
       </defs>
       <path d={areaPath} fill={`url(#${gId})`} />
-      <path d={linePath} fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+      <path d={linePath} fill="none" stroke={`url(#${strokeId})`} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 
 function metricStatusColor(metric, value, baseline) {
   if (!Number.isFinite(value) || !baseline) return metric?.color || C.blue;
-  if (metric?.key === 'steps' && metric?.target) return value >= metric.target ? C.green : value >= metric.target * 0.65 ? C.amber : C.red;
-  if (metric?.higherBetter === true) return value >= baseline * 0.95 ? C.green : value >= baseline * 0.88 ? C.amber : C.red;
-  if (metric?.higherBetter === false) return value <= baseline * 1.05 ? C.green : value <= baseline * 1.1 ? C.amber : C.red;
-  return value <= baseline * 1.15 ? C.green : value <= baseline * 1.3 ? C.amber : C.red;
+  if (metric?.key === 'steps' && metric?.target) {
+    if (value >= metric.target) return C.green;
+    if (value >= metric.target * 0.8) return '#45a8f5';
+    if (value >= metric.target * 0.6) return '#f4d735';
+    if (value >= metric.target * 0.35) return '#ff9f1c';
+    return C.red;
+  }
+  if (metric?.higherBetter === true) {
+    if (value >= baseline * 0.97) return C.green;
+    if (value >= baseline * 0.9) return '#45a8f5';
+    if (value >= baseline * 0.84) return '#f4d735';
+    if (value >= baseline * 0.78) return '#ff9f1c';
+    return C.red;
+  }
+  if (metric?.higherBetter === false) {
+    if (value <= baseline * 1.03) return C.green;
+    if (value <= baseline * 1.07) return '#45a8f5';
+    if (value <= baseline * 1.1) return '#f4d735';
+    if (value <= baseline * 1.15) return '#ff9f1c';
+    return C.red;
+  }
+  if (value <= baseline * 1.08) return C.green;
+  if (value <= baseline * 1.15) return '#45a8f5';
+  if (value <= baseline * 1.25) return '#f4d735';
+  if (value <= baseline * 1.4) return '#ff9f1c';
+  return C.red;
 }
 
 function MetricInsightChart({ metric, data, baseline }) {
@@ -2436,9 +2504,22 @@ function MetricInsightChart({ metric, data, baseline }) {
   const yTicks = [hi, (hi + lo) / 2, lo];
   const labelIdx = [...new Set([0, Math.floor((points.length - 1) / 2), points.length - 1])];
   const baseY = baseline ? yOf(baseline) : null;
+  const chartPoints = points.map((p, i) => ({ x: xOf(i), y: yOf(p.value), value: p.value }));
+  const smoothPath = smoothLinePath(chartPoints);
+  const gradientId = `metricInsight${(metric?.key || 'metric').replace(/[^a-z0-9]/gi, '')}${points.length}`;
+  const glowId = `${gradientId}Glow`;
+  const stops = gradientStopsForPoints(chartPoints, metric, baseline, metric?.color || C.blue);
   return (
     <div>
       <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 190, display: 'block' }}>
+        <defs>
+          <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="0">
+            {stops.map((stop, i) => <stop key={i} offset={stop.offset} stopColor={stop.color} />)}
+          </linearGradient>
+          <filter id={glowId} x="-8%" y="-25%" width="116%" height="150%">
+            <feDropShadow dx="0" dy="5" stdDeviation="5" floodColor={metric?.color || C.blue} floodOpacity="0.18" />
+          </filter>
+        </defs>
         <text x={pL} y={9} fill={C.muted} fontSize={8} fontFamily={C.fMono}>{axisLabel}</text>
         <line x1={pL} y1={pT} x2={pL} y2={H - pB} stroke={C.border} strokeWidth={1.2} />
         <line x1={pL} y1={H - pB} x2={W - pR} y2={H - pB} stroke={C.border} strokeWidth={1.2} />
@@ -2458,11 +2539,8 @@ function MetricInsightChart({ metric, data, baseline }) {
             <text x={W - 43} y={Math.max(22, baseY - 6)} fill={C.blue} fontSize={8} textAnchor="middle" fontFamily={C.fMono}>Baseline</text>
           </g>
         )}
-        {points.slice(1).map((p, i) => {
-          const prev = points[i];
-          const color = metricStatusColor(metric, p.value, baseline);
-          return <line key={`${prev.date}-${p.date}`} x1={xOf(i)} y1={yOf(prev.value)} x2={xOf(i + 1)} y2={yOf(p.value)} stroke={color} strokeWidth={3} strokeLinecap="round" />;
-        })}
+        <path d={smoothPath} fill="none" stroke={`url(#${gradientId})`} strokeWidth={5} strokeLinecap="round" strokeLinejoin="round" opacity={0.16} filter={`url(#${glowId})`} />
+        <path d={smoothPath} fill="none" stroke={`url(#${gradientId})`} strokeWidth={3.2} strokeLinecap="round" strokeLinejoin="round" />
         {points.map((p, i) => {
           const color = metricStatusColor(metric, p.value, baseline);
           return <circle key={p.date} cx={xOf(i)} cy={yOf(p.value)} r={4} fill={color} stroke="#fff" strokeWidth={1.5} />;
@@ -2474,11 +2552,7 @@ function MetricInsightChart({ metric, data, baseline }) {
         ))}
       </svg>
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginTop: -4 }}>
-        {[
-          { label: 'Good / normal', color: C.green },
-          { label: 'Caution', color: C.amber },
-          { label: 'High strain', color: C.red },
-        ].map(item => (
+        {chartColorKey().map(item => (
           <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: C.fMono, fontSize: 8, color: C.muted }}>
             <span style={{ width: 8, height: 8, borderRadius: 4, background: item.color, display: 'inline-block' }} />
             {item.label}
@@ -2510,25 +2584,43 @@ function RecoveryTrendChart({ healthData, days }) {
   const xOf = (i, n) => pL + (n < 2 ? 0.5 : i / (n - 1)) * iW;
   const yHRV = v => pT + iH - ((v - hLo) / (hHi - hLo)) * iH;
   const yRHR = v => pT + iH - ((v - rLo) / (rHi - rLo)) * iH;
-  const hrvPts = hrv.map((d, i) => `${xOf(i, hrv.length)},${yHRV(Number(d.value))}`).join(' ');
-  const rhrPts = rhr.map((d, i) => `${xOf(i, rhr.length)},${yRHR(Number(d.value))}`).join(' ');
+  const hrvMetric = { key: 'hrv', title: 'HRV', color: C.blue, higherBetter: true };
+  const rhrMetric = { key: 'restingHr', title: 'Resting HR', color: C.red, higherBetter: false };
+  const hrvXY = hrv.map((d, i) => ({ x: xOf(i, hrv.length), y: yHRV(Number(d.value)), value: Number(d.value) }));
+  const rhrXY = rhr.map((d, i) => ({ x: xOf(i, rhr.length), y: yRHR(Number(d.value)), value: Number(d.value) }));
+  const hrvPts = hrvXY.map(p => `${p.x},${p.y}`).join(' ');
+  const rhrPts = rhrXY.map(p => `${p.x},${p.y}`).join(' ');
+  const hrvSmooth = smoothLinePath(hrvXY);
+  const rhrSmooth = smoothLinePath(rhrXY);
+  const hrvGradientId = `recoveryHrv${days}${hrv.length}`;
+  const rhrGradientId = `recoveryRhr${days}${rhr.length}`;
+  const hrvStops = gradientStopsForPoints(hrvXY, hrvMetric, bHRV, C.blue);
+  const rhrStops = gradientStopsForPoints(rhrXY, rhrMetric, bRHR, C.red);
   const first = [...hrv, ...rhr].map(d => d.date).sort()[0];
   const last  = [...hrv, ...rhr].map(d => d.date).sort().reverse()[0];
   return (
     <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: H, display: 'block' }}>
+      <defs>
+        <linearGradient id={hrvGradientId} x1="0" y1="0" x2="1" y2="0">
+          {hrvStops.map((stop, i) => <stop key={i} offset={stop.offset} stopColor={stop.color} />)}
+        </linearGradient>
+        <linearGradient id={rhrGradientId} x1="0" y1="0" x2="1" y2="0">
+          {rhrStops.map((stop, i) => <stop key={i} offset={stop.offset} stopColor={stop.color} />)}
+        </linearGradient>
+      </defs>
       {[0.25, 0.5, 0.75].map((v, i) => (
         <line key={i} x1={pL} y1={pT + iH * v} x2={W - pR} y2={pT + iH * v} stroke={C.border} strokeWidth={1} strokeDasharray="3,3" />
       ))}
-      {hrvPts.length > 1 && <polyline points={hrvPts} fill="none" stroke={C.blue} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />}
+      {hrvPts.length > 1 && <path d={hrvSmooth} fill="none" stroke={`url(#${hrvGradientId})`} strokeWidth={2.9} strokeLinecap="round" strokeLinejoin="round" />}
       {hrv.map((d, i) => {
         const v = Number(d.value);
-        const col = bHRV ? (v >= bHRV * 0.95 ? C.green : v >= bHRV * 0.88 ? C.amber : C.red) : C.blue;
+        const col = metricStatusColor(hrvMetric, v, bHRV);
         return <circle key={d.date} cx={xOf(i, hrv.length)} cy={yHRV(v)} r={4} fill={col} />;
       })}
-      {rhrPts.length > 1 && <polyline points={rhrPts} fill="none" stroke={C.red} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" opacity={0.8} />}
+      {rhrPts.length > 1 && <path d={rhrSmooth} fill="none" stroke={`url(#${rhrGradientId})`} strokeWidth={2.9} strokeLinecap="round" strokeLinejoin="round" opacity={0.82} />}
       {rhr.map((d, i) => {
         const v = Number(d.value);
-        const col = bRHR ? (v <= bRHR * 1.05 ? C.green : v <= bRHR * 1.1 ? C.amber : C.red) : C.red;
+        const col = metricStatusColor(rhrMetric, v, bRHR);
         return <circle key={d.date} cx={xOf(i, rhr.length)} cy={yRHR(v)} r={4} fill={col} opacity={0.9} />;
       })}
       {/* Axis labels */}
@@ -3201,6 +3293,14 @@ function TrendInsightModal({ healthData, trendDays, onClose }) {
       <div style={{ ...st.card(), marginBottom: 12 }}>
         <div style={{ ...st.label, marginBottom: 8 }}>{trendDays}-day HRV + resting HR</div>
         <RecoveryTrendChart healthData={healthData} days={trendDays} />
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', marginTop: 3 }}>
+          {chartColorKey().map(item => (
+            <span key={item.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: C.fMono, fontSize: 7, color: C.muted }}>
+              <span style={{ width: 7, height: 7, borderRadius: 4, background: item.color, display: 'inline-block' }} />
+              {item.label}
+            </span>
+          ))}
+        </div>
       </div>
       <div style={{ ...st.card(C.blue + '0c'), borderColor: C.blue + '33', marginBottom: 12 }}>
         <div style={{ ...st.label, color: C.blue, marginBottom: 6 }}>Current read</div>
@@ -3255,7 +3355,7 @@ function DailySignalsStrip({ healthData, onMetricTap }) {
                 {value}{m.unit && m.key !== 'steps' && <span style={{ fontSize: 8, marginLeft: 2, fontWeight: 700 }}>{m.unit}</span>}
               </div>
               <div style={{ fontFamily: C.fBody, fontSize: 10, color: m.color, marginTop: 3 }}>{caption}</div>
-              <MetricSparkline data={m.data} color={m.color} height={24} />
+              <MetricSparkline data={m.data} color={m.color} height={24} metric={m} baseline={base} />
               <div style={{ ...st.mono(8, C.muted), marginTop: 1 }}>Tap for details</div>
             </button>
           );
@@ -3286,6 +3386,14 @@ function RecoveryTrendCard({ healthData, trendDays, setTrendDays, onTrendTap }) 
       </div>
       <button onClick={onTrendTap} style={{ border: 'none', background: 'transparent', padding: 0, width: '100%', cursor: 'pointer', textAlign: 'left' }}>
         <RecoveryTrendChart healthData={healthData} days={trendDays} />
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', marginTop: 3 }}>
+          {chartColorKey().map(item => (
+            <span key={item.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: C.fMono, fontSize: 7, color: C.muted }}>
+              <span style={{ width: 7, height: 7, borderRadius: 4, background: item.color, display: 'inline-block' }} />
+              {item.label}
+            </span>
+          ))}
+        </div>
         {insight && <div style={{ display: 'flex', gap: 7, alignItems: 'center', justifyContent: 'center', color: C.muted, fontFamily: C.fBody, fontSize: 13, marginTop: 2 }}>
           <Icon name="circle-check" size={14} color={C.green} />{insight}
         </div>}
