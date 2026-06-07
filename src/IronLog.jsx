@@ -2923,12 +2923,19 @@ function ReadinessInsightModal({ recovery, fatigue, healthData, watchSummary, on
   );
 }
 
-function ReadinessSummaryCard({ recovery, fatigue, healthData, watchSummary, setView, onSeeWhy, onWatchTap }) {
+function ReadinessSummaryCard({ recovery, fatigue, healthData, watchSummary, setView, onSeeWhy, onWatchTap, onMetricTap }) {
   const verdict = readinessVerdict(recovery, fatigue, watchSummary);
   const chips = readinessChips(recovery, healthData, watchSummary);
+  const metricsByKey = Object.fromEntries(homeMetricDefs(healthData).map(m => [m.key, m]));
   const fatigueLevel = Math.min(100, Math.max(0, fatigue?.level || (verdict.status === 'High load' ? 74 : 38)));
   const filled = Math.max(1, Math.round(fatigueLevel / 14));
   const primaryOpensInsight = verdict.action === 'Review plan';
+  function handleChipClick(chip) {
+    if (chip.text.startsWith('HRV')) return onMetricTap(metricsByKey.hrv);
+    if (chip.text.startsWith('RHR')) return onMetricTap(metricsByKey.restingHr);
+    if (chip.text.includes('Watch')) return onWatchTap();
+    return onSeeWhy();
+  }
   return (
     <div style={{ ...dash.card({ padding: 16, marginBottom: 10 }) }}>
       <div style={{ display: 'grid', gridTemplateColumns: '108px 1fr', gap: 14, alignItems: 'center' }}>
@@ -2949,7 +2956,7 @@ function ReadinessSummaryCard({ recovery, fatigue, healthData, watchSummary, set
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 14 }}>
         {chips.map(chip => (
-          <button key={chip.text} onClick={() => chip.text.includes('Watch') ? onWatchTap() : onSeeWhy()} style={{ ...dash.chip(chip.color), border: `1px solid ${C.border}`, cursor: 'pointer' }}>
+          <button key={chip.text} onClick={() => handleChipClick(chip)} style={{ ...dash.chip(chip.color), border: `1px solid ${C.border}`, cursor: 'pointer' }}>
             <Icon name={chip.icon} size={13} color={chip.color} />
             <span>{chip.text}</span>
           </button>
@@ -3161,13 +3168,17 @@ function TrendInsightModal({ healthData, trendDays, onClose }) {
   );
 }
 
-function DailySignalsStrip({ healthData, onMetricTap }) {
-  const metricDefs = [
+function homeMetricDefs(healthData) {
+  return [
     { key: 'hrv', title: 'HRV', unit: 'ms', color: C.green, data: healthData?.hrv || [], icon: 'heart', higherBetter: true },
     { key: 'restingHr', title: 'Resting HR', unit: 'bpm', color: C.green, data: healthData?.restingHr || [], icon: 'heart', higherBetter: false },
     { key: 'steps', title: 'Steps', unit: '', color: '#ff7a1a', data: healthData?.steps || [], icon: 'footprints', target: 8000 },
     { key: 'activeCal', title: 'Active Cal', unit: 'kcal', color: C.blue, data: healthData?.activeCal || [], icon: 'flame' },
   ];
+}
+
+function DailySignalsStrip({ healthData, onMetricTap }) {
+  const metricDefs = homeMetricDefs(healthData);
   return (
     <div style={{ ...dash.card({ padding: 0, overflow: 'hidden', marginBottom: 10 }) }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
@@ -3370,6 +3381,7 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
         setView={setView}
         onSeeWhy={() => setShowReadinessInsight(true)}
         onWatchTap={() => setHomeInsight({ type: 'watch' })}
+        onMetricTap={metric => setHomeInsight({ type: 'metric', metric })}
       />
       {showReadinessInsight && (
         <ReadinessInsightModal

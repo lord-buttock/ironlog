@@ -4,6 +4,11 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-06-07 — Readiness chip modal routing fix (Codex)
+
+- HRV and resting HR readiness chips now open metric-specific insight modals instead of the overall readiness plan
+- View recovery plan continues to open the readiness plan modal; Watch effort still opens Watch effort details
+
 ## 2026-06-07 — Home health InsightModals (Codex)
 
 - Added tappable Home metric cards for HRV, resting HR, steps, and active calories with detail panels for today's value, recent trend, baseline, explanation, and recommendation
