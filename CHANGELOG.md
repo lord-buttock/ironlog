@@ -4,6 +4,13 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-06-08 — Sleep diagnostics and Blood Oxygen support (Codex)
+
+- Redeployed Supabase `ingest-health` Edge Function v7 so health exports are captured for debugging when sleep or Blood Oxygen payloads do not normalize as expected
+- Updated `health_export_captures` constraint to allow `kind = health`; verified diagnostic capture and cleanup
+- Added Blood Oxygen / SpO2 support to IronLog health cloud sync, localStorage, Health tab cards, and Health Auto Export bulk import
+- Fixed sleep localStorage persistence after cloud/local health data loads
+
 ## 2026-06-08 — Sleep ingest parser fix (Codex)
 
 - Redeployed Supabase `ingest-health` Edge Function v4 so `sleep_analysis` exports normalize to `health_metrics.metric = sleep`

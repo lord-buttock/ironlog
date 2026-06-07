@@ -982,8 +982,8 @@ async function pullHealthMetrics() {
       .select('metric, date, value')
       .order('date', { ascending: true });
     if (error || !data || !data.length) return null;
-    const result = { hrv: [], restingHr: [], steps: [], activeCal: [], cardio: [], sleep: [] };
-    const keyMap = { hrv: 'hrv', resting_hr: 'restingHr', steps: 'steps', active_cal: 'activeCal', sleep: 'sleep' };
+    const result = { hrv: [], restingHr: [], steps: [], activeCal: [], cardio: [], sleep: [], bloodOxygen: [] };
+    const keyMap = { hrv: 'hrv', resting_hr: 'restingHr', steps: 'steps', active_cal: 'activeCal', sleep: 'sleep', blood_oxygen: 'bloodOxygen' };
     data.forEach(row => {
       const key = keyMap[row.metric];
       if (key) result[key].push({ date: row.date, value: Number(row.value) });
@@ -1029,7 +1029,7 @@ async function pullWatchWorkouts() {
 async function pushHealthMetrics(healthData) {
   if (!db) return;
   try {
-    const keyMap = { hrv: 'hrv', restingHr: 'resting_hr', steps: 'steps', activeCal: 'active_cal', sleep: 'sleep' };
+    const keyMap = { hrv: 'hrv', restingHr: 'resting_hr', steps: 'steps', activeCal: 'active_cal', sleep: 'sleep', bloodOxygen: 'blood_oxygen' };
     const rows = [];
     const now = new Date().toISOString();
     Object.entries(keyMap).forEach(([stateKey, metricName]) => {
@@ -1468,6 +1468,7 @@ const HEALTH_METRICS = [
   { id: 'resting_hr', key: 'restingHr', storage: 'il_health_resting_hr', title: 'Resting HR', subtitle: 'Resting Heart Rate', unit: 'bpm', type: 'line', days: 30, color: C.blue, lowBetter: true },
   { id: 'steps', key: 'steps', storage: 'il_health_steps', title: 'Steps', subtitle: 'Daily Total', unit: 'steps', type: 'bar', days: 14, color: C.green, target: 8000 },
   { id: 'active_cal', key: 'activeCal', storage: 'il_health_active_cal', title: 'Active Calories', subtitle: 'Daily Total', unit: 'kcal', type: 'bar', days: 14, color: C.amber },
+  { id: 'blood_oxygen', key: 'bloodOxygen', storage: 'il_health_blood_oxygen', title: 'Blood Oxygen', subtitle: 'SpO2', unit: '%', type: 'line', days: 30, color: C.purple, sparse: true },
   { id: 'cardio', key: 'cardio', storage: 'il_health_cardio', title: 'Cardio Fitness', subtitle: 'VO2 Max Estimate', unit: 'mL/kg/min', type: 'line', days: 180, color: C.purple, sparse: true },
 ];
 
@@ -1507,10 +1508,49 @@ function normaliseHealthReadings(input) {
 // Parse a Health Auto Export JSON file and return {hrv, restingHr, steps, activeCal} all at once
 const HEALTH_EXPORT_MAP = {
   heart_rate_variability: 'hrv',
+  hrv:                    'hrv',
   resting_heart_rate:     'restingHr',
+  resting_hr:             'restingHr',
   step_count:             'steps',
+  steps:                  'steps',
   active_energy:          'activeCal',
+  active_calories:        'activeCal',
+  blood_oxygen_saturation:'bloodOxygen',
+  blood_oxygen:           'bloodOxygen',
+  oxygen_saturation:      'bloodOxygen',
+  vo2_max:                'cardio',
+  cardio_fitness:         'cardio',
+  sleep_analysis:         'sleep',
+  sleep:                  'sleep',
 };
+
+function healthExportValue(metricName, entry) {
+  if (metricName === 'sleep_analysis' || metricName === 'sleep') {
+    const direct = [entry.totalSleep, entry.asleep, entry.sleep, entry.duration, entry.qty];
+    for (const candidate of direct) {
+      const n = Number(candidate);
+      if (Number.isFinite(n) && n > 0) return n;
+    }
+    const stages = Number(entry.core || 0) + Number(entry.deep || 0) + Number(entry.rem || 0);
+    return stages > 0 ? stages : null;
+  }
+
+  let value = Number(entry.qty ?? entry.value ?? entry.total ?? entry.average ?? entry.avg);
+  if (!Number.isFinite(value)) return null;
+  if (metricName === 'active_energy') value = value / 4.184; // kJ → kcal
+  if (['blood_oxygen_saturation', 'blood_oxygen', 'oxygen_saturation'].includes(metricName) && value <= 1) value = value * 100;
+  return value;
+}
+
+function combineHealthExportEntries(metricName, entries) {
+  if (!entries.length || !['sleep_analysis', 'sleep'].includes(metricName)) return entries;
+  const byDate = {};
+  entries.forEach(entry => {
+    byDate[entry.date] = { date: entry.date, value: Math.round(((byDate[entry.date]?.value || 0) + Number(entry.value)) * 10) / 10 };
+  });
+  return Object.values(byDate);
+}
+
 function parseHealthAutoExport(parsed) {
   const metrics = parsed?.data?.metrics;
   if (!Array.isArray(metrics)) return null; // not this format
@@ -1522,14 +1562,14 @@ function parseHealthAutoExport(parsed) {
       .map(entry => {
         const date = typeof entry.date === 'string' ? entry.date.slice(0, 10) : '';
         if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
-        let value = Number(entry.qty);
+        const value = healthExportValue(metric.name, entry);
         if (!Number.isFinite(value)) return null;
-        if (metric.name === 'active_energy') value = value / 4.184; // kJ → kcal
         return { date, value: Math.round(value * 10) / 10 };
       })
       .filter(Boolean)
       .sort((a, b) => a.date.localeCompare(b.date));
-    if (entries.length) result[key] = entries;
+    const combined = combineHealthExportEntries(metric.name, entries);
+    if (combined.length) result[key] = combined;
   });
   return Object.keys(result).length ? result : null;
 }
@@ -7934,7 +7974,7 @@ export default function App() {
   const [preStartSwaps, setPreStartSwaps] = useState({});
   const [ironView, setIronView] = useState(false);
   const [healthData, setHealthData] = useState({
-    hrv: [], restingHr: [], steps: [], activeCal: [], cardio: [], sleep: [],
+    hrv: [], restingHr: [], steps: [], activeCal: [], cardio: [], sleep: [], bloodOxygen: [],
   });
   const [watchData, setWatchData] = useState({ matches: [], workouts: [], samples: [], ecg: [] });
 
@@ -7951,11 +7991,11 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
-      const [s, r, a, ce, wc, wh, hrv, restingHr, steps, activeCal, cardio, sleep] = await Promise.all([
+      const [s, r, a, ce, wc, wh, hrv, restingHr, steps, activeCal, cardio, sleep, bloodOxygen] = await Promise.all([
         load('il_sessions'), load('il_rides'), load('il_active'),
         load('il_custom_exercises'), load('il_workout_custom'), load('il_workout_hidden'),
         load('il_health_hrv'), load('il_health_resting_hr'), load('il_health_steps'),
-        load('il_health_active_cal'), load('il_health_cardio'), load('il_health_sleep'),
+        load('il_health_active_cal'), load('il_health_cardio'), load('il_health_sleep'), load('il_health_blood_oxygen'),
       ]);
       const localSessions = s || [];
       const localRides    = r || [];
@@ -7985,6 +8025,7 @@ export default function App() {
         activeCal: (cloudHealth?.activeCal || activeCal || []),
         cardio:    (cardio || []),
         sleep:     (cloudHealth?.sleep     || sleep     || []),
+        bloodOxygen: (cloudHealth?.bloodOxygen || bloodOxygen || []),
       });
       setWatchData(cloudWatch || { matches: [], workouts: [], samples: [], ecg: [] });
       setSelectedWorkout(nextWorkout(finalSessions));
@@ -8010,6 +8051,8 @@ export default function App() {
   useEffect(() => { if (ready) save('il_health_steps', healthData.steps); }, [healthData.steps, ready]);
   useEffect(() => { if (ready) save('il_health_active_cal', healthData.activeCal); }, [healthData.activeCal, ready]);
   useEffect(() => { if (ready) save('il_health_cardio', healthData.cardio); }, [healthData.cardio, ready]);
+  useEffect(() => { if (ready) save('il_health_sleep', healthData.sleep); }, [healthData.sleep, ready]);
+  useEffect(() => { if (ready) save('il_health_blood_oxygen', healthData.bloodOxygen); }, [healthData.bloodOxygen, ready]);
 
   function handleExport() {
     exportData(dataRef.current);

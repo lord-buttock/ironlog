@@ -47,9 +47,10 @@ The app is in active daily use. All core workout features complete. Apple Watch 
 
 ### Health data pipeline — fully live
 - **Health Auto Export** (iPhone app) sends data nightly to Supabase Edge Function (`ingest-health`)
-- Supabase `health_metrics` table stores HRV, Resting HR, Steps, Active Cal by date
+- Supabase `health_metrics` table stores HRV, Resting HR, Steps, Active Cal, Sleep, and Blood Oxygen by date when those metrics are present in the export
 - IronLog fetches on every load → drives Recovery Dashboard on Home screen
 - Manual import fallback available in Health tab → Body section (small text link)
+- Latest receiver version captures raw health export payloads in `health_export_captures` so missing sleep / SpO2 issues can be diagnosed from the actual Health Auto Export request shape
 
 ### Recovery Dashboard (Home screen)
 - Greeting + date header
