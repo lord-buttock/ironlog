@@ -4,6 +4,12 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-06-07 — Home health InsightModals (Codex)
+
+- Added tappable Home metric cards for HRV, resting HR, steps, and active calories with detail panels for today's value, recent trend, baseline, explanation, and recommendation
+- Added Watch effort detail modal from the Home readiness chip with matched workout stats, weekly hard-workout count, calories, minutes, and recommendation context
+- Added recovery trend detail modal with larger HRV/RHR chart, current trend read, and guidance on how to interpret the pattern
+
 ## 2026-06-07 — Explicit Start Set timing and recovery CTA cleanup (Codex)
 
 - Recovery-day Home card now shows one primary action: "View recovery plan", which opens the readiness modal; duplicate top-card "See why" is hidden in that state

@@ -2923,7 +2923,7 @@ function ReadinessInsightModal({ recovery, fatigue, healthData, watchSummary, on
   );
 }
 
-function ReadinessSummaryCard({ recovery, fatigue, healthData, watchSummary, setView, onSeeWhy }) {
+function ReadinessSummaryCard({ recovery, fatigue, healthData, watchSummary, setView, onSeeWhy, onWatchTap }) {
   const verdict = readinessVerdict(recovery, fatigue, watchSummary);
   const chips = readinessChips(recovery, healthData, watchSummary);
   const fatigueLevel = Math.min(100, Math.max(0, fatigue?.level || (verdict.status === 'High load' ? 74 : 38)));
@@ -2949,10 +2949,10 @@ function ReadinessSummaryCard({ recovery, fatigue, healthData, watchSummary, set
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 14 }}>
         {chips.map(chip => (
-          <div key={chip.text} style={dash.chip(chip.color)}>
+          <button key={chip.text} onClick={() => chip.text.includes('Watch') ? onWatchTap() : onSeeWhy()} style={{ ...dash.chip(chip.color), border: `1px solid ${C.border}`, cursor: 'pointer' }}>
             <Icon name={chip.icon} size={13} color={chip.color} />
             <span>{chip.text}</span>
-          </div>
+          </button>
         ))}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: primaryOpensInsight ? '1fr' : '2fr 1fr', gap: 10, marginTop: 12 }}>
@@ -3008,7 +3008,160 @@ function TrainingRecommendationTiles({ recovery, fatigue, sessions, setView }) {
   );
 }
 
-function DailySignalsStrip({ healthData }) {
+function HomeInsightShell({ title, tone = C.blue, onClose, children }) {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(12,18,32,.42)',
+      display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+      padding: '18px 12px calc(18px + env(safe-area-inset-bottom, 0px))',
+    }} onClick={onClose}>
+      <div style={{
+        width: '100%', maxWidth: 430, maxHeight: 'calc(100dvh - 36px)', overflowY: 'auto',
+        WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain',
+        background: C.card, border: `1px solid ${C.border}`, borderRadius: 16,
+        boxShadow: '0 22px 60px rgba(16,31,54,.24)', padding: '16px 16px 30px',
+      }} onClick={e => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
+          <div>
+            <div style={{ ...st.label, color: tone, marginBottom: 4 }}>Home insight</div>
+            <div style={{ fontFamily: C.fDisplay, fontSize: 24, color: C.text, lineHeight: 1 }}>{title}</div>
+          </div>
+          <button onClick={onClose} style={{ width: 34, height: 34, borderRadius: 17, border: `1px solid ${C.border}`, background: C.dim, color: C.muted, fontSize: 18, cursor: 'pointer' }}>×</button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function metricInsightCopy(metric, latest, base, caption) {
+  const val = Number(latest?.value);
+  if (metric.key === 'hrv') return {
+    meaning: 'HRV reflects how recovered your nervous system looks compared with your recent baseline. Lower than usual can mean more recovery pressure.',
+    recommendation: val && base && val < base ? 'Keep intensity conservative today and avoid chasing personal records.' : 'HRV is not limiting today. Still pair it with resting HR, sleep, pain, and Watch effort.',
+  };
+  if (metric.key === 'restingHr') return {
+    meaning: 'Resting heart rate rising above baseline can show fatigue, stress, illness, dehydration, or poor sleep.',
+    recommendation: val && base && val > base ? 'Treat this as a caution signal. Keep training easy unless warm-up feels unusually good.' : 'Resting HR is not a major caution signal today.',
+  };
+  if (metric.key === 'steps') return {
+    meaning: 'Steps show general daily movement. Low steps are context rather than a recovery diagnosis.',
+    recommendation: val < 8000 ? 'A gentle walk can help recovery if you feel good, but it should not replace rest if recovery is low.' : 'You have hit your movement target. Keep extra work easy if recovery is low.',
+  };
+  return {
+    meaning: 'Active calories show total daily movement and training demand. High values can add to fatigue; low values are useful context.',
+    recommendation: caption?.includes('below') ? 'Active calories are below your recent average, so they are not the main limiting factor today.' : 'If active calories are high alongside low recovery, keep the next session lighter.',
+  };
+}
+
+function HomeMetricInsightModal({ metric, healthData, onClose }) {
+  const data = metric?.data || [];
+  const latest = getLatestReading(data);
+  const base = rollingAvg(data, 7);
+  const val = Number(latest?.value);
+  let caption = 'no data';
+  if (metric?.target && Number.isFinite(val)) caption = val >= metric.target ? 'goal hit' : 'below target';
+  else if (base && Number.isFinite(val) && metric?.higherBetter === true) caption = val >= base ? 'above 7-day baseline' : 'below 7-day baseline';
+  else if (base && Number.isFinite(val) && metric?.higherBetter === false) caption = val <= base ? 'improving vs baseline' : 'above 7-day baseline';
+  else if (base && Number.isFinite(val)) caption = val >= base ? 'above 7-day average' : 'below 7-day average';
+  const copy = metricInsightCopy(metric, latest, base, caption);
+  const display = !latest ? 'No reading' : metric.key === 'steps'
+    ? `${Math.round(val).toLocaleString()} steps`
+    : `${Math.round(val * 10) / 10}${metric.unit ? ` ${metric.unit}` : ''}`;
+  return (
+    <HomeInsightShell title={metric.title} tone={metric.color} onClose={onClose}>
+      <div style={{ ...st.card(metric.color + '10'), borderLeft: `3px solid ${metric.color}`, marginBottom: 12 }}>
+        <div style={{ ...st.label, color: metric.color, marginBottom: 5 }}>Today</div>
+        <div style={{ fontFamily: C.fDisplay, fontSize: 26, color: C.text, lineHeight: 1 }}>{display}</div>
+        <div style={{ fontSize: 13, color: metric.color, marginTop: 5 }}>{caption}</div>
+      </div>
+      <div style={{ ...st.card(), marginBottom: 12 }}>
+        <div style={{ ...st.label, marginBottom: 8 }}>Recent trend</div>
+        <MetricSparkline data={data} color={metric.color} height={64} />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10 }}>
+          <div style={{ background: C.dim, borderRadius: 8, padding: 9 }}>
+            <div style={{ ...st.label, fontSize: 8 }}>7-day baseline</div>
+            <div style={{ ...st.mono(16, C.text) }}>{base ? Math.round(base * 10) / 10 : '—'}</div>
+          </div>
+          <div style={{ background: C.dim, borderRadius: 8, padding: 9 }}>
+            <div style={{ ...st.label, fontSize: 8 }}>Readings</div>
+            <div style={{ ...st.mono(16, C.text) }}>{data.length}</div>
+          </div>
+        </div>
+      </div>
+      <div style={{ ...st.card(), marginBottom: 12 }}>
+        <div style={{ ...st.label, marginBottom: 6 }}>What it means</div>
+        <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.45 }}>{copy.meaning}</div>
+      </div>
+      <div style={{ ...st.card(C.blue + '0c'), borderColor: C.blue + '33' }}>
+        <div style={{ ...st.label, color: C.blue, marginBottom: 6 }}>Recommendation</div>
+        <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.45 }}>{copy.recommendation}</div>
+      </div>
+    </HomeInsightShell>
+  );
+}
+
+function WatchEffortInsightModal({ watchSummary, onClose }) {
+  const m = watchSummary?.latestMatch;
+  return (
+    <HomeInsightShell title="Watch effort" tone={watchSummary?.hardCount > 0 ? C.amber : C.blue} onClose={onClose}>
+      <div style={{ ...st.card((watchSummary?.hardCount > 0 ? C.amber : C.blue) + '10'), borderLeft: `3px solid ${watchSummary?.hardCount > 0 ? C.amber : C.blue}`, marginBottom: 12 }}>
+        <div style={{ ...st.label, color: watchSummary?.hardCount > 0 ? C.amber : C.blue, marginBottom: 5 }}>This week</div>
+        <div style={{ fontFamily: C.fDisplay, fontSize: 22, color: C.text }}>{watchSummary?.hardCount || 0} hard matched workout{watchSummary?.hardCount === 1 ? '' : 's'}</div>
+        <div style={{ fontSize: 13, color: C.muted, marginTop: 5 }}>{watchSummary?.totalMinutes || 0} Watch workout minutes · {watchSummary?.totalKcal || 0} kcal</div>
+      </div>
+      {m ? (
+        <div style={{ ...st.card(), marginBottom: 12 }}>
+          <div style={{ ...st.label, marginBottom: 8 }}>Latest matched workout</div>
+          {[
+            ['Workout', m.name || 'Apple Watch workout'],
+            ['Match', `${Math.round(Number(m.overlap_ratio || m.confidence || 0) * 100) || '—'}% overlap`],
+            ['Duration', `${Math.round((Number(m.watch_duration_sec) || Number(m.duration_sec) || 0) / 60)} min`],
+            ['Active energy', `${Math.round(Number(m.active_energy_kcal) || 0)} kcal`],
+            ['Heart rate', `${Math.round(Number(m.avg_heart_rate) || 0)} avg · ${Math.round(Number(m.max_heart_rate) || 0)} peak`],
+          ].map(([label, value]) => (
+            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, padding: '8px 0', borderTop: `1px solid ${C.border}` }}>
+              <div style={{ fontSize: 12, color: C.muted }}>{label}</div>
+              <div style={{ fontSize: 12, color: C.text, textAlign: 'right', fontWeight: 700 }}>{value}</div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div style={{ ...st.card(), marginBottom: 12, fontSize: 13, color: C.muted, lineHeight: 1.45 }}>No matched Apple Watch workout is available yet.</div>
+      )}
+      <div style={{ ...st.card(C.blue + '0c'), borderColor: C.blue + '33' }}>
+        <div style={{ ...st.label, color: C.blue, marginBottom: 6 }}>Recommendation</div>
+        <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.45 }}>
+          Watch effort is a load signal. When it is high alongside low HRV or elevated resting HR, IronLog recommends recovery or a lighter session.
+        </div>
+      </div>
+    </HomeInsightShell>
+  );
+}
+
+function TrendInsightModal({ healthData, trendDays, onClose }) {
+  const insight = computeTrendInsight(healthData);
+  return (
+    <HomeInsightShell title="Recovery trend" tone={C.blue} onClose={onClose}>
+      <div style={{ ...st.card(), marginBottom: 12 }}>
+        <div style={{ ...st.label, marginBottom: 8 }}>{trendDays}-day HRV + resting HR</div>
+        <RecoveryTrendChart healthData={healthData} days={trendDays} />
+      </div>
+      <div style={{ ...st.card(C.blue + '0c'), borderColor: C.blue + '33', marginBottom: 12 }}>
+        <div style={{ ...st.label, color: C.blue, marginBottom: 6 }}>Current read</div>
+        <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.45 }}>{insight || 'Trend needs more readings before it can be interpreted.'}</div>
+      </div>
+      <div style={{ ...st.card() }}>
+        <div style={{ ...st.label, marginBottom: 6 }}>How to use it</div>
+        <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.45 }}>
+          Rising HRV with stable or lower resting HR is usually a positive recovery signal. Falling HRV plus elevated resting HR is a reason to reduce intensity.
+        </div>
+      </div>
+    </HomeInsightShell>
+  );
+}
+
+function DailySignalsStrip({ healthData, onMetricTap }) {
   const metricDefs = [
     { key: 'hrv', title: 'HRV', unit: 'ms', color: C.green, data: healthData?.hrv || [], icon: 'heart', higherBetter: true },
     { key: 'restingHr', title: 'Resting HR', unit: 'bpm', color: C.green, data: healthData?.restingHr || [], icon: 'heart', higherBetter: false },
@@ -3031,7 +3184,10 @@ function DailySignalsStrip({ healthData }) {
             ? `${Math.round(val).toLocaleString()} / 8k`
             : `${val % 1 === 0 ? val : Math.round(val * 10) / 10}`;
           return (
-            <div key={m.key} style={{ padding: '10px 9px 8px', borderLeft: idx ? `1px solid ${C.border}` : 'none', minWidth: 0 }}>
+            <button key={m.key} onClick={() => onMetricTap && onMetricTap(m)} style={{
+              padding: '10px 9px 8px', border: 'none', borderLeft: idx ? `1px solid ${C.border}` : 'none',
+              minWidth: 0, background: 'transparent', textAlign: 'left', cursor: 'pointer',
+            }}>
               <div style={{ display: 'flex', gap: 5, alignItems: 'center', marginBottom: 4 }}>
                 <Icon name={m.icon} size={13} color={m.color} />
                 <span style={{ ...dash.label, fontSize: 8 }}>{m.title}</span>
@@ -3041,7 +3197,8 @@ function DailySignalsStrip({ healthData }) {
               </div>
               <div style={{ fontFamily: C.fBody, fontSize: 10, color: m.color, marginTop: 3 }}>{caption}</div>
               <MetricSparkline data={m.data} color={m.color} height={24} />
-            </div>
+              <div style={{ ...st.mono(8, C.muted), marginTop: 1 }}>Tap for details</div>
+            </button>
           );
         })}
       </div>
@@ -3049,7 +3206,7 @@ function DailySignalsStrip({ healthData }) {
   );
 }
 
-function RecoveryTrendCard({ healthData, trendDays, setTrendDays }) {
+function RecoveryTrendCard({ healthData, trendDays, setTrendDays, onTrendTap }) {
   const insight = computeTrendInsight(healthData);
   return (
     <div style={dash.card({ marginBottom: 10 })}>
@@ -3068,10 +3225,13 @@ function RecoveryTrendCard({ healthData, trendDays, setTrendDays }) {
         <span style={{ fontFamily: C.fBody, fontSize: 10, color: '#0d1838' }}><span style={{ color: C.blue }}>—</span> HRV (ms)</span>
         <span style={{ fontFamily: C.fBody, fontSize: 10, color: '#0d1838' }}><span style={{ color: C.red }}>—</span> RHR (bpm)</span>
       </div>
-      <RecoveryTrendChart healthData={healthData} days={trendDays} />
-      {insight && <div style={{ display: 'flex', gap: 7, alignItems: 'center', justifyContent: 'center', color: C.muted, fontFamily: C.fBody, fontSize: 13, marginTop: 2 }}>
-        <Icon name="circle-check" size={14} color={C.green} />{insight}
-      </div>}
+      <button onClick={onTrendTap} style={{ border: 'none', background: 'transparent', padding: 0, width: '100%', cursor: 'pointer', textAlign: 'left' }}>
+        <RecoveryTrendChart healthData={healthData} days={trendDays} />
+        {insight && <div style={{ display: 'flex', gap: 7, alignItems: 'center', justifyContent: 'center', color: C.muted, fontFamily: C.fBody, fontSize: 13, marginTop: 2 }}>
+          <Icon name="circle-check" size={14} color={C.green} />{insight}
+        </div>}
+        <div style={{ ...st.mono(9, C.muted), textAlign: 'center', marginTop: 3 }}>Tap for details</div>
+      </button>
     </div>
   );
 }
@@ -3114,6 +3274,7 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
   const [showWarmup, setShowWarmup] = useState(false);
   const [showCooldown, setShowCooldown] = useState(false);
   const [showReadinessInsight, setShowReadinessInsight] = useState(false);
+  const [homeInsight, setHomeInsight] = useState(null);
   const [trendDays, setTrendDays] = useState(7);
   const suggested = nextWorkout(sessions);
 
@@ -3201,7 +3362,15 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
         {updateAvailable && <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}`}</style>}
       </div>
 
-      <ReadinessSummaryCard recovery={recovery} fatigue={fatigue} healthData={hd} watchSummary={watchSummary} setView={setView} onSeeWhy={() => setShowReadinessInsight(true)} />
+      <ReadinessSummaryCard
+        recovery={recovery}
+        fatigue={fatigue}
+        healthData={hd}
+        watchSummary={watchSummary}
+        setView={setView}
+        onSeeWhy={() => setShowReadinessInsight(true)}
+        onWatchTap={() => setHomeInsight({ type: 'watch' })}
+      />
       {showReadinessInsight && (
         <ReadinessInsightModal
           recovery={recovery}
@@ -3211,10 +3380,19 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
           onClose={() => setShowReadinessInsight(false)}
         />
       )}
+      {homeInsight?.type === 'metric' && (
+        <HomeMetricInsightModal metric={homeInsight.metric} healthData={hd} onClose={() => setHomeInsight(null)} />
+      )}
+      {homeInsight?.type === 'watch' && (
+        <WatchEffortInsightModal watchSummary={watchSummary} onClose={() => setHomeInsight(null)} />
+      )}
+      {homeInsight?.type === 'trend' && (
+        <TrendInsightModal healthData={hd} trendDays={trendDays} onClose={() => setHomeInsight(null)} />
+      )}
       <TrainingRecommendationTiles recovery={recovery} fatigue={fatigue} sessions={sessions} setView={setView} />
-      {hasHealthData && <DailySignalsStrip healthData={hd} />}
+      {hasHealthData && <DailySignalsStrip healthData={hd} onMetricTap={metric => setHomeInsight({ type: 'metric', metric })} />}
       {hasHealthData && (hd.hrv?.length > 1 || hd.restingHr?.length > 1) && (
-        <RecoveryTrendCard healthData={hd} trendDays={trendDays} setTrendDays={setTrendDays} />
+        <RecoveryTrendCard healthData={hd} trendDays={trendDays} setTrendDays={setTrendDays} onTrendTap={() => setHomeInsight({ type: 'trend' })} />
       )}
       <ThisWeekSummaryCard sessions={sessions} rides={rides} watchSummary={watchSummary} />
 
