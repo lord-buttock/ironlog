@@ -4,6 +4,14 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-06-07 — Exercise effort intelligence foundation (Codex)
+
+- Added forward-looking exercise/set timing fields: `exerciseStartedAt`, `exerciseCompletedAt`, `setStartedAt`, `setCompletedAt`, and session `completedAt`
+- Set timing now starts on first set edit and completes when Done is tapped; Done without prior edit creates a conservative estimated work window
+- IronLog now fetches `apple_workout_samples` alongside Watch workout summaries so future exports can support exercise-effort matching
+- Added confidence-scored Watch effort helpers and rule-based exercise progression recommendations gated by pain, recovery, RPE, and Watch effort
+- Workout screen now shows a "NEXT TIME" recommendation panel for the current exercise, with Watch effort details when timestamped sample data is available
+
 ## 2026-06-07 — Iron Series icons, equipment list, exercise library (Claude Sonnet 4.6)
 
 - Iron Series exercise library: all 40 `IRON_EXERCISES` now appear in Manage → Library → Exercises, searchable by name

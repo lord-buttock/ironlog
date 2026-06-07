@@ -994,9 +994,9 @@ async function pullHealthMetrics() {
 }
 
 async function pullWatchWorkouts() {
-  if (!db) return { matches: [], workouts: [], ecg: [] };
+  if (!db) return { matches: [], workouts: [], samples: [], ecg: [] };
   try {
-    const [matchRes, workoutRes, ecgRes] = await Promise.all([
+    const [matchRes, workoutRes, sampleRes, ecgRes] = await Promise.all([
       db.from('ironlog_watch_matches')
         .select('*')
         .order('session_start_at', { ascending: false }),
@@ -1004,6 +1004,9 @@ async function pullWatchWorkouts() {
         .select('source_id,name,local_date,start_at,end_at,duration_sec,active_energy_kcal,avg_heart_rate,max_heart_rate,intensity')
         .order('start_at', { ascending: false })
         .limit(30),
+      db.from('apple_workout_samples')
+        .select('*')
+        .limit(2000),
       db.from('ecg_readings')
         .select('local_date,start_at,classification,average_heart_rate')
         .order('start_at', { ascending: false })
@@ -1011,14 +1014,16 @@ async function pullWatchWorkouts() {
     ]);
     if (matchRes.error) console.warn('IronLog restore (watch matches):', matchRes.error);
     if (workoutRes.error) console.warn('IronLog restore (watch workouts):', workoutRes.error);
+    if (sampleRes.error) console.warn('IronLog restore (watch samples):', sampleRes.error);
     if (ecgRes.error) console.warn('IronLog restore (ecg):', ecgRes.error);
     return {
       matches: matchRes.data || [],
       workouts: workoutRes.data || [],
+      samples: sampleRes.data || [],
       ecg: ecgRes.data || [],
     };
   } catch (e) { console.warn('IronLog restore (watch):', e); }
-  return { matches: [], workouts: [], ecg: [] };
+  return { matches: [], workouts: [], samples: [], ecg: [] };
 }
 
 async function pushHealthMetrics(healthData) {
@@ -2133,6 +2138,82 @@ function summarizeWatchEffort(watchData) {
     totalMinutes: Math.round(totalMinutes),
     hasRecentHard: hardCount > 0,
   };
+}
+
+function sampleTimeMs(sample) {
+  const raw = sample?.sample_at || sample?.start_at || sample?.timestamp || sample?.time || sample?.date;
+  const ms = raw ? new Date(raw).getTime() : NaN;
+  return Number.isFinite(ms) ? ms : null;
+}
+
+function sampleHeartRate(sample) {
+  const value = sample?.heart_rate ?? sample?.heartRate ?? sample?.avg_heart_rate ?? sample?.value;
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function setWindowMs(set) {
+  const start = set?.setStartedAt ? new Date(set.setStartedAt).getTime() : null;
+  const end = set?.setCompletedAt ? new Date(set.setCompletedAt).getTime() : null;
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null;
+  return { start, end };
+}
+
+function exerciseWindowMs(exercise) {
+  const directStart = exercise?.exerciseStartedAt ? new Date(exercise.exerciseStartedAt).getTime() : null;
+  const directEnd = exercise?.exerciseCompletedAt ? new Date(exercise.exerciseCompletedAt).getTime() : null;
+  const setWindows = (exercise?.sets || []).map(setWindowMs).filter(Boolean);
+  const start = Number.isFinite(directStart) ? directStart : Math.min(...setWindows.map(w => w.start));
+  const end = Number.isFinite(directEnd) ? directEnd : Math.max(...setWindows.map(w => w.end));
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null;
+  return { start, end };
+}
+
+function analyseExerciseEffort(exercise, watchData) {
+  const window = exerciseWindowMs(exercise);
+  const samples = watchData ? (watchData.samples || []) : [];
+  if (!window || !samples.length) return { status: 'missing', label: 'No Watch effort yet', confidence: 'none', samples: 0 };
+  const hrSamples = samples
+    .map(sample => ({ t: sampleTimeMs(sample), hr: sampleHeartRate(sample) }))
+    .filter(sample => sample.t && sample.hr && sample.t >= window.start && sample.t <= window.end);
+  if (!hrSamples.length) return { status: 'missing', label: 'No Watch effort in this window', confidence: 'none', samples: 0 };
+  const avgHr = Math.round(hrSamples.reduce((sum, sample) => sum + sample.hr, 0) / hrSamples.length);
+  const maxHr = Math.round(Math.max(...hrSamples.map(sample => sample.hr)));
+  const minutes = Math.max(1, Math.round((window.end - window.start) / 60000));
+  const density = hrSamples.length / minutes;
+  const confidence = hrSamples.length >= 3 && density >= 0.6 ? 'high' : hrSamples.length >= 2 ? 'medium' : 'low';
+  const label = maxHr >= 150 || avgHr >= 135 ? 'Hard effort'
+    : maxHr >= 130 || avgHr >= 115 ? 'Moderate effort'
+      : 'Easy effort';
+  return { status: 'ok', label, confidence, samples: hrSamples.length, avgHr, maxHr, minutes };
+}
+
+function findLastExerciseEntry(sessions, exId) {
+  const sorted = [...(sessions || [])].filter(s => s.completed).sort((a, b) => new Date(b.date) - new Date(a.date));
+  for (const sess of sorted) {
+    const exercise = (sess.exercises || []).find(ex => ex.id === exId);
+    if (exercise?.sets?.some(set => set.done)) return { session: sess, exercise };
+  }
+  return null;
+}
+
+function recommendExerciseProgression(entry, def, recovery, watchData) {
+  if (!entry?.exercise || !def) return { tone: C.muted, title: 'No previous data', body: 'Log this exercise once to get a progression recommendation.' };
+  const sets = (entry.exercise.sets || []).filter(set => set.done);
+  if (!sets.length) return { tone: C.muted, title: 'No completed sets', body: 'Complete at least one set to build a recommendation.' };
+  const painMax = Math.max(...sets.map(set => Number(set.pain) || 0));
+  const rpes = sets.map(set => Number(set.rpe)).filter(n => Number.isFinite(n) && n > 0);
+  const avgRpe = rpes.length ? rpes.reduce((a, b) => a + b, 0) / rpes.length : 0;
+  const effort = analyseExerciseEffort(entry.exercise, watchData);
+  const allAtTop = def.repMax && sets.every(set => Number(set.reps) >= def.repMax);
+  const allComfortable = avgRpe === 0 || avgRpe <= 7;
+  const hardWatch = effort.status === 'ok' && (effort.label === 'Hard effort' || effort.maxHr >= 150);
+  if (painMax >= 3) return { tone: C.red, title: 'Reduce or modify', body: `Pain reached ${painMax}/10 last time. Keep load conservative and adjust range or exercise if symptoms return.`, effort };
+  if (recovery?.score != null && recovery.score < 38) return { tone: C.red, title: 'Hold progression', body: 'Recovery is low today. Keep this exercise light, even if last session looked strong.', effort };
+  if (hardWatch || avgRpe >= 8.5) return { tone: C.amber, title: 'Maintain today', body: 'Last time looked demanding. Repeat the same load/reps and aim for smoother control before progressing.', effort };
+  if (def.unit === 'kg' && allAtTop && allComfortable) return { tone: C.green, title: 'Consider adding load', body: 'You completed the top of the rep range with manageable effort. Add the smallest sensible weight jump if warm-up sets feel good.', effort };
+  if (def.repMax && allComfortable) return { tone: C.green, title: 'Add 1 rep', body: 'Last time looked controlled. Try adding 1 rep to one or two sets before increasing weight.', effort };
+  return { tone: C.blue, title: 'Repeat and build', body: 'Keep the same target and focus on clean reps. Progress once reps, RPE, pain, and recovery all line up.', effort };
 }
 
 function timeGreeting() {
@@ -4303,7 +4384,7 @@ function IronSeriesView({ sessions, allExercises, onStart, onDemoOpen }) {
   );
 }
 
-function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, setView, selectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, onDemoOpen, onWarmupOpen, coachRec }) {
+function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, setView, selectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, onDemoOpen, onWarmupOpen, coachRec, recovery, watchData }) {
   const nextWkt = selectedWorkout;
   const [session, setSession] = useState(activeSession || null);
   const [phase, setPhase] = useState(() => {
@@ -4354,6 +4435,30 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
   function startRest(s = 30) { setRestSecs(s); setRestActive(true); }
   function stopRest() { setRestActive(false); setRestSecs(30); }
 
+  function stampExerciseStart(prev, eIdx, nowIso) {
+    if (!prev?.exercises?.[eIdx]) return prev;
+    return {
+      ...prev,
+      exercises: prev.exercises.map((ex, ei) => ei !== eIdx || ex.exerciseStartedAt ? ex : { ...ex, exerciseStartedAt: nowIso }),
+    };
+  }
+
+  function withExerciseCompletion(prev, eIdx, nowIso) {
+    const ex = prev?.exercises?.[eIdx];
+    if (!ex) return prev;
+    const allDone = (ex.sets || []).every(set => set.done || set.setCompletedAt);
+    if (!allDone || ex.exerciseCompletedAt) return prev;
+    return {
+      ...prev,
+      exercises: prev.exercises.map((item, ei) => ei !== eIdx ? item : { ...item, exerciseCompletedAt: nowIso }),
+    };
+  }
+
+  function estimatedSetStartIso(set, def, completedAtMs) {
+    const durationSec = Number(set?.duration) || Number(def?.defaultDuration) || 45;
+    return new Date(completedAtMs - Math.max(20, Math.min(120, durationSec)) * 1000).toISOString();
+  }
+
   function startSession(energy) {
     // If activeSession was pre-built by the pre-start screen (has exercises), preserve it.
     // Only add the energy level and advance to warmup — do not rebuild.
@@ -4376,11 +4481,17 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
 
   function updateSet(eIdx, sIdx, field, val) {
     setSession(prev => {
+      const nowIso = new Date().toISOString();
+      const started = stampExerciseStart(prev, eIdx, nowIso);
       const updated = {
-        ...prev,
-        exercises: prev.exercises.map((ex, ei) => ei !== eIdx ? ex : {
+        ...started,
+        exercises: started.exercises.map((ex, ei) => ei !== eIdx ? ex : {
           ...ex,
-          sets: ex.sets.map((s, si) => si !== sIdx ? s : { ...s, [field]: val }),
+          sets: ex.sets.map((s, si) => {
+            if (si !== sIdx) return s;
+            const shouldStart = field !== 'done' && !s.setStartedAt;
+            return { ...s, ...(shouldStart ? { setStartedAt: nowIso } : {}), [field]: val };
+          }),
         }),
       };
       setActiveSession(updated);
@@ -4389,7 +4500,30 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
   }
 
   function doneSet(eIdx, sIdx) {
-    updateSet(eIdx, sIdx, 'done', true);
+    setSession(prev => {
+      const completedAtMs = Date.now();
+      const nowIso = new Date(completedAtMs).toISOString();
+      const ex = prev?.exercises?.[eIdx];
+      const set = ex?.sets?.[sIdx];
+      const exerciseDef = allExercises[ex?.id] || EXERCISES[ex?.id] || {};
+      const fallbackStartIso = set?.setStartedAt || estimatedSetStartIso(set, exerciseDef, completedAtMs);
+      const started = stampExerciseStart(prev, eIdx, fallbackStartIso);
+      const marked = {
+        ...started,
+        exercises: started.exercises.map((ex, ei) => ei !== eIdx ? ex : {
+          ...ex,
+          sets: ex.sets.map((set, si) => si !== sIdx ? set : {
+            ...set,
+            setStartedAt: set.setStartedAt || fallbackStartIso,
+            setCompletedAt: set.setCompletedAt || nowIso,
+            done: true,
+          }),
+        }),
+      };
+      const completed = withExerciseCompletion(marked, eIdx, nowIso);
+      setActiveSession(completed);
+      return completed;
+    });
     startRest(30);
   }
 
@@ -4397,7 +4531,7 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
     setSession(prev => {
       const ex = prev.exercises[eIdx];
       const last = ex.sets[ex.sets.length - 1];
-      const newSet = { ...last, done: false, rpe: null, pain: null };
+      const newSet = { ...last, done: false, rpe: null, pain: null, setStartedAt: null, setCompletedAt: null };
       const updated = {
         ...prev,
         exercises: prev.exercises.map((e, i) => i !== eIdx ? e : { ...e, sets: [...e.sets, newSet] }),
@@ -4419,7 +4553,17 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
   }
 
   function completeWorkout() {
-    const completed = { ...session, completed: true, duration: Math.round(elapsed / 60) };
+    const nowIso = new Date().toISOString();
+    const completed = {
+      ...session,
+      completed: true,
+      completedAt: nowIso,
+      duration: Math.round(elapsed / 60),
+      exercises: (session.exercises || []).map(ex => {
+        const allDone = (ex.sets || []).every(set => set.done);
+        return allDone && !ex.exerciseCompletedAt ? { ...ex, exerciseCompletedAt: nowIso } : ex;
+      }),
+    };
     setPRs(detectPRs(completed, sessions, allExercises));
     setNudges(checkOverloadNudges(completed, allExercises));
     onComplete(completed);
@@ -4538,6 +4682,9 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
     const allExDone = exData.sets.every(s => s.done);
     const sessionExIds = new Set(session.exercises.map(e => e.id));
     const availableToAdd = Object.entries(allExercises).filter(([id, def]) => !sessionExIds.has(id) && !def.gymOnly);
+    const previousEntry = findLastExerciseEntry(sessions, exId);
+    const progression = recommendExerciseProgression(previousEntry, def, recovery, watchData);
+    const effort = progression.effort;
 
     return (
       <div style={{ padding: 16 }}>
@@ -4641,6 +4788,26 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
                 secondary={def.secondary || []}
                 size="medium"
               />
+            </div>
+          )}
+        </div>
+
+        {/* Exercise effort recommendation */}
+        <div style={{ ...st.card(progression.tone + '10'), borderLeft: `2px solid ${progression.tone}`, marginBottom: 14, padding: '10px 12px' }}>
+          <div style={{ ...st.label, color: progression.tone, fontSize: 9, marginBottom: 5 }}>NEXT TIME</div>
+          <div style={{ fontFamily: C.fDisplay, fontSize: 16, color: C.text, lineHeight: 1.1, marginBottom: 4 }}>{progression.title}</div>
+          <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.45 }}>{progression.body}</div>
+          {effort?.status === 'ok' && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+              <span style={st.pill(progression.tone)}>{effort.label}</span>
+              <span style={st.pill(C.muted)}>Avg {effort.avgHr} bpm</span>
+              <span style={st.pill(C.muted)}>Peak {effort.maxHr} bpm</span>
+              <span style={st.pill(C.muted)}>{effort.confidence} confidence</span>
+            </div>
+          )}
+          {effort?.status !== 'ok' && previousEntry?.exercise && (
+            <div style={{ ...st.mono(10, C.muted), marginTop: 7 }}>
+              Watch effort will appear here after this exercise has timestamped sets and the matching Watch export is available.
             </div>
           )}
         </div>
@@ -7119,13 +7286,14 @@ export default function App() {
   const [healthData, setHealthData] = useState({
     hrv: [], restingHr: [], steps: [], activeCal: [], cardio: [], sleep: [],
   });
-  const [watchData, setWatchData] = useState({ matches: [], workouts: [], ecg: [] });
+  const [watchData, setWatchData] = useState({ matches: [], workouts: [], samples: [], ecg: [] });
 
   // Keep a ref to current data so export always uses the latest state
   const dataRef = useRef({});
 
   const allExercises = { ...EXERCISES, ...PRESET_LIBRARY, ...IRON_EXERCISES, ...customExercises };
   const coachRec = computeCoachRecommendation(sessions, rides, selectedWorkout);
+  const recovery = computeRecovery(healthData);
 
   useEffect(() => {
     dataRef.current = { sessions, rides, customExercises, workoutCustom };
@@ -7168,7 +7336,7 @@ export default function App() {
         cardio:    (cardio || []),
         sleep:     (cloudHealth?.sleep     || sleep     || []),
       });
-      setWatchData(cloudWatch || { matches: [], workouts: [], ecg: [] });
+      setWatchData(cloudWatch || { matches: [], workouts: [], samples: [], ecg: [] });
       setSelectedWorkout(nextWorkout(finalSessions));
       setReady(true);
     })();
@@ -7334,6 +7502,8 @@ export default function App() {
                 onDemoOpen={setDemoExId}
                 onWarmupOpen={setWarmupDemoItem}
                 coachRec={coachRec}
+                recovery={recovery}
+                watchData={watchData}
               />
             )}
           </>
