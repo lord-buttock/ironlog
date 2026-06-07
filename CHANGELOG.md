@@ -4,6 +4,11 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-06-08 — Sleep ingest parser fix (Codex)
+
+- Redeployed Supabase `ingest-health` Edge Function v4 so `sleep_analysis` exports normalize to `health_metrics.metric = sleep`
+- Parser now handles Health Auto Export aggregated sleep (`totalSleep` / `asleep`) and unaggregated sleep segments by summing same-day sleep durations
+
 ## 2026-06-07 — Smooth blended Home charts (Codex)
 
 - Updated Home metric sparklines, HRV/resting HR insight charts, and Recovery Trend lines to use smoothed SVG curves with blended status-colour strokes
