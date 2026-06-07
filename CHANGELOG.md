@@ -13,6 +13,14 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 - Codex icon generation: Batches 1–3 complete and pushed (exercises 1–15: heel-elevated squat → bench dip); Batch 4 in progress (exercises 16–20)
 - Iron Series tap-to-animate: ExerciseIcon components in IronSeriesView now pass `onDemoOpen` handler — tapping an icon opens ExerciseDemoModal
 
+## 2026-06-07 — Apple Watch workout export pipeline (Codex)
+
+- Added Supabase `apple_workouts`, `apple_workout_samples`, and `ecg_readings` tables; raw Health Auto Export payloads retained in `health_export_captures`
+- Deployed `ingest-workouts` and `ingest-ecg` Edge Functions with `x-ironlog-ingest-key` validation; workout exports now parse into normalized summaries and minute samples
+- Backfilled Phill's exported workout/ECG captures: 4 Apple Watch strength workouts, 477 samples, 1 ECG reading
+- Added `ironlog_watch_matches` Supabase view linking Apple Watch workouts to IronLog sessions by time overlap and confidence
+- IronLog Home now fetches Watch matches/workouts/ECG and shows a compact "Last workout matched" effort card; ECG remains stored but not used in normal readiness scoring
+
 ## 2026-06-06 — Sleep-aware recovery score (Claude Sonnet 4.6)
 
 - `computeRecovery()` now adapts automatically based on sleep data availability

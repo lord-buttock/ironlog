@@ -993,6 +993,34 @@ async function pullHealthMetrics() {
   return null;
 }
 
+async function pullWatchWorkouts() {
+  if (!db) return { matches: [], workouts: [], ecg: [] };
+  try {
+    const [matchRes, workoutRes, ecgRes] = await Promise.all([
+      db.from('ironlog_watch_matches')
+        .select('*')
+        .order('session_start_at', { ascending: false }),
+      db.from('apple_workouts')
+        .select('source_id,name,local_date,start_at,end_at,duration_sec,active_energy_kcal,avg_heart_rate,max_heart_rate,intensity')
+        .order('start_at', { ascending: false })
+        .limit(30),
+      db.from('ecg_readings')
+        .select('local_date,start_at,classification,average_heart_rate')
+        .order('start_at', { ascending: false })
+        .limit(5),
+    ]);
+    if (matchRes.error) console.warn('IronLog restore (watch matches):', matchRes.error);
+    if (workoutRes.error) console.warn('IronLog restore (watch workouts):', workoutRes.error);
+    if (ecgRes.error) console.warn('IronLog restore (ecg):', ecgRes.error);
+    return {
+      matches: matchRes.data || [],
+      workouts: workoutRes.data || [],
+      ecg: ecgRes.data || [],
+    };
+  } catch (e) { console.warn('IronLog restore (watch):', e); }
+  return { matches: [], workouts: [], ecg: [] };
+}
+
 async function pushHealthMetrics(healthData) {
   if (!db) return;
   try {
@@ -2040,6 +2068,33 @@ function computeTrendInsight(healthData) {
   return 'HRV is below average and resting HR is elevated. Consider lighter movement or a recovery day.';
 }
 
+function summarizeWatchEffort(watchData) {
+  const matches = watchData?.matches || [];
+  const workouts = watchData?.workouts || [];
+  const ecg = watchData?.ecg || [];
+  const latestMatch = matches[0] || null;
+  const latestWorkout = workouts[0] || null;
+  const latestEcg = ecg[0] || null;
+  const ws = weekMondayStart();
+  const weekMatches = matches.filter(m => new Date(m.session_start_at) >= ws);
+  const weekWorkouts = workouts.filter(w => new Date(w.start_at) >= ws);
+  const hardCount = weekMatches.filter(m => m.effort_label === 'hard').length;
+  const moderateCount = weekMatches.filter(m => m.effort_label === 'moderate').length;
+  const totalKcal = weekWorkouts.reduce((s, w) => s + (Number(w.active_energy_kcal) || 0), 0);
+  const totalMinutes = weekWorkouts.reduce((s, w) => s + ((Number(w.duration_sec) || 0) / 60), 0);
+  return {
+    latestMatch,
+    latestWorkout,
+    latestEcg,
+    weekMatches,
+    hardCount,
+    moderateCount,
+    totalKcal: Math.round(totalKcal),
+    totalMinutes: Math.round(totalMinutes),
+    hasRecentHard: hardCount > 0,
+  };
+}
+
 function timeGreeting() {
   const h = new Date().getHours();
   if (h >= 5  && h < 12) return 'Good morning';
@@ -2474,7 +2529,52 @@ function RecentWorkoutsSection({ sessions, rides, setView }) {
   );
 }
 
-function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, setSelectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, driveSync, onCloudSync, updateAvailable, onWarmupOpen, onDemoOpen, coachRec, showWhy, setShowWhy, healthData }) {
+function WatchEffortCard({ watchSummary }) {
+  const m = watchSummary?.latestMatch;
+  if (!m) return null;
+  const day = m.ironlog_workout?.startsWith('IRON_') ? `Iron Series — Day ${m.ironlog_workout.split('_')[1]}` : `Workout ${m.ironlog_workout}`;
+  const effortColor = m.effort_label === 'hard' ? C.red : m.effort_label === 'moderate' ? C.amber : C.green;
+  const minutes = Math.round((Number(m.watch_duration_sec) || 0) / 60);
+  const kcal = Math.round(Number(m.active_energy_kcal) || 0);
+  const avgHr = Math.round(Number(m.avg_heart_rate) || 0);
+  const maxHr = Math.round(Number(m.max_heart_rate) || 0);
+  const overlap = Math.round((Number(m.session_overlap_ratio) || 0) * 100);
+
+  return (
+    <div style={{ ...st.card(), marginBottom: 12, padding: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted, textTransform: 'uppercase', letterSpacing: 1 }}>Last workout matched</div>
+          <div style={{ fontFamily: C.fBody, fontSize: 13, fontWeight: 800, color: C.text, marginTop: 5, lineHeight: 1.2 }}>{day}</div>
+          <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, marginTop: 3 }}>
+            Apple Watch · {m.match_confidence} confidence · {overlap}% overlap
+          </div>
+        </div>
+        <div style={{ fontFamily: C.fMono, fontSize: 9, fontWeight: 800, color: effortColor, background: effortColor + '18', borderRadius: 999, padding: '4px 8px', textTransform: 'uppercase' }}>
+          {m.effort_label || 'logged'}
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginTop: 12 }}>
+        {[
+          ['Time', `${minutes}m`],
+          ['Energy', `${kcal}`],
+          ['Avg HR', avgHr ? `${avgHr}` : '—'],
+          ['Peak', maxHr ? `${maxHr}` : '—'],
+        ].map(([label, value]) => (
+          <div key={label} style={{ background: C.dim, borderRadius: 8, padding: '7px 6px' }}>
+            <div style={{ fontFamily: C.fMono, fontSize: 7, color: C.muted, textTransform: 'uppercase', letterSpacing: .6 }}>{label}</div>
+            <div style={{ fontFamily: C.fDisplay, fontSize: 15, fontWeight: 800, color: C.text, marginTop: 1 }}>{value}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ height: 5, background: C.border, borderRadius: 999, overflow: 'hidden', marginTop: 10 }}>
+        <div style={{ width: m.effort_label === 'hard' ? '82%' : m.effort_label === 'moderate' ? '58%' : '32%', height: '100%', background: effortColor, borderRadius: 999 }} />
+      </div>
+    </div>
+  );
+}
+
+function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, setSelectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, driveSync, onCloudSync, updateAvailable, onWarmupOpen, onDemoOpen, coachRec, showWhy, setShowWhy, healthData, watchData }) {
   const [showExercises, setShowExercises] = useState(false);
   const [showWarmup, setShowWarmup] = useState(false);
   const [showCooldown, setShowCooldown] = useState(false);
@@ -2488,6 +2588,7 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
   const fatigue   = hasHealthData ? computeFatigue(hd, sessions) : null;
   const trainLoad = computeTrainingLoad(sessions, hd.activeCal || []);
   const insight   = hasHealthData ? computeTrendInsight(hd) : null;
+  const watchSummary = summarizeWatchEffort(watchData);
 
   // Training recommendation — thresholds aligned to new SD-band scoring
   // Readiness combines recovery score (physiology) AND fatigue (workload)
@@ -2496,7 +2597,7 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
     const highFatigue = f && f.level >= 60;
     const modFatigue  = f && f.level >= 30;
     if (r.score >= 60) {
-      if (highFatigue)  return { label: 'Moderate today',  color: C.amber, detail: 'Body is ready, but load is high — consider a lighter session.' };
+      if (highFatigue || watchSummary.hasRecentHard) return { label: 'Moderate today',  color: C.amber, detail: watchSummary.hasRecentHard ? 'Recovery is good, but Watch effort was high this week — keep effort controlled.' : 'Body is ready, but load is high — consider a lighter session.' };
       if (modFatigue)   return { label: 'Good to train',   color: C.green, detail: 'Ready to train. Keep effort controlled.' };
       return                   { label: 'Good to train',   color: C.green, detail: 'You can push hard today.' };
     }
@@ -2604,6 +2705,8 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
           <TrainingLoadBar load={trainLoad} />
         </div>
       )}
+
+      <WatchEffortCard watchSummary={watchSummary} />
 
       {/* ── Today's Training ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
@@ -6874,6 +6977,7 @@ export default function App() {
   const [healthData, setHealthData] = useState({
     hrv: [], restingHr: [], steps: [], activeCal: [], cardio: [], sleep: [],
   });
+  const [watchData, setWatchData] = useState({ matches: [], workouts: [], ecg: [] });
 
   // Keep a ref to current data so export always uses the latest state
   const dataRef = useRef({});
@@ -6897,10 +7001,11 @@ export default function App() {
       const localRides    = r || [];
 
       // Attempt cloud restore — only replaces local if cloud has more records
-      const [cloudSessions, cloudRides, cloudHealth] = await Promise.all([
+      const [cloudSessions, cloudRides, cloudHealth, cloudWatch] = await Promise.all([
         pullSessions(localSessions),
         pullRides(localRides),
         pullHealthMetrics(),
+        pullWatchWorkouts(),
       ]);
       const finalSessions = cloudSessions || localSessions;
       const finalRides    = cloudRides    || localRides;
@@ -6921,6 +7026,7 @@ export default function App() {
         cardio:    (cardio || []),
         sleep:     (cloudHealth?.sleep     || sleep     || []),
       });
+      setWatchData(cloudWatch || { matches: [], workouts: [], ecg: [] });
       setSelectedWorkout(nextWorkout(finalSessions));
       setReady(true);
     })();
@@ -7037,7 +7143,7 @@ export default function App() {
             updateAvailable={updateAvailable} onWarmupOpen={setWarmupDemoItem}
             onDemoOpen={setDemoExId}
             coachRec={coachRec} showWhy={showWhy} setShowWhy={setShowWhy}
-            healthData={healthData} />
+            healthData={healthData} watchData={watchData} />
         )}
         {view === 'workout' && (
           <>
