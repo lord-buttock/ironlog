@@ -17,7 +17,7 @@ Iron Series programme fully integrated. 30-day Caroline Girvan dumbbell programm
 - ✅ Current export backfilled: 4 Apple Watch strength workouts, 477 minute samples
 - ✅ Home screen now shows compact "Last workout matched" card with duration, active kcal, avg HR, peak HR, match confidence, and effort label
 - ✅ ECG receiver/table live for occasional manual readings, but ECG is not part of the normal readiness score; HRV/RHR/sleep + workout HR/calories are the useful daily signals
-- 🔄 Next: redesign Home screen toward the approved polished mockup using Watch effort as one reason signal, while keeping ECG quiet unless an abnormal recent reading exists
+- 🔄 Home screen redesign in progress — Codex: rebuild Home toward the approved polished mockup using Watch effort as one reason signal, while keeping ECG quiet unless an abnormal recent reading exists
 
 ### Iron Series — status
 - ✅ 30-day IRON_WORKOUTS constant with YouTube IDs, equipment lists, superset pairs
