@@ -21,6 +21,14 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 - Added `ironlog_watch_matches` Supabase view linking Apple Watch workouts to IronLog sessions by time overlap and confidence
 - IronLog Home now fetches Watch matches/workouts/ECG and shows a compact "Last workout matched" effort card; ECG remains stored but not used in normal readiness scoring
 
+## 2026-06-07 — Polished Home screen redesign (Codex)
+
+- Rebuilt the top Home screen toward the approved professional mockup: large readiness verdict card, action buttons, recommendation tiles, compact signal strip, recovery trend card, and combined weekly summary
+- Added `dash` mini design system for Home cards, labels, chips, icon boxes, rounded surfaces, and softer shadows
+- Added Home components: `ReadinessSummaryCard`, `TrainingRecommendationTiles`, `DailySignalsStrip`, `RecoveryTrendCard`, and `ThisWeekSummaryCard`
+- Watch workout effort now informs the readiness explanation/reason chips instead of taking over the screen; ECG remains quiet unless needed later for abnormal recent readings
+- Recovery trend chart height tightened so the first viewport shows more useful information before scrolling
+
 ## 2026-06-06 — Sleep-aware recovery score (Claude Sonnet 4.6)
 
 - `computeRecovery()` now adapts automatically based on sleep data availability

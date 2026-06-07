@@ -1699,6 +1699,46 @@ const st = {
   col: (gap = 8) => ({ display: 'flex', flexDirection: 'column', gap }),
 };
 
+const dash = {
+  page: { padding: '14px 16px 8px', maxWidth: 430, margin: '0 auto' },
+  card: (extra = {}) => ({
+    background: C.card,
+    border: `1px solid ${C.border}`,
+    borderRadius: 12,
+    boxShadow: '0 10px 26px rgba(32, 55, 85, 0.07)',
+    padding: 13,
+    ...extra,
+  }),
+  label: { fontFamily: C.fBody, fontSize: 10, fontWeight: 800, color: C.muted, textTransform: 'uppercase', letterSpacing: 0.7 },
+  h: { fontFamily: C.fDisplay, fontSize: 27, fontWeight: 800, color: '#0d1838', lineHeight: 0.95, letterSpacing: 0 },
+  body: { fontFamily: C.fBody, fontSize: 13, color: '#526078', lineHeight: 1.25 },
+  chip: (color = C.blue) => ({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    minHeight: 28,
+    borderRadius: 8,
+    border: `1px solid ${C.border}`,
+    background: '#fff',
+    color: '#1d2b45',
+    fontFamily: C.fBody,
+    fontSize: 12,
+    fontWeight: 600,
+    whiteSpace: 'nowrap',
+  }),
+  iconBox: (color = C.blue) => ({
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    background: color + '18',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  }),
+};
+
 // ═══════════════════════════════════════════════════════════════════════
 // DATA EXPORT / IMPORT  (JSON file — works on any device, any host)
 // ═══════════════════════════════════════════════════════════════════════
@@ -2201,7 +2241,7 @@ function RecoveryTrendChart({ healthData, days }) {
   const hrv = lastNDaysReadings(healthData?.hrv || [], days);
   const rhr = lastNDaysReadings(healthData?.restingHr || [], days);
   if (!hrv.length && !rhr.length) return null;
-  const W = 320, H = 160, pL = 34, pR = 38, pT = 12, pB = 28;
+  const W = 320, H = 124, pL = 34, pR = 38, pT = 10, pB = 24;
   const iW = W - pL - pR, iH = H - pT - pB;
   const bHRV = rollingAvg(healthData?.hrv || [], 14);
   const bRHR = rollingAvg(healthData?.restingHr || [], 14);
@@ -2574,6 +2614,258 @@ function WatchEffortCard({ watchSummary }) {
   );
 }
 
+function ReadinessGauge({ score, label, color }) {
+  const size = 98;
+  const displayScore = Math.min(score || 0, 100);
+  const r = 38;
+  const cx = size / 2;
+  const circ = 2 * Math.PI * r;
+  const dashLen = circ * (displayScore / 100);
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ display: 'block' }}>
+      <circle cx={cx} cy={cx} r={r} fill="none" stroke={C.border} strokeWidth={8} strokeLinecap="round" />
+      <circle cx={cx} cy={cx} r={r} fill="none" stroke={color || C.green} strokeWidth={8}
+        strokeDasharray={`${dashLen} ${circ}`} strokeLinecap="round" transform={`rotate(135 ${cx} ${cx})`} />
+      <text x={cx} y={cx + 1} textAnchor="middle" fill="#0d1838" fontSize={26} fontWeight={800} fontFamily={C.fDisplay}>{displayScore}%</text>
+      <text x={cx} y={cx + 22} textAnchor="middle" fill={color || C.green} fontSize={13} fontWeight={700} fontFamily={C.fBody}>{label}</text>
+    </svg>
+  );
+}
+
+function readinessVerdict(recovery, fatigue, watchSummary) {
+  if (!recovery) return {
+    title: 'Today: Log data',
+    status: 'Scheduled',
+    color: C.blue,
+    body: 'Log health metrics and workouts to get a recommendation.',
+    action: 'Start session',
+  };
+  const highLoad = (fatigue?.level || 0) >= 60 || watchSummary?.hardCount > 0;
+  if (recovery.score >= 60 && highLoad) return {
+    title: 'Today: Train lighter',
+    status: 'High load',
+    color: C.red,
+    body: watchSummary?.hardCount > 0
+      ? 'Recovery is good, but Watch effort and weekly strength load are high. Keep 2-3 reps in reserve.'
+      : 'Recovery is good, but this week\'s strength load is high. Keep 2-3 reps in reserve.',
+    action: 'Start lighter session',
+  };
+  if (recovery.score >= 60) return {
+    title: 'Today: Good to train',
+    status: 'Ready',
+    color: C.green,
+    body: 'Recovery signals look steady. Train normally and keep form strict.',
+    action: 'Start session',
+  };
+  if (recovery.score >= 38) return {
+    title: 'Today: Take it steady',
+    status: 'Moderate',
+    color: C.amber,
+    body: 'Recovery is fair. Cap effort and avoid chasing personal bests today.',
+    action: 'Start steady session',
+  };
+  return {
+    title: 'Today: Recovery day',
+    status: 'Low recovery',
+    color: C.red,
+    body: 'Recovery is low. Choose rest, mobility, or very light movement.',
+    action: 'Review plan',
+  };
+}
+
+function readinessChips(recovery, healthData, watchSummary) {
+  const chips = [];
+  if (recovery?.zHRV != null) chips.push({ icon: 'activity', text: recovery.zHRV >= 0 ? 'HRV above avg' : 'HRV below avg', color: recovery.zHRV >= 0 ? C.green : C.red });
+  if (recovery?.zRHR != null) chips.push({ icon: 'heart', text: recovery.zRHR >= 0 ? 'RHR down' : 'RHR up', color: recovery.zRHR >= 0 ? C.green : C.red });
+  if (watchSummary?.hardCount > 0) chips.push({ icon: 'flame', text: 'Watch effort high', color: C.amber });
+  const sleepLatest = getLatestReading(healthData?.sleep || []);
+  chips.push({ icon: sleepLatest ? 'moon' : 'circle-alert', text: sleepLatest ? 'Sleep tracked' : 'Sleep missing', color: sleepLatest ? C.green : C.amber });
+  return chips.slice(0, 3);
+}
+
+function ReadinessSummaryCard({ recovery, fatigue, healthData, watchSummary, setView, setShowWhy }) {
+  const verdict = readinessVerdict(recovery, fatigue, watchSummary);
+  const chips = readinessChips(recovery, healthData, watchSummary);
+  const fatigueLevel = Math.min(100, Math.max(0, fatigue?.level || (verdict.status === 'High load' ? 74 : 38)));
+  const filled = Math.max(1, Math.round(fatigueLevel / 14));
+  return (
+    <div style={{ ...dash.card({ padding: 16, marginBottom: 10 }) }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '108px 1fr', gap: 14, alignItems: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <ReadinessGauge score={recovery?.score || 0} label={recovery?.label || '—'} color={recovery?.color || C.blue} />
+          <div style={{ ...dash.label, marginTop: 4, letterSpacing: 1.2 }}>Recovery</div>
+        </div>
+        <div>
+          <div style={dash.h}>{verdict.title}</div>
+          <div style={{ fontFamily: C.fBody, fontSize: 13, fontWeight: 800, color: verdict.color, marginTop: 10 }}>{verdict.status}</div>
+          <div style={{ display: 'flex', gap: 6, marginTop: 5 }}>
+            {Array.from({ length: 7 }, (_, i) => (
+              <div key={i} style={{ height: 6, flex: 1, minWidth: 14, borderRadius: 999, background: i < filled ? verdict.color : C.border }} />
+            ))}
+          </div>
+          <div style={{ ...dash.body, marginTop: 12 }}>{verdict.body}</div>
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 14 }}>
+        {chips.map(chip => (
+          <div key={chip.text} style={dash.chip(chip.color)}>
+            <Icon name={chip.icon} size={13} color={chip.color} />
+            <span>{chip.text}</span>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10, marginTop: 12 }}>
+        <button onClick={() => setView('workout')} style={{
+          border: 'none', borderRadius: 9, padding: '12px 14px', background: C.blue, color: '#fff',
+          fontFamily: C.fBody, fontSize: 14, fontWeight: 800, display: 'flex', alignItems: 'center',
+          justifyContent: 'space-between', cursor: 'pointer', boxShadow: '0 8px 18px rgba(91,157,245,.24)',
+        }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}><Icon name="dumbbell" size={18} color="#fff" />{verdict.action}</span>
+          <Icon name="chevron-right" size={18} color="#fff" />
+        </button>
+        <button onClick={() => setShowWhy(v => !v)} style={{
+          border: `1px solid ${C.border}`, borderRadius: 9, padding: '12px 10px', background: '#fff', color: '#0d1838',
+          fontFamily: C.fBody, fontSize: 14, fontWeight: 700, cursor: 'pointer',
+        }}>See why</button>
+      </div>
+    </div>
+  );
+}
+
+function TrainingRecommendationTiles({ recovery, fatigue, sessions, setView }) {
+  const verdict = readinessVerdict(recovery, fatigue, {});
+  const ironDay = nextIronDay(sessions);
+  const strengthMode = verdict.title.includes('lighter') || verdict.title.includes('steady') ? 'Moderate' : verdict.title.includes('Recovery') ? 'Recovery' : 'Recommended';
+  const cyclingMode = verdict.title.includes('Recovery') ? 'Recovery ride' : 'Easy endurance';
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
+      {[
+        { icon: 'dumbbell', title: 'Strength', status: strengthMode, lines: [`Iron Day ${ironDay}`, strengthMode === 'Moderate' ? 'Reduce load 10%' : strengthMode === 'Recovery' ? 'Mobility only' : 'Normal plan'], action: 'View plan', color: C.blue },
+        { icon: 'bike', title: 'Cycling', status: cyclingMode, lines: [cyclingMode === 'Recovery ride' ? '15-20 min' : '25-35 min', 'Zone 2'], action: 'Plan ride', color: C.green },
+      ].map(tile => (
+        <button key={tile.title} onClick={() => setView(tile.title === 'Strength' ? 'workout' : 'rides')} style={{
+          ...dash.card({ padding: 12, textAlign: 'left', cursor: 'pointer', minHeight: 96 }),
+          borderColor: tile.title === 'Cycling' ? C.green + '30' : C.border,
+          background: tile.title === 'Cycling' ? 'linear-gradient(135deg,#fff,#f3fff6)' : C.card,
+        }}>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+            <div style={dash.iconBox(tile.color)}><Icon name={tile.icon} size={19} color={tile.color} /></div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ ...dash.label, color: tile.color }}>{tile.title}</div>
+              <div style={{ fontFamily: C.fBody, fontSize: 15, fontWeight: 800, color: '#0d1838', marginTop: 3 }}>{tile.status}</div>
+              {tile.lines.map(line => <div key={line} style={{ fontFamily: C.fBody, fontSize: 12, color: C.muted, lineHeight: 1.2 }}>{line}</div>)}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 7, color: tile.color, fontSize: 12, fontWeight: 800 }}>
+                <span>{tile.action}</span><Icon name="chevron-right" size={14} color={tile.color} />
+              </div>
+            </div>
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function DailySignalsStrip({ healthData }) {
+  const metricDefs = [
+    { key: 'hrv', title: 'HRV', unit: 'ms', color: C.green, data: healthData?.hrv || [], icon: 'heart', higherBetter: true },
+    { key: 'restingHr', title: 'Resting HR', unit: 'bpm', color: C.green, data: healthData?.restingHr || [], icon: 'heart', higherBetter: false },
+    { key: 'steps', title: 'Steps', unit: '', color: '#ff7a1a', data: healthData?.steps || [], icon: 'footprints', target: 8000 },
+    { key: 'activeCal', title: 'Active Cal', unit: 'kcal', color: C.blue, data: healthData?.activeCal || [], icon: 'flame' },
+  ];
+  return (
+    <div style={{ ...dash.card({ padding: 0, overflow: 'hidden', marginBottom: 10 }) }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
+        {metricDefs.map((m, idx) => {
+          const latest = getLatestReading(m.data);
+          const base = rollingAvg(m.data, 7);
+          const val = Number(latest?.value);
+          let caption = 'no data';
+          if (m.target && val) caption = val >= m.target ? 'goal hit' : 'low today';
+          else if (base && val && m.higherBetter === true) caption = val >= base ? 'above 7d avg' : 'below avg';
+          else if (base && val && m.higherBetter === false) caption = val <= base ? 'improving' : 'above avg';
+          else if (base && val) caption = val >= base ? 'above avg' : 'below avg';
+          const value = !latest ? '—' : m.key === 'steps'
+            ? `${Math.round(val).toLocaleString()} / 8k`
+            : `${val % 1 === 0 ? val : Math.round(val * 10) / 10}`;
+          return (
+            <div key={m.key} style={{ padding: '10px 9px 8px', borderLeft: idx ? `1px solid ${C.border}` : 'none', minWidth: 0 }}>
+              <div style={{ display: 'flex', gap: 5, alignItems: 'center', marginBottom: 4 }}>
+                <Icon name={m.icon} size={13} color={m.color} />
+                <span style={{ ...dash.label, fontSize: 8 }}>{m.title}</span>
+              </div>
+              <div style={{ fontFamily: C.fBody, fontSize: 15, fontWeight: 900, color: '#0d1838', lineHeight: 1 }}>
+                {value}{m.unit && m.key !== 'steps' && <span style={{ fontSize: 8, marginLeft: 2, fontWeight: 700 }}>{m.unit}</span>}
+              </div>
+              <div style={{ fontFamily: C.fBody, fontSize: 10, color: m.color, marginTop: 3 }}>{caption}</div>
+              <MetricSparkline data={m.data} color={m.color} height={24} />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function RecoveryTrendCard({ healthData, trendDays, setTrendDays }) {
+  const insight = computeTrendInsight(healthData);
+  return (
+    <div style={dash.card({ marginBottom: 10 })}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <div style={{ ...dash.label, color: '#0d1838' }}>Recovery Trend</div>
+        <div style={{ display: 'flex', gap: 5 }}>
+          {[7, 30, 90].map(d => (
+            <button key={d} onClick={() => setTrendDays(d)} style={{
+              border: 'none', borderRadius: 6, padding: '5px 8px', fontFamily: C.fBody, fontSize: 11,
+              fontWeight: 800, background: trendDays === d ? C.blue : C.dim, color: trendDays === d ? '#fff' : C.muted,
+            }}>{d}D</button>
+          ))}
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: 15, marginBottom: 3, justifyContent: 'center' }}>
+        <span style={{ fontFamily: C.fBody, fontSize: 10, color: '#0d1838' }}><span style={{ color: C.blue }}>—</span> HRV (ms)</span>
+        <span style={{ fontFamily: C.fBody, fontSize: 10, color: '#0d1838' }}><span style={{ color: C.red }}>—</span> RHR (bpm)</span>
+      </div>
+      <RecoveryTrendChart healthData={healthData} days={trendDays} />
+      {insight && <div style={{ display: 'flex', gap: 7, alignItems: 'center', justifyContent: 'center', color: C.muted, fontFamily: C.fBody, fontSize: 13, marginTop: 2 }}>
+        <Icon name="circle-check" size={14} color={C.green} />{insight}
+      </div>}
+    </div>
+  );
+}
+
+function ThisWeekSummaryCard({ sessions, rides, watchSummary }) {
+  const ws = weekMondayStart();
+  const weekSess = sessions.filter(s => s.completed && new Date(s.date) >= ws);
+  const weekRides = rides.filter(r => new Date(r.date) >= ws);
+  const totalTime = weekSess.reduce((s, sess) => s + (Number(sess.duration) || 0), 0);
+  const volume = weekSess.reduce((sum, sess) => sum + (sess.exercises || []).reduce((exSum, ex) =>
+    exSum + ex.sets.filter(set => set.done).reduce((setSum, set) => setSum + (Number(set.weight) || 0) * (Number(set.reps) || 0), 0), 0), 0);
+  const timeLabel = totalTime > 0 ? `${Math.floor(totalTime / 60)}h ${totalTime % 60}m` : watchSummary?.totalMinutes ? `${Math.floor(watchSummary.totalMinutes / 60)}h ${watchSummary.totalMinutes % 60}m` : '—';
+  const items = [
+    { icon: 'dumbbell', color: C.blue, label: 'Strength', value: weekSess.length, sub: 'sessions' },
+    { label: 'Total Volume', value: volume ? `${Math.round(volume / 100) / 10} t` : '—' },
+    { icon: 'bike', color: C.green, label: 'Cycling', value: weekRides.length ? `${weekRides.length}` : 'No rides', sub: weekRides.length ? 'rides' : 'this week' },
+    { label: 'Total Time', value: timeLabel },
+  ];
+  return (
+    <div style={dash.card({ marginBottom: 10 })}>
+      <div style={{ ...dash.label, color: '#0d1838', marginBottom: 12 }}>This Week</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1.15fr 1fr 1.15fr 1fr', gap: 8, alignItems: 'center' }}>
+        {items.map((item, idx) => (
+          <div key={idx} style={{ display: 'flex', gap: 8, alignItems: 'center', minWidth: 0, borderLeft: idx ? `1px solid ${C.border}` : 'none', paddingLeft: idx ? 10 : 0 }}>
+            {item.icon && <div style={dash.iconBox(item.color)}><Icon name={item.icon} size={18} color={item.color} /></div>}
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontFamily: C.fBody, fontSize: 10, color: C.muted, fontWeight: 700 }}>{item.label}</div>
+              <div style={{ fontFamily: C.fBody, fontSize: 15, color: '#0d1838', fontWeight: 900, lineHeight: 1.05 }}>{item.value}</div>
+              {item.sub && <div style={{ fontFamily: C.fBody, fontSize: 10, color: C.muted }}>{item.sub}</div>}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, setSelectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, driveSync, onCloudSync, updateAvailable, onWarmupOpen, onDemoOpen, coachRec, showWhy, setShowWhy, healthData, watchData }) {
   const [showExercises, setShowExercises] = useState(false);
   const [showWarmup, setShowWarmup] = useState(false);
@@ -2642,186 +2934,36 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
       : `Supabase auto-sync on · Last synced ${lastSyncTime}`;
 
   return (
-    <div style={{ padding: '16px 16px 8px' }}>
+    <div style={dash.page}>
 
       {/* ── Greeting header ── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
         <div>
-          <div style={{ fontFamily: C.fBody, fontSize: 22, fontWeight: 700, color: C.text, lineHeight: 1.2 }}>
+          <div style={{ fontFamily: C.fDisplay, fontSize: 28, fontWeight: 800, color: '#0d1838', lineHeight: 0.95 }}>
             {timeGreeting()}, Phill
           </div>
-          <div style={{ fontFamily: C.fMono, fontSize: 11, color: C.muted, marginTop: 3 }}>
+          <div style={{ fontFamily: C.fBody, fontSize: 13, color: C.muted, marginTop: 5 }}>
             {new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}
           </div>
         </div>
         <button onClick={() => window.location.reload(true)}
           title={updateAvailable ? 'Update available' : 'Check for updates'}
-          style={{ background: C.dim, border: 'none', borderRadius: 20, width: 34, height: 34, cursor: 'pointer',
-            color: updateAvailable ? C.amber : C.muted, fontSize: 18,
+          style={{ background: '#fff', border: `1px solid ${C.border}`, borderRadius: 12, width: 42, height: 42, cursor: 'pointer',
+            color: updateAvailable ? C.blue : '#0d1838', fontSize: 18, boxShadow: '0 8px 20px rgba(32,55,85,.08)', position: 'relative',
             animation: updateAvailable ? 'pulse 1.5s ease-in-out infinite' : 'none' }}>
           ↺
+          {updateAvailable && <span style={{ position: 'absolute', right: 7, top: 7, width: 6, height: 6, borderRadius: '50%', background: C.blue }} />}
         </button>
         {updateAvailable && <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}`}</style>}
       </div>
 
-      {/* ── Recovery Summary Card (Recovery + Fatigue) ── */}
-      {hasHealthData && recovery && (
-        <div style={{ ...st.card(), marginBottom: 8 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            {/* Recovery Score */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Recovery Score</div>
-              <RecoveryRing score={recovery.score} color={recovery.color} label={recovery.label} size={90} />
-              <div style={{ fontFamily: C.fMono, fontSize: 7, color: C.muted, marginTop: 5, textAlign: 'center' }}>
-                HRV {recovery.zHRV > 0 ? '↑' : '↓'}{Math.abs(recovery.zHRV)}σ · RHR {recovery.zRHR > 0 ? '↓' : '↑'}{Math.abs(Math.round((recovery.meanRHR - recovery.todayRHR) * 10) / 10)}
-              </div>
-            </div>
-            {/* Fatigue + Readiness */}
-            <div style={{ paddingTop: 4 }}>
-              <div style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Fatigue</div>
-              <div style={{ fontFamily: C.fDisplay, fontSize: 17, fontWeight: 700, color: fatigue?.color || C.muted }}>{fatigue?.label || '—'}</div>
-              {fatigue && <FatigueBar level={fatigue.level} color={fatigue.color} />}
-              <div style={{ marginTop: 10 }}>
-                <div style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Readiness</div>
-                <div style={{ fontFamily: C.fBody, fontSize: 13, fontWeight: 700, color: rec.color }}>{rec.label}</div>
-                <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, marginTop: 2 }}>{rec.detail}</div>
-              </div>
-            </div>
-          </div>
-          <div style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted, marginTop: 10, paddingTop: 8, borderTop: `1px solid ${C.border}` }}>
-            {recovery.formula === 'hrv+rhr+sleep'
-              ? `HRV (40%) · Resting HR (30%) · Sleep ${recovery.todaySleep?.toFixed(1)}h (30%) · 7-day baseline`
-              : 'Estimate · HRV (70%) + Resting HR (30%) · no sleep reading for last night'}
-          </div>
-        </div>
-      )}
-
-      {/* ── Training Load — own card with gradient bar ── */}
-      {trainLoad != null && (
-        <div style={{ ...st.card(), marginBottom: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-            <div style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted, textTransform: 'uppercase', letterSpacing: 1 }}>Training Load</div>
-          </div>
-          <TrainingLoadBar load={trainLoad} />
-        </div>
-      )}
-
-      <WatchEffortCard watchSummary={watchSummary} />
-
-      {/* ── Today's Training ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
-        {[
-          { icon: 'dumbbell', label: 'Weight Training', focus: 'Strength' },
-          { icon: 'bike',     label: 'Cycling',         focus: 'Endurance' },
-        ].map(t => (
-          <div key={t.label} style={{ ...st.card(), padding: '12px 14px', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: C.blue + '18',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <Icon name={t.icon} size={18} color={C.blue} />
-            </div>
-            <div>
-              <div style={{ fontFamily: C.fDisplay, fontSize: 14, fontWeight: 700, color: C.text, lineHeight: 1.2 }}>{t.label}</div>
-              <div style={{ fontFamily: C.fMono, fontSize: 10, color: rec.color, fontWeight: 700, marginTop: 2 }}>{rec.label}</div>
-              <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, marginTop: 1 }}>Focus: {t.focus}{rec.label === 'Moderate today' ? ' · lighter' : ''}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* ── 4-Metric horizontal strip ── */}
-      {hasHealthData && (
-        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', marginBottom: 12, WebkitOverflowScrolling: 'touch', paddingBottom: 2 }}>
-          {hMetrics.map(m => {
-            const latest = getLatestReading(m.data || []);
-            const base   = rollingAvg(m.data || [], 14);
-            const val    = Number(latest?.value);
-            let statusColor = m.color;
-            if (base && val) {
-              if (m.higherBetter === true)  statusColor = val >= base * 0.95 ? C.green : val >= base * 0.88 ? C.amber : C.red;
-              if (m.higherBetter === false) statusColor = val <= base * 1.05 ? C.green : val <= base * 1.10 ? C.amber : C.red;
-              if (m.target)                 statusColor = val >= m.target ? C.green : val >= m.target * 0.75 ? C.amber : C.red;
-            }
-            // Comparison label — matches target mockup style
-            let compLabel = null;
-            if (m.target && val) {
-              const pct = Math.round(val / m.target * 100);
-              compLabel = { arrow: pct >= 100 ? '▲' : '▼', text: `${pct}% of ${(m.target/1000).toFixed(0)}k`, color: statusColor };
-            } else if (base && val && m.higherBetter !== undefined) {
-              const diff = m.higherBetter === false ? base - val : val - base;
-              compLabel = { arrow: diff >= 0 ? '▲' : '▼', text: `${Math.abs(Math.round(diff * 10) / 10)} vs avg`, color: statusColor };
-            } else if (base && val) {
-              // Active Cal — show 7-day average
-              compLabel = { arrow: '', text: `${Math.round(base)} avg`, color: C.muted };
-            }
-            return (
-              <div key={m.key} style={{ ...st.card(), flex: '1 0 0', minWidth: 82, padding: '8px 10px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 6 }}>
-                  <Icon name={m.icon} size={13} color={statusColor} />
-                  <span style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted, textTransform: 'uppercase', letterSpacing: 1 }}>{m.title}</span>
-                </div>
-                {latest ? (
-                  <>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 2, marginBottom: 2, flexWrap: 'wrap' }}>
-                      <span style={{ fontFamily: C.fDisplay, fontSize: 18, fontWeight: 800, color: statusColor, lineHeight: 1 }}>
-                        {m.key === 'steps' ? Number(val).toLocaleString() : val % 1 === 0 ? val : (Math.round(val * 10) / 10)}
-                      </span>
-                      {m.unit && <span style={{ fontFamily: C.fMono, fontSize: 8, color: C.muted }}>{m.unit}</span>}
-                    </div>
-                    {compLabel && (
-                      <div style={{ fontFamily: C.fMono, fontSize: 8, color: compLabel.color, marginBottom: 4, lineHeight: 1.2 }}>
-                        {compLabel.arrow} {compLabel.text}
-                      </div>
-                    )}
-                    <MetricSparkline data={m.data || []} color={statusColor} height={30} />
-                  </>
-                ) : (
-                  <div style={{ fontSize: 11, color: C.muted }}>No data</div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* ── Recovery Trends Chart ── */}
+      <ReadinessSummaryCard recovery={recovery} fatigue={fatigue} healthData={hd} watchSummary={watchSummary} setView={setView} setShowWhy={setShowWhy} />
+      <TrainingRecommendationTiles recovery={recovery} fatigue={fatigue} sessions={sessions} setView={setView} />
+      {hasHealthData && <DailySignalsStrip healthData={hd} />}
       {hasHealthData && (hd.hrv?.length > 1 || hd.restingHr?.length > 1) && (
-        <div style={{ ...st.card(), marginBottom: 12 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <div style={{ fontFamily: C.fDisplay, fontSize: 14, fontWeight: 800, textTransform: 'uppercase', color: C.text }}>Recovery Trends</div>
-            <div style={{ display: 'flex', gap: 4 }}>
-              {[7, 30, 90].map(d => (
-                <button key={d} onClick={() => setTrendDays(d)} style={{
-                  fontFamily: C.fMono, fontSize: 10, border: 'none', borderRadius: 4, cursor: 'pointer', padding: '3px 8px',
-                  background: trendDays === d ? C.blue : C.dim, color: trendDays === d ? '#fff' : C.muted,
-                }}>{d}D</button>
-              ))}
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <div style={{ width: 20, height: 2.5, background: C.blue, borderRadius: 2 }} />
-              <span style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted }}>HRV (ms)</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <div style={{ width: 20, height: 2.5, background: C.red, borderRadius: 2 }} />
-              <span style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted }}>Resting HR (bpm)</span>
-            </div>
-          </div>
-          <RecoveryTrendChart healthData={hd} days={trendDays} />
-          {insight && (
-            <div style={{ marginTop: 10, padding: '8px 10px', background: C.dim, borderRadius: 6, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-              <span style={{ fontSize: 13, flexShrink: 0 }}>💡</span>
-              <span style={{ fontFamily: C.fBody, fontSize: 12, color: C.muted, lineHeight: 1.45 }}>{insight}</span>
-            </div>
-          )}
-        </div>
+        <RecoveryTrendCard healthData={hd} trendDays={trendDays} setTrendDays={setTrendDays} />
       )}
-
-      {/* ── Cycling + Strength week ── */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-        <CyclingWeekCard rides={rides} />
-        <StrengthWeekCard sessions={sessions} allExercises={allExercises} />
-      </div>
+      <ThisWeekSummaryCard sessions={sessions} rides={rides} watchSummary={watchSummary} />
 
       {/* ── Weekly Activity + Recent Workouts side by side ── */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'flex-start' }}>
