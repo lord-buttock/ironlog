@@ -4,6 +4,14 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-06-07 — Exercise InsightModal and effort history (Codex)
+
+- Added tappable "View insight" action to the workout exercise "NEXT TIME" panel
+- Added `ExerciseInsightModal` with recommendation explanation, recent performance chart, load/volume/RPE/pain summary, Watch effort status, and safety rationale
+- Added `exerciseHistoryPoints()` and `ExerciseHistoryChart()` to compare recent exercise sessions and overlay average heart rate when Watch samples match
+- Added session-aware Watch sample matching helpers so exercise effort can filter by matched Apple Watch workout when match/source identifiers are available
+- Modal clearly labels Watch effort as unavailable until a timestamped IronLog workout and matching Watch export exist
+
 ## 2026-06-07 — Exercise effort intelligence foundation (Codex)
 
 - Added forward-looking exercise/set timing fields: `exerciseStartedAt`, `exerciseCompletedAt`, `setStartedAt`, `setCompletedAt`, and session `completedAt`

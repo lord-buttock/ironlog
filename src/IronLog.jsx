@@ -2152,6 +2152,25 @@ function sampleHeartRate(sample) {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
+function sampleSourceId(sample) {
+  return sample?.source_id || sample?.workout_source_id || sample?.workout_id || sample?.uuid || null;
+}
+
+function matchSourceId(match) {
+  return match?.source_id || match?.watch_source_id || match?.workout_source_id || match?.apple_workout_source_id || null;
+}
+
+function getSessionWatchMatch(watchData, session) {
+  if (!session) return null;
+  const matches = watchData?.matches || [];
+  const sessionStart = Number(session.startTime) || new Date(session.date).getTime();
+  return matches.find(m => {
+    if ([m.session_id, m.ironlog_session_id, m.local_session_id].some(id => id && String(id) === String(session.id))) return true;
+    const mStart = new Date(m.session_start_at || m.start_at || m.ironlog_start_at || '').getTime();
+    return Number.isFinite(mStart) && Number.isFinite(sessionStart) && Math.abs(mStart - sessionStart) < 15 * 60000;
+  }) || null;
+}
+
 function setWindowMs(set) {
   const start = set?.setStartedAt ? new Date(set.setStartedAt).getTime() : null;
   const end = set?.setCompletedAt ? new Date(set.setCompletedAt).getTime() : null;
@@ -2169,13 +2188,19 @@ function exerciseWindowMs(exercise) {
   return { start, end };
 }
 
-function analyseExerciseEffort(exercise, watchData) {
+function analyseExerciseEffort(exercise, watchData, session = null) {
   const window = exerciseWindowMs(exercise);
   const samples = watchData ? (watchData.samples || []) : [];
+  const match = getSessionWatchMatch(watchData, session);
+  const sourceId = matchSourceId(match);
   if (!window || !samples.length) return { status: 'missing', label: 'No Watch effort yet', confidence: 'none', samples: 0 };
   const hrSamples = samples
     .map(sample => ({ t: sampleTimeMs(sample), hr: sampleHeartRate(sample) }))
-    .filter(sample => sample.t && sample.hr && sample.t >= window.start && sample.t <= window.end);
+    .filter((sample, idx) => {
+      if (!sample.t || !sample.hr || sample.t < window.start || sample.t > window.end) return false;
+      if (!sourceId) return true;
+      return String(sampleSourceId(samples[idx])) === String(sourceId);
+    });
   if (!hrSamples.length) return { status: 'missing', label: 'No Watch effort in this window', confidence: 'none', samples: 0 };
   const avgHr = Math.round(hrSamples.reduce((sum, sample) => sum + sample.hr, 0) / hrSamples.length);
   const maxHr = Math.round(Math.max(...hrSamples.map(sample => sample.hr)));
@@ -2204,7 +2229,7 @@ function recommendExerciseProgression(entry, def, recovery, watchData) {
   const painMax = Math.max(...sets.map(set => Number(set.pain) || 0));
   const rpes = sets.map(set => Number(set.rpe)).filter(n => Number.isFinite(n) && n > 0);
   const avgRpe = rpes.length ? rpes.reduce((a, b) => a + b, 0) / rpes.length : 0;
-  const effort = analyseExerciseEffort(entry.exercise, watchData);
+  const effort = analyseExerciseEffort(entry.exercise, watchData, entry.session);
   const allAtTop = def.repMax && sets.every(set => Number(set.reps) >= def.repMax);
   const allComfortable = avgRpe === 0 || avgRpe <= 7;
   const hardWatch = effort.status === 'ok' && (effort.label === 'Hard effort' || effort.maxHr >= 150);
@@ -2214,6 +2239,72 @@ function recommendExerciseProgression(entry, def, recovery, watchData) {
   if (def.unit === 'kg' && allAtTop && allComfortable) return { tone: C.green, title: 'Consider adding load', body: 'You completed the top of the rep range with manageable effort. Add the smallest sensible weight jump if warm-up sets feel good.', effort };
   if (def.repMax && allComfortable) return { tone: C.green, title: 'Add 1 rep', body: 'Last time looked controlled. Try adding 1 rep to one or two sets before increasing weight.', effort };
   return { tone: C.blue, title: 'Repeat and build', body: 'Keep the same target and focus on clean reps. Progress once reps, RPE, pain, and recovery all line up.', effort };
+}
+
+function exerciseHistoryPoints(sessions, exId, watchData) {
+  return [...(sessions || [])]
+    .filter(s => s.completed)
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .map(session => {
+      const exercise = (session.exercises || []).find(ex => ex.id === exId);
+      if (!exercise) return null;
+      const sets = (exercise.sets || []).filter(set => set.done);
+      if (!sets.length) return null;
+      const volume = sets.reduce((sum, set) => sum + (Number(set.weight) || 0) * (Number(set.reps) || 0), 0);
+      const maxWeight = Math.max(0, ...sets.map(set => Number(set.weight) || 0));
+      const reps = sets.reduce((sum, set) => sum + (Number(set.reps) || 0), 0);
+      const rpes = sets.map(set => Number(set.rpe)).filter(n => Number.isFinite(n) && n > 0);
+      const pain = Math.max(0, ...sets.map(set => Number(set.pain) || 0));
+      const effort = analyseExerciseEffort(exercise, watchData, session);
+      return {
+        date: session.date,
+        label: new Date(session.date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }),
+        volume,
+        maxWeight,
+        reps,
+        avgRpe: rpes.length ? Math.round((rpes.reduce((a, b) => a + b, 0) / rpes.length) * 10) / 10 : null,
+        pain,
+        effort,
+      };
+    })
+    .filter(Boolean)
+    .slice(-6);
+}
+
+function ExerciseHistoryChart({ points }) {
+  if (!points?.length) return null;
+  const W = 320, H = 126, pL = 28, pR = 18, pT = 14, pB = 28;
+  const values = points.map(p => p.volume || p.reps || 0);
+  const hrs = points.map(p => p.effort?.avgHr || null);
+  const maxVal = Math.max(1, ...values);
+  const hrVals = hrs.filter(Boolean);
+  const minHr = hrVals.length ? Math.min(...hrVals) : 0;
+  const maxHr = hrVals.length ? Math.max(...hrVals) : 1;
+  const spanHr = maxHr === minHr ? 1 : maxHr - minHr;
+  const step = points.length > 1 ? (W - pL - pR) / (points.length - 1) : 0;
+  const xOf = i => pL + i * step;
+  const yBar = v => H - pB - (v / maxVal) * (H - pT - pB);
+  const yHr = hr => pT + ((maxHr - hr) / spanHr) * (H - pT - pB);
+  const hrPath = points.map((p, i) => p.effort?.avgHr ? `${i === 0 ? 'M' : 'L'} ${xOf(i)} ${yHr(p.effort.avgHr)}` : null).filter(Boolean).join(' ');
+  return (
+    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', marginTop: 8 }}>
+      {[0, 1, 2].map(i => <line key={i} x1={pL} x2={W - pR} y1={pT + i * 34} y2={pT + i * 34} stroke={C.border} strokeDasharray="4 4" />)}
+      {points.map((p, i) => {
+        const x = xOf(i);
+        const barH = H - pB - yBar(values[i]);
+        return (
+          <g key={p.date}>
+            <rect x={x - 10} y={yBar(values[i])} width={20} height={Math.max(3, barH)} rx={4} fill={C.blue} opacity={0.78} />
+            <text x={x} y={H - 8} textAnchor="middle" fontSize="8" fontFamily={C.fMono} fill={C.muted}>{p.label}</text>
+          </g>
+        );
+      })}
+      {hrPath && <path d={hrPath} fill="none" stroke={C.red} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />}
+      {points.map((p, i) => p.effort?.avgHr ? <circle key={`hr-${p.date}`} cx={xOf(i)} cy={yHr(p.effort.avgHr)} r={3.2} fill={C.red} /> : null)}
+      <text x={pL} y={10} fontSize="8" fontFamily={C.fMono} fill={C.blue}>Volume/reps</text>
+      <text x={W - pR} y={10} textAnchor="end" fontSize="8" fontFamily={C.fMono} fill={C.red}>Avg HR</text>
+    </svg>
+  );
 }
 
 function timeGreeting() {
@@ -4384,6 +4475,93 @@ function IronSeriesView({ sessions, allExercises, onStart, onDemoOpen }) {
   );
 }
 
+function ExerciseInsightModal({ exId, def, sessions, recovery, watchData, onClose }) {
+  const points = exerciseHistoryPoints(sessions, exId, watchData);
+  const lastEntry = findLastExerciseEntry(sessions, exId);
+  const recommendation = recommendExerciseProgression(lastEntry, def, recovery, watchData);
+  const latest = points[points.length - 1] || null;
+  const effort = latest?.effort;
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(12,18,32,.42)',
+      display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+      padding: '18px 12px calc(18px + env(safe-area-inset-bottom, 0px))',
+    }} onClick={onClose}>
+      <div style={{
+        width: '100%', maxWidth: 430, maxHeight: '88vh', overflowY: 'auto',
+        background: C.card, border: `1px solid ${C.border}`, borderRadius: 16,
+        boxShadow: '0 22px 60px rgba(16,31,54,.24)', padding: 16,
+      }} onClick={e => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ ...st.label, color: recommendation.tone, marginBottom: 4 }}>Exercise insight</div>
+            <div style={{ fontFamily: C.fDisplay, fontSize: 24, color: C.text, lineHeight: 1, textTransform: 'uppercase' }}>{def?.name || exId}</div>
+          </div>
+          <button onClick={onClose} style={{ width: 34, height: 34, borderRadius: 17, border: `1px solid ${C.border}`, background: C.dim, color: C.muted, fontSize: 18, cursor: 'pointer' }}>×</button>
+        </div>
+
+        <div style={{ ...st.card(recommendation.tone + '10'), borderLeft: `3px solid ${recommendation.tone}`, marginBottom: 12 }}>
+          <div style={{ ...st.label, color: recommendation.tone, marginBottom: 5 }}>Recommendation</div>
+          <div style={{ fontFamily: C.fDisplay, fontSize: 18, color: C.text, marginBottom: 4 }}>{recommendation.title}</div>
+          <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.45 }}>{recommendation.body}</div>
+        </div>
+
+        <div style={{ ...st.card(), marginBottom: 12 }}>
+          <div style={{ ...st.label, marginBottom: 8 }}>Recent performance</div>
+          {points.length ? (
+            <>
+              <ExerciseHistoryChart points={points} />
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginTop: 8 }}>
+                {[
+                  ['Load', latest?.maxWeight ? `${latest.maxWeight}kg` : latest?.volume ? `${Math.round(latest.volume)}kg` : `${latest?.reps || 0} reps`],
+                  ['Volume', latest?.volume ? `${Math.round(latest.volume)}kg` : '—'],
+                  ['RPE', latest?.avgRpe || '—'],
+                  ['Pain', latest?.pain ?? '—'],
+                ].map(([label, value]) => (
+                  <div key={label} style={{ background: C.dim, borderRadius: 8, padding: '8px 6px', textAlign: 'center' }}>
+                    <div style={{ ...st.label, fontSize: 8, marginBottom: 3 }}>{label}</div>
+                    <div style={{ fontFamily: C.fMono, fontSize: 14, color: C.text }}>{value}</div>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.45 }}>No completed history for this exercise yet. Log it once to build a trend.</div>
+          )}
+        </div>
+
+        <div style={{ ...st.card(), marginBottom: 12 }}>
+          <div style={{ ...st.label, marginBottom: 8 }}>Watch effort</div>
+          {effort?.status === 'ok' ? (
+            <>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                <span style={st.pill(recommendation.tone)}>{effort.label}</span>
+                <span style={st.pill(C.muted)}>Avg {effort.avgHr} bpm</span>
+                <span style={st.pill(C.muted)}>Peak {effort.maxHr} bpm</span>
+                <span style={st.pill(C.muted)}>{effort.confidence} confidence</span>
+              </div>
+              <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.45 }}>
+                This uses Apple Watch samples inside the timestamped exercise window. Minute-level Watch data means short sets are treated as estimates.
+              </div>
+            </>
+          ) : (
+            <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.45 }}>
+              Watch effort will appear after you complete a workout with timestamped sets and export the matching Apple Watch workout data.
+            </div>
+          )}
+        </div>
+
+        <div style={{ ...st.card(C.blue + '0c'), borderColor: C.blue + '33' }}>
+          <div style={{ ...st.label, color: C.blue, marginBottom: 6 }}>Why this matters</div>
+          <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.45 }}>
+            IronLog compares performance, RPE, pain, recovery, and Watch effort. Pain and low recovery block progression first; load or reps only increase when the safer signals agree.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, setView, selectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, onDemoOpen, onWarmupOpen, coachRec, recovery, watchData }) {
   const nextWkt = selectedWorkout;
   const [session, setSession] = useState(activeSession || null);
@@ -4409,6 +4587,7 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
   const [showAddEx, setShowAddEx] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [showDiagram, setShowDiagram] = useState(false);
+  const [showExerciseInsight, setShowExerciseInsight] = useState(false);
   const [pickerSlot, setPickerSlot] = useState(null); // null = no picker; 0–7 = slot being edited
   const [workoutDemoModal, setWorkoutDemoModal] = useState(null); // { id, name } for in-app demo
 
@@ -4430,7 +4609,7 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
     return () => clearTimeout(restRef.current);
   }, [restActive, restSecs]);
 
-  useEffect(() => { setShowDiagram(false); }, [exIdx]);
+  useEffect(() => { setShowDiagram(false); setShowExerciseInsight(false); }, [exIdx]);
 
   function startRest(s = 30) { setRestSecs(s); setRestActive(true); }
   function stopRest() { setRestActive(false); setRestSecs(30); }
@@ -4810,7 +4989,21 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
               Watch effort will appear here after this exercise has timestamped sets and the matching Watch export is available.
             </div>
           )}
+          <button onClick={() => setShowExerciseInsight(true)} style={{ ...st.ghost, marginTop: 10, padding: '8px 10px', fontSize: 11 }}>
+            View insight
+          </button>
         </div>
+
+        {showExerciseInsight && (
+          <ExerciseInsightModal
+            exId={exId}
+            def={def}
+            sessions={sessions}
+            recovery={recovery}
+            watchData={watchData}
+            onClose={() => setShowExerciseInsight(false)}
+          />
+        )}
 
         {/* Pull-up progress card */}
         {def.pullupTracking && (() => {
