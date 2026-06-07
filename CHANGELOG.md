@@ -4,6 +4,13 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-06-08 — Sleep stage recovery scoring (Codex)
+
+- Redeployed Supabase `ingest-health` Edge Function v9 so `sleep_analysis` exports store deep, REM, core, awake, and derived efficiency metrics alongside total sleep
+- Backfilled the latest captured sleep export into `sleep_deep`, `sleep_rem`, `sleep_core`, `sleep_awake`, and `sleep_efficiency` rows
+- Updated Home recovery scoring to use a sleep quality score from total sleep, efficiency, deep sleep, REM sleep, and awake time instead of sleep duration alone
+- Updated the Home readiness chip/modal so sleep reports as `Sleep good/fair/low` with stage details in the explanation
+
 ## 2026-06-08 — Sleep diagnostics and Blood Oxygen support (Codex)
 
 - Redeployed Supabase `ingest-health` Edge Function v7 so health exports are captured for debugging when sleep or Blood Oxygen payloads do not normalize as expected

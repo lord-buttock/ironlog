@@ -47,7 +47,7 @@ The app is in active daily use. All core workout features complete. Apple Watch 
 
 ### Health data pipeline — fully live
 - **Health Auto Export** (iPhone app) sends data nightly to Supabase Edge Function (`ingest-health`)
-- Supabase `health_metrics` table stores HRV, Resting HR, Steps, Active Cal, Sleep, and Blood Oxygen by date when those metrics are present in the export
+- Supabase `health_metrics` table stores HRV, Resting HR, Steps, Active Cal, Sleep, Sleep stages, derived Sleep Efficiency, and Blood Oxygen by date when those metrics are present in the export
 - IronLog fetches on every load → drives Recovery Dashboard on Home screen
 - Manual import fallback available in Health tab → Body section (small text link)
 - Latest receiver version captures raw health export payloads in `health_export_captures` so missing sleep / SpO2 issues can be diagnosed from the actual Health Auto Export request shape
@@ -62,7 +62,7 @@ The app is in active daily use. All core workout features complete. Apple Watch 
 - Weekly Activity Heatmap (5-week GitHub-style grid)
 - Recent Workouts (last 3 sessions+rides, "+ Log Workout" CTA)
 
-### Recovery score formula (as of 2026-06-06)
+### Recovery score formula (as of 2026-06-08)
 Based on Buchheit 2014, Plews 2013, Altini/HRV4Training methodology.
 Adaptive: uses 3-factor formula when sleep is available, 2-factor otherwise.
 
@@ -71,8 +71,9 @@ Adaptive: uses 3-factor formula when sleep is available, 2-factor otherwise.
 zHRV   = (todayHRV   - mean7HRV)  / sd7HRV   // higher HRV = positive = good
 zRHR   = (mean7RHR   - todayRHR)  / sd7RHR   // lower  RHR = positive = good (inverted)
 
-// WITH sleep (≥3 nights in last 7 days + last-night reading):
-zSleep = (todaySleep - mean7Sleep) / sd7Sleep // higher sleep = positive = good
+// WITH sleep_analysis:
+sleepScore = 35% total sleep + 20% sleep efficiency + 20% deep sleep + 15% REM sleep + 10% awake-time penalty
+zSleep = (sleepScore - 50) / 15
 zComb  = zHRV × 0.40 + zRHR × 0.30 + zSleep × 0.30
 
 // WITHOUT sleep (watch not worn overnight):
@@ -81,7 +82,7 @@ zComb  = zHRV × 0.70 + zRHR × 0.30
 score = clamp(50 + zComb × 15, 0, 100)       // 50 = average, ±1 SD = ±15 pts
 ```
 Thresholds: Good ≥ 60, Fair 38–59, Low < 38
-Sleep metric name in Health Auto Export JSON: `sleep_analysis` (hours per night)
+Sleep metric name in Health Auto Export JSON: `sleep_analysis`. Receiver stores `sleep`, `sleep_deep`, `sleep_rem`, `sleep_core`, `sleep_awake`, optional `sleep_in_bed`, and derived `sleep_efficiency`.
 
 ---
 

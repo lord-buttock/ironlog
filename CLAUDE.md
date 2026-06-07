@@ -229,31 +229,30 @@ Energy check → Warm-up checklist → Exercises (weight/reps/RPE/pain per set) 
 - ✅ Health Auto Export → Supabase pipeline (nightly automation, `ingest-health` Edge Function, `health_metrics` table)
 - ✅ Health tab Body section: charts for HRV, Resting HR, Steps, Active Cal with workout markers, badges, trend arrows
 - ✅ Recovery Dashboard on Home: greeting, recovery ring, fatigue bar, training load, Today's Training, 4-metric strip with area sparklines, Recovery Trends dual-axis chart (7D/30D/90D), Cycling/Strength week cards, Weekly Heatmap, Recent Workouts
-- ✅ Recovery score: adaptive SD-band formula — auto-switches between 2-factor (HRV 70%/RHR 30%) and 3-factor (HRV 40%/RHR 30%/Sleep 30%) depending on whether sleep data is available. Sleep pipeline complete: Edge Function v2 handles `sleep_analysis`, `pullHealthMetrics` returns sleep, state and localStorage extended. See `computeRecovery()` and ROADMAP.md formula block.
+- ✅ Recovery score: adaptive SD-band formula — auto-switches between 2-factor (HRV 70%/RHR 30%) and 3-factor (HRV 40%/RHR 30%/Sleep 30%) depending on whether sleep data is available. Sleep now uses a stage-aware score from total sleep, efficiency, deep sleep, REM sleep, and awake time where exported. See `computeRecovery()`, `computeSleepScore()`, and ROADMAP.md formula block.
 
 ---
 
 ## Health data pipeline — Supabase
 
 **Edge Function:** `https://bhlbebdmuodscdgcwkyb.supabase.co/functions/v1/ingest-health`
-- Accepts POST with Health Auto Export v1 JSON body
-- Maps: `heart_rate_variability→hrv`, `resting_heart_rate→resting_hr`, `step_count→steps`, `active_energy→active_cal` (÷4.184 kJ→kcal)
+- Accepts POST with Health Auto Export JSON body
+- Maps: `heart_rate_variability→hrv`, `resting_heart_rate→resting_hr`, `step_count→steps`, `active_energy→active_cal` (÷4.184 kJ→kcal), `blood_oxygen_saturation→blood_oxygen`
+- Expands `sleep_analysis` into `sleep`, `sleep_deep`, `sleep_rem`, `sleep_core`, `sleep_awake`, optional `sleep_in_bed`, and derived `sleep_efficiency`
 - Upserts to `health_metrics(metric, date, value)` using service-role key
 
 **Table:** `health_metrics` — PRIMARY KEY (metric, date). RLS: anon SELECT, service-role write.
 
 **App functions:** `pullHealthMetrics()` called at startup; `pushHealthMetrics()` called after bulk import.
 
-**Metrics Phill exports from Health Auto Export (as of 2026-06-06):**
-Currently stored and displayed: `hrv`, `resting_hr`, `steps`, `active_cal`
+**Metrics Phill exports from Health Auto Export (as of 2026-06-08):**
+Currently stored and used/displayed: `hrv`, `resting_hr`, `steps`, `active_cal`, `sleep`, sleep stage metrics, `blood_oxygen`
 
 Currently exported but NOT YET stored/displayed (Edge Function would need extending):
 - `cycling_distance` (km)
 - `vo2_max` (mL/kg/min) — sparse, only updates after outdoor GPS activity
-- `blood_oxygen` (SpO2 %)
 - `respiratory_rate` (breaths/min)
 - `cardio_recovery` (bpm drop after 1 min)
-- `sleep_analysis` (hours)
 - `walking_heart_rate` (bpm avg)
 
 ---

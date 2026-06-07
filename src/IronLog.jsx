@@ -982,8 +982,15 @@ async function pullHealthMetrics() {
       .select('metric, date, value')
       .order('date', { ascending: true });
     if (error || !data || !data.length) return null;
-    const result = { hrv: [], restingHr: [], steps: [], activeCal: [], cardio: [], sleep: [], bloodOxygen: [] };
-    const keyMap = { hrv: 'hrv', resting_hr: 'restingHr', steps: 'steps', active_cal: 'activeCal', sleep: 'sleep', blood_oxygen: 'bloodOxygen' };
+    const result = {
+      hrv: [], restingHr: [], steps: [], activeCal: [], cardio: [], sleep: [], bloodOxygen: [],
+      sleepDeep: [], sleepRem: [], sleepCore: [], sleepAwake: [], sleepInBed: [], sleepEfficiency: [],
+    };
+    const keyMap = {
+      hrv: 'hrv', resting_hr: 'restingHr', steps: 'steps', active_cal: 'activeCal', sleep: 'sleep', blood_oxygen: 'bloodOxygen',
+      sleep_deep: 'sleepDeep', sleep_rem: 'sleepRem', sleep_core: 'sleepCore', sleep_awake: 'sleepAwake',
+      sleep_in_bed: 'sleepInBed', sleep_efficiency: 'sleepEfficiency',
+    };
     data.forEach(row => {
       const key = keyMap[row.metric];
       if (key) result[key].push({ date: row.date, value: Number(row.value) });
@@ -1029,7 +1036,11 @@ async function pullWatchWorkouts() {
 async function pushHealthMetrics(healthData) {
   if (!db) return;
   try {
-    const keyMap = { hrv: 'hrv', restingHr: 'resting_hr', steps: 'steps', activeCal: 'active_cal', sleep: 'sleep', bloodOxygen: 'blood_oxygen' };
+    const keyMap = {
+      hrv: 'hrv', restingHr: 'resting_hr', steps: 'steps', activeCal: 'active_cal', sleep: 'sleep', bloodOxygen: 'blood_oxygen',
+      sleepDeep: 'sleep_deep', sleepRem: 'sleep_rem', sleepCore: 'sleep_core', sleepAwake: 'sleep_awake',
+      sleepInBed: 'sleep_in_bed', sleepEfficiency: 'sleep_efficiency',
+    };
     const rows = [];
     const now = new Date().toISOString();
     Object.entries(keyMap).forEach(([stateKey, metricName]) => {
@@ -1522,10 +1533,30 @@ const HEALTH_EXPORT_MAP = {
   cardio_fitness:         'cardio',
   sleep_analysis:         'sleep',
   sleep:                  'sleep',
+  sleep_deep:             'sleepDeep',
+  sleep_rem:              'sleepRem',
+  sleep_core:             'sleepCore',
+  sleep_awake:            'sleepAwake',
+  sleep_in_bed:           'sleepInBed',
+  sleep_efficiency:       'sleepEfficiency',
 };
 
 function healthExportValue(metricName, entry) {
-  if (metricName === 'sleep_analysis' || metricName === 'sleep') {
+  if (['sleep_analysis', 'sleep', 'sleep_deep', 'sleep_rem', 'sleep_core', 'sleep_awake', 'sleep_in_bed', 'sleep_efficiency'].includes(metricName)) {
+    if (metricName === 'sleep_deep') return Number(entry.deep);
+    if (metricName === 'sleep_rem') return Number(entry.rem);
+    if (metricName === 'sleep_core') return Number(entry.core);
+    if (metricName === 'sleep_awake') return Number(entry.awake);
+    if (metricName === 'sleep_in_bed') return Number(entry.inBed);
+    if (metricName === 'sleep_efficiency') {
+      const total = Number(entry.totalSleep ?? entry.asleep);
+      const awake = Number(entry.awake);
+      const inBed = Number(entry.inBed);
+      const denominator = Number.isFinite(inBed) && inBed > 0
+        ? inBed
+        : (Number.isFinite(total) && Number.isFinite(awake) ? total + awake : null);
+      return Number.isFinite(total) && Number.isFinite(denominator) && denominator > 0 ? (total / denominator) * 100 : null;
+    }
     const direct = [entry.totalSleep, entry.asleep, entry.sleep, entry.duration, entry.qty];
     for (const candidate of direct) {
       const n = Number(candidate);
@@ -1542,6 +1573,19 @@ function healthExportValue(metricName, entry) {
   return value;
 }
 
+function expandSleepExportMetric(metric) {
+  if (!['sleep_analysis', 'sleep'].includes(metric.name)) return [metric];
+  return [
+    metric,
+    { ...metric, name: 'sleep_deep' },
+    { ...metric, name: 'sleep_rem' },
+    { ...metric, name: 'sleep_core' },
+    { ...metric, name: 'sleep_awake' },
+    { ...metric, name: 'sleep_in_bed' },
+    { ...metric, name: 'sleep_efficiency' },
+  ];
+}
+
 function combineHealthExportEntries(metricName, entries) {
   if (!entries.length || !['sleep_analysis', 'sleep'].includes(metricName)) return entries;
   const byDate = {};
@@ -1555,7 +1599,7 @@ function parseHealthAutoExport(parsed) {
   const metrics = parsed?.data?.metrics;
   if (!Array.isArray(metrics)) return null; // not this format
   const result = {};
-  metrics.forEach(metric => {
+  metrics.flatMap(expandSleepExportMetric).forEach(metric => {
     const key = HEALTH_EXPORT_MAP[metric.name];
     if (!key) return;
     const entries = (metric.data || [])
@@ -1977,6 +2021,71 @@ function rollingAvg(readings, days = 14) {
 }
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
+function readingOnDate(readings, date) {
+  return (readings || []).find(r => r?.date === date) || null;
+}
+
+function scoreAgainstTarget(value, target, spread, higherBetter = true) {
+  if (!Number.isFinite(value) || !Number.isFinite(target) || !Number.isFinite(spread) || spread <= 0) return 50;
+  const delta = higherBetter ? value - target : target - value;
+  return clamp(50 + (delta / spread) * 15, 0, 100);
+}
+
+function computeSleepScore(healthData) {
+  const total = healthData?.sleep || [];
+  const latest = getLatestReading(total);
+  if (!latest) return null;
+  const date = latest.date;
+  const totalSleep = Number(latest.value);
+  const inBed = Number(readingOnDate(healthData?.sleepInBed, date)?.value);
+  const deep = Number(readingOnDate(healthData?.sleepDeep, date)?.value);
+  const rem = Number(readingOnDate(healthData?.sleepRem, date)?.value);
+  const core = Number(readingOnDate(healthData?.sleepCore, date)?.value);
+  const awake = Number(readingOnDate(healthData?.sleepAwake, date)?.value);
+  const exportedEfficiency = Number(readingOnDate(healthData?.sleepEfficiency, date)?.value);
+  const inferredInBed = Number.isFinite(inBed) && inBed > 0
+    ? inBed
+    : (Number.isFinite(awake) && Number.isFinite(totalSleep) ? totalSleep + awake : null);
+  const efficiency = Number.isFinite(exportedEfficiency)
+    ? exportedEfficiency
+    : (Number.isFinite(inferredInBed) && inferredInBed > 0 ? (totalSleep / inferredInBed) * 100 : null);
+
+  const total7 = lastNDaysReadings(total, 7).map(r => Number(r.value)).filter(Number.isFinite);
+  const deep7 = lastNDaysReadings(healthData?.sleepDeep || [], 7).map(r => Number(r.value)).filter(Number.isFinite);
+  const rem7 = lastNDaysReadings(healthData?.sleepRem || [], 7).map(r => Number(r.value)).filter(Number.isFinite);
+  const avg = arr => arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : null;
+
+  const totalTarget = total7.length >= 3 ? avg(total7) : 7.5;
+  const deepTarget = deep7.length >= 3 ? avg(deep7) : 1.1;
+  const remTarget = rem7.length >= 3 ? avg(rem7) : 1.5;
+
+  const totalScore = scoreAgainstTarget(totalSleep, totalTarget, 1.5, true);
+  const efficiencyScore = Number.isFinite(efficiency) ? scoreAgainstTarget(efficiency, 88, 8, true) : 50;
+  const deepScore = Number.isFinite(deep) ? scoreAgainstTarget(deep, deepTarget, 0.45, true) : 50;
+  const remScore = Number.isFinite(rem) ? scoreAgainstTarget(rem, remTarget, 0.55, true) : 50;
+  const awakeScore = Number.isFinite(awake) ? scoreAgainstTarget(awake, 0.6, 0.45, false) : 50;
+
+  const score = Math.round(clamp(
+    totalScore * 0.35 + efficiencyScore * 0.20 + deepScore * 0.20 + remScore * 0.15 + awakeScore * 0.10,
+    0, 100
+  ));
+  const label = score >= 60 ? 'Good' : score >= 38 ? 'Fair' : 'Low';
+  const color = score >= 60 ? C.green : score >= 38 ? C.amber : C.red;
+  const parts = [
+    Number.isFinite(totalSleep) ? `${Math.round(totalSleep * 10) / 10} h asleep` : null,
+    Number.isFinite(deep) ? `${Math.round(deep * 10) / 10} h deep` : null,
+    Number.isFinite(rem) ? `${Math.round(rem * 10) / 10} h REM` : null,
+    Number.isFinite(awake) ? `${Math.round(awake * 10) / 10} h awake` : null,
+  ].filter(Boolean);
+
+  return {
+    date, score, label, color, totalSleep, inBed, deep, rem, core, awake, efficiency,
+    components: { totalScore, efficiencyScore, deepScore, remScore, awakeScore },
+    summary: parts.join(' · '),
+    hasStages: [deep, rem, core, awake, inBed, efficiency].some(Number.isFinite),
+  };
+}
+
 // Recovery score — methodology based on sports science consensus (Buchheit 2014, Plews 2013):
 //   • 7-day rolling mean + SD baseline
 //   • SD-band z-score: score = clamp(50 + zCombined × 15, 0–100)
@@ -1989,6 +2098,7 @@ function computeRecovery(healthData) {
   const hrv   = healthData?.hrv       || [];
   const rhr   = healthData?.restingHr || [];
   const slp   = healthData?.sleep     || [];
+  const sleepScore = computeSleepScore(healthData);
 
   const todayHRV   = Number(getLatestReading(hrv)?.value) || 0;
   const todayRHR   = Number(getLatestReading(rhr)?.value) || 0;
@@ -2009,16 +2119,15 @@ function computeRecovery(healthData) {
   const zHRV = (todayHRV - mHRV) / sHRV;  // higher HRV = positive = good
   const zRHR = (mRHR - todayRHR) / sRHR;  // lower  RHR = positive = good (inverted)
 
-  // Use sleep if we have at least 3 nights of data AND a reading for today/last night
-  const hasSleep = slp7.length >= 3 && todaySleep > 0;
+  // Use sleep if Health Auto Export supplied last night's reading. With <3 nights,
+  // it is scored against conservative targets until a personal baseline exists.
+  const hasSleep = !!sleepScore && todaySleep > 0;
 
   let zCombined, formula;
   if (hasSleep) {
-    const mSleep = avg(slp7);
-    const sSleep = sdev(slp7, mSleep) || mSleep * 0.15; // sleep CV ~15%
-    const zSleep = (todaySleep - mSleep) / sSleep;       // higher sleep = positive = good
+    const zSleep = (sleepScore.score - 50) / 15;
     zCombined = zHRV * 0.40 + zRHR * 0.30 + zSleep * 0.30;
-    formula   = 'hrv+rhr+sleep';
+    formula   = sleepScore.hasStages ? 'hrv+rhr+sleep-quality' : 'hrv+rhr+sleep-duration';
   } else {
     zCombined = zHRV * 0.70 + zRHR * 0.30;
     formula   = 'hrv+rhr';
@@ -2030,7 +2139,7 @@ function computeRecovery(healthData) {
 
   return {
     score, label, color, formula,
-    todayHRV, todayRHR, todaySleep: hasSleep ? todaySleep : null,
+    todayHRV, todayRHR, todaySleep: hasSleep ? todaySleep : null, sleepScore,
     meanHRV:  Math.round(mHRV * 10) / 10,
     meanRHR:  Math.round(mRHR * 10) / 10,
     zHRV:     Math.round(zHRV * 10) / 10,
@@ -3062,9 +3171,13 @@ function readinessChips(recovery, healthData, watchSummary) {
   const chips = [];
   if (recovery?.zHRV != null) chips.push({ icon: 'activity', text: recovery.zHRV >= 0 ? 'HRV above avg' : 'HRV below avg', color: recovery.zHRV >= 0 ? C.green : C.red });
   if (recovery?.zRHR != null) chips.push({ icon: 'heart', text: recovery.zRHR >= 0 ? 'RHR down' : 'RHR up', color: recovery.zRHR >= 0 ? C.green : C.red });
+  const sleep = recovery?.sleepScore || computeSleepScore(healthData);
+  chips.push({
+    icon: sleep ? 'moon' : 'circle-alert',
+    text: sleep ? `Sleep ${sleep.label.toLowerCase()}` : 'Sleep missing',
+    color: sleep ? sleep.color : C.amber,
+  });
   if (watchSummary?.hardCount > 0) chips.push({ icon: 'flame', text: 'Watch effort high', color: C.amber });
-  const sleepLatest = getLatestReading(healthData?.sleep || []);
-  chips.push({ icon: sleepLatest ? 'moon' : 'circle-alert', text: sleepLatest ? 'Sleep tracked' : 'Sleep missing', color: sleepLatest ? C.green : C.amber });
   return chips.slice(0, 3);
 }
 
@@ -3074,12 +3187,14 @@ function ReadinessInsightModal({ recovery, fatigue, healthData, watchSummary, on
   const latestHrv = getLatestReading(healthData?.hrv || []);
   const latestRhr = getLatestReading(healthData?.restingHr || []);
   const latestSleep = getLatestReading(healthData?.sleep || []);
+  const sleepScore = recovery?.sleepScore || computeSleepScore(healthData);
   const latestMatch = watchSummary?.latestMatch;
   const rows = [
     { label: 'Recovery score', value: recovery ? `${recovery.score}% · ${recovery.label}` : 'No recovery data yet', color: recovery?.color || C.muted },
     { label: 'HRV', value: latestHrv ? `${Math.round(Number(latestHrv.value) * 10) / 10} ms · ${recovery?.zHRV >= 0 ? 'above baseline' : 'below baseline'}` : 'No HRV reading', color: recovery?.zHRV >= 0 ? C.green : C.red },
     { label: 'Resting HR', value: latestRhr ? `${Math.round(Number(latestRhr.value))} bpm · ${recovery?.zRHR >= 0 ? 'down vs baseline' : 'up vs baseline'}` : 'No resting HR reading', color: recovery?.zRHR >= 0 ? C.green : C.red },
-    { label: 'Sleep', value: latestSleep ? `${Math.round(Number(latestSleep.value) * 10) / 10} h tracked` : 'No sleep reading for last night', color: latestSleep ? C.green : C.amber },
+    { label: 'Sleep quality', value: sleepScore ? `${sleepScore.score}% · ${sleepScore.label}` : 'No sleep reading for last night', color: sleepScore?.color || C.amber },
+    { label: 'Sleep detail', value: sleepScore?.summary || (latestSleep ? `${Math.round(Number(latestSleep.value) * 10) / 10} h tracked` : 'No sleep stages yet'), color: C.muted },
     { label: 'Watch effort', value: watchSummary?.hardCount > 0 ? `${watchSummary.hardCount} hard matched workout${watchSummary.hardCount === 1 ? '' : 's'} this week` : latestMatch ? 'Latest matched workout was not hard' : 'No matched Watch workout yet', color: watchSummary?.hardCount > 0 ? C.amber : C.muted },
   ];
   return (
@@ -3128,7 +3243,7 @@ function ReadinessInsightModal({ recovery, fatigue, healthData, watchSummary, on
         <div style={{ ...st.card(C.blue + '0c'), borderColor: C.blue + '33' }}>
           <div style={{ ...st.label, color: C.blue, marginBottom: 6 }}>Recommendation</div>
           <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.45 }}>
-            Pain and recovery gates come first. On low recovery days, IronLog recommends rest, mobility, or a lighter workout even when the next planned session is available.
+            Pain and recovery gates come first. Sleep now uses duration, efficiency, deep sleep, REM sleep, and awake time where available, so a short but efficient night is treated differently from a restless one.
           </div>
         </div>
       </div>
@@ -7975,6 +8090,7 @@ export default function App() {
   const [ironView, setIronView] = useState(false);
   const [healthData, setHealthData] = useState({
     hrv: [], restingHr: [], steps: [], activeCal: [], cardio: [], sleep: [], bloodOxygen: [],
+    sleepDeep: [], sleepRem: [], sleepCore: [], sleepAwake: [], sleepInBed: [], sleepEfficiency: [],
   });
   const [watchData, setWatchData] = useState({ matches: [], workouts: [], samples: [], ecg: [] });
 
@@ -7991,11 +8107,16 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
-      const [s, r, a, ce, wc, wh, hrv, restingHr, steps, activeCal, cardio, sleep, bloodOxygen] = await Promise.all([
+      const [
+        s, r, a, ce, wc, wh, hrv, restingHr, steps, activeCal, cardio, sleep, bloodOxygen,
+        sleepDeep, sleepRem, sleepCore, sleepAwake, sleepInBed, sleepEfficiency,
+      ] = await Promise.all([
         load('il_sessions'), load('il_rides'), load('il_active'),
         load('il_custom_exercises'), load('il_workout_custom'), load('il_workout_hidden'),
         load('il_health_hrv'), load('il_health_resting_hr'), load('il_health_steps'),
         load('il_health_active_cal'), load('il_health_cardio'), load('il_health_sleep'), load('il_health_blood_oxygen'),
+        load('il_health_sleep_deep'), load('il_health_sleep_rem'), load('il_health_sleep_core'),
+        load('il_health_sleep_awake'), load('il_health_sleep_in_bed'), load('il_health_sleep_efficiency'),
       ]);
       const localSessions = s || [];
       const localRides    = r || [];
@@ -8026,6 +8147,12 @@ export default function App() {
         cardio:    (cardio || []),
         sleep:     (cloudHealth?.sleep     || sleep     || []),
         bloodOxygen: (cloudHealth?.bloodOxygen || bloodOxygen || []),
+        sleepDeep: (cloudHealth?.sleepDeep || sleepDeep || []),
+        sleepRem: (cloudHealth?.sleepRem || sleepRem || []),
+        sleepCore: (cloudHealth?.sleepCore || sleepCore || []),
+        sleepAwake: (cloudHealth?.sleepAwake || sleepAwake || []),
+        sleepInBed: (cloudHealth?.sleepInBed || sleepInBed || []),
+        sleepEfficiency: (cloudHealth?.sleepEfficiency || sleepEfficiency || []),
       });
       setWatchData(cloudWatch || { matches: [], workouts: [], samples: [], ecg: [] });
       setSelectedWorkout(nextWorkout(finalSessions));
@@ -8053,6 +8180,12 @@ export default function App() {
   useEffect(() => { if (ready) save('il_health_cardio', healthData.cardio); }, [healthData.cardio, ready]);
   useEffect(() => { if (ready) save('il_health_sleep', healthData.sleep); }, [healthData.sleep, ready]);
   useEffect(() => { if (ready) save('il_health_blood_oxygen', healthData.bloodOxygen); }, [healthData.bloodOxygen, ready]);
+  useEffect(() => { if (ready) save('il_health_sleep_deep', healthData.sleepDeep); }, [healthData.sleepDeep, ready]);
+  useEffect(() => { if (ready) save('il_health_sleep_rem', healthData.sleepRem); }, [healthData.sleepRem, ready]);
+  useEffect(() => { if (ready) save('il_health_sleep_core', healthData.sleepCore); }, [healthData.sleepCore, ready]);
+  useEffect(() => { if (ready) save('il_health_sleep_awake', healthData.sleepAwake); }, [healthData.sleepAwake, ready]);
+  useEffect(() => { if (ready) save('il_health_sleep_in_bed', healthData.sleepInBed); }, [healthData.sleepInBed, ready]);
+  useEffect(() => { if (ready) save('il_health_sleep_efficiency', healthData.sleepEfficiency); }, [healthData.sleepEfficiency, ready]);
 
   function handleExport() {
     exportData(dataRef.current);
