@@ -2855,11 +2855,80 @@ function readinessChips(recovery, healthData, watchSummary) {
   return chips.slice(0, 3);
 }
 
-function ReadinessSummaryCard({ recovery, fatigue, healthData, watchSummary, setView, setShowWhy }) {
+function ReadinessInsightModal({ recovery, fatigue, healthData, watchSummary, onClose }) {
+  const verdict = readinessVerdict(recovery, fatigue, watchSummary);
+  const chips = readinessChips(recovery, healthData, watchSummary);
+  const latestHrv = getLatestReading(healthData?.hrv || []);
+  const latestRhr = getLatestReading(healthData?.restingHr || []);
+  const latestSleep = getLatestReading(healthData?.sleep || []);
+  const latestMatch = watchSummary?.latestMatch;
+  const rows = [
+    { label: 'Recovery score', value: recovery ? `${recovery.score}% · ${recovery.label}` : 'No recovery data yet', color: recovery?.color || C.muted },
+    { label: 'HRV', value: latestHrv ? `${Math.round(Number(latestHrv.value) * 10) / 10} ms · ${recovery?.zHRV >= 0 ? 'above baseline' : 'below baseline'}` : 'No HRV reading', color: recovery?.zHRV >= 0 ? C.green : C.red },
+    { label: 'Resting HR', value: latestRhr ? `${Math.round(Number(latestRhr.value))} bpm · ${recovery?.zRHR >= 0 ? 'down vs baseline' : 'up vs baseline'}` : 'No resting HR reading', color: recovery?.zRHR >= 0 ? C.green : C.red },
+    { label: 'Sleep', value: latestSleep ? `${Math.round(Number(latestSleep.value) * 10) / 10} h tracked` : 'No sleep reading for last night', color: latestSleep ? C.green : C.amber },
+    { label: 'Watch effort', value: watchSummary?.hardCount > 0 ? `${watchSummary.hardCount} hard matched workout${watchSummary.hardCount === 1 ? '' : 's'} this week` : latestMatch ? 'Latest matched workout was not hard' : 'No matched Watch workout yet', color: watchSummary?.hardCount > 0 ? C.amber : C.muted },
+  ];
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(12,18,32,.42)',
+      display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+      padding: '18px 12px calc(18px + env(safe-area-inset-bottom, 0px))',
+    }} onClick={onClose}>
+      <div style={{
+        width: '100%', maxWidth: 430, maxHeight: 'calc(100dvh - 36px)', overflowY: 'auto',
+        WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain',
+        background: C.card, border: `1px solid ${C.border}`, borderRadius: 16,
+        boxShadow: '0 22px 60px rgba(16,31,54,.24)', padding: '16px 16px 28px',
+      }} onClick={e => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
+          <div>
+            <div style={{ ...st.label, color: verdict.color, marginBottom: 4 }}>Readiness insight</div>
+            <div style={{ fontFamily: C.fDisplay, fontSize: 24, color: C.text, lineHeight: 1 }}>{verdict.title}</div>
+          </div>
+          <button onClick={onClose} style={{ width: 34, height: 34, borderRadius: 17, border: `1px solid ${C.border}`, background: C.dim, color: C.muted, fontSize: 18, cursor: 'pointer' }}>×</button>
+        </div>
+
+        <div style={{ ...st.card(verdict.color + '10'), borderLeft: `3px solid ${verdict.color}`, marginBottom: 12 }}>
+          <div style={{ ...st.label, color: verdict.color, marginBottom: 5 }}>{verdict.status}</div>
+          <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.45 }}>{verdict.body}</div>
+        </div>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+          {chips.map(chip => (
+            <span key={chip.text} style={{ ...st.pill(chip.color), display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              <Icon name={chip.icon} size={12} color={chip.color} /> {chip.text}
+            </span>
+          ))}
+        </div>
+
+        <div style={{ ...st.card(), marginBottom: 12 }}>
+          <div style={{ ...st.label, marginBottom: 8 }}>Signals used</div>
+          {rows.map(row => (
+            <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, padding: '8px 0', borderTop: `1px solid ${C.border}` }}>
+              <div style={{ fontSize: 12, color: C.muted }}>{row.label}</div>
+              <div style={{ fontSize: 12, color: row.color, textAlign: 'right', fontWeight: 700 }}>{row.value}</div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ ...st.card(C.blue + '0c'), borderColor: C.blue + '33' }}>
+          <div style={{ ...st.label, color: C.blue, marginBottom: 6 }}>Recommendation</div>
+          <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.45 }}>
+            Pain and recovery gates come first. On low recovery days, IronLog recommends rest, mobility, or a lighter workout even when the next planned session is available.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ReadinessSummaryCard({ recovery, fatigue, healthData, watchSummary, setView, onSeeWhy }) {
   const verdict = readinessVerdict(recovery, fatigue, watchSummary);
   const chips = readinessChips(recovery, healthData, watchSummary);
   const fatigueLevel = Math.min(100, Math.max(0, fatigue?.level || (verdict.status === 'High load' ? 74 : 38)));
   const filled = Math.max(1, Math.round(fatigueLevel / 14));
+  const primaryOpensInsight = verdict.action === 'Review plan';
   return (
     <div style={{ ...dash.card({ padding: 16, marginBottom: 10 }) }}>
       <div style={{ display: 'grid', gridTemplateColumns: '108px 1fr', gap: 14, alignItems: 'center' }}>
@@ -2887,7 +2956,7 @@ function ReadinessSummaryCard({ recovery, fatigue, healthData, watchSummary, set
         ))}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10, marginTop: 12 }}>
-        <button onClick={() => setView('workout')} style={{
+        <button onClick={() => primaryOpensInsight ? onSeeWhy() : setView('workout')} style={{
           border: 'none', borderRadius: 9, padding: '12px 14px', background: C.blue, color: '#fff',
           fontFamily: C.fBody, fontSize: 14, fontWeight: 800, display: 'flex', alignItems: 'center',
           justifyContent: 'space-between', cursor: 'pointer', boxShadow: '0 8px 18px rgba(91,157,245,.24)',
@@ -2895,7 +2964,7 @@ function ReadinessSummaryCard({ recovery, fatigue, healthData, watchSummary, set
           <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}><Icon name="dumbbell" size={18} color="#fff" />{verdict.action}</span>
           <Icon name="chevron-right" size={18} color="#fff" />
         </button>
-        <button onClick={() => setShowWhy(v => !v)} style={{
+        <button onClick={onSeeWhy} style={{
           border: `1px solid ${C.border}`, borderRadius: 9, padding: '12px 10px', background: '#fff', color: '#0d1838',
           fontFamily: C.fBody, fontSize: 14, fontWeight: 700, cursor: 'pointer',
         }}>See why</button>
@@ -3042,6 +3111,7 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
   const [showExercises, setShowExercises] = useState(false);
   const [showWarmup, setShowWarmup] = useState(false);
   const [showCooldown, setShowCooldown] = useState(false);
+  const [showReadinessInsight, setShowReadinessInsight] = useState(false);
   const [trendDays, setTrendDays] = useState(7);
   const suggested = nextWorkout(sessions);
 
@@ -3129,7 +3199,16 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
         {updateAvailable && <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}`}</style>}
       </div>
 
-      <ReadinessSummaryCard recovery={recovery} fatigue={fatigue} healthData={hd} watchSummary={watchSummary} setView={setView} setShowWhy={setShowWhy} />
+      <ReadinessSummaryCard recovery={recovery} fatigue={fatigue} healthData={hd} watchSummary={watchSummary} setView={setView} onSeeWhy={() => setShowReadinessInsight(true)} />
+      {showReadinessInsight && (
+        <ReadinessInsightModal
+          recovery={recovery}
+          fatigue={fatigue}
+          healthData={hd}
+          watchSummary={watchSummary}
+          onClose={() => setShowReadinessInsight(false)}
+        />
+      )}
       <TrainingRecommendationTiles recovery={recovery} fatigue={fatigue} sessions={sessions} setView={setView} />
       {hasHealthData && <DailySignalsStrip healthData={hd} />}
       {hasHealthData && (hd.hrv?.length > 1 || hd.restingHr?.length > 1) && (
@@ -4483,14 +4562,15 @@ function ExerciseInsightModal({ exId, def, sessions, recovery, watchData, onClos
   const effort = latest?.effort;
   return (
     <div style={{
-      position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(12,18,32,.42)',
+      position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(12,18,32,.42)',
       display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
       padding: '18px 12px calc(18px + env(safe-area-inset-bottom, 0px))',
     }} onClick={onClose}>
       <div style={{
-        width: '100%', maxWidth: 430, maxHeight: '88vh', overflowY: 'auto',
+        width: '100%', maxWidth: 430, maxHeight: 'calc(100dvh - 36px)', overflowY: 'auto',
+        WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain',
         background: C.card, border: `1px solid ${C.border}`, borderRadius: 16,
-        boxShadow: '0 22px 60px rgba(16,31,54,.24)', padding: 16,
+        boxShadow: '0 22px 60px rgba(16,31,54,.24)', padding: '16px 16px 32px',
       }} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
           <div style={{ minWidth: 0 }}>

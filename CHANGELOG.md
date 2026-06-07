@@ -4,6 +4,12 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-06-07 — Insight modal usability fixes (Codex)
+
+- Fixed Exercise InsightModal layering/scrolling so the bottom content is reachable above the app nav, including shorter mobile viewports
+- Added a proper Home readiness insight modal; the top-card "See why" button now opens recovery signals, explanation, and recommendation details
+- Changed recovery-day "Review plan" to open the readiness explanation instead of silently jumping straight to the Workout tab
+
 ## 2026-06-07 — Exercise InsightModal and effort history (Codex)
 
 - Added tappable "View insight" action to the workout exercise "NEXT TIME" panel
