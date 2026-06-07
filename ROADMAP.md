@@ -19,6 +19,7 @@ Iron Series programme fully integrated. 30-day Caroline Girvan dumbbell programm
 - ✅ ECG receiver/table live for occasional manual readings, but ECG is not part of the normal readiness score; HRV/RHR/sleep + workout HR/calories are the useful daily signals
 - ✅ Home screen redesigned toward approved polished mockup — Codex: readiness verdict card, training tiles, compact signals, recovery trend, and weekly summary now use Watch effort as one reason signal; ECG stays quiet unless an abnormal recent reading exists
 - ✅ Exercise effort intelligence foundation — Codex: forward-looking exercise/set timestamps, Watch sample fetch, confidence-scored effort helpers, and first rule-based "NEXT TIME" exercise recommendations
+- 🔄 Exercise InsightModal in progress — Codex: add tappable exercise detail with recent performance, Watch effort confidence, and progression explanation
 - 🔄 Next: add tappable exercise/health InsightModal screens with richer graphs and per-exercise effort history once new timestamped workouts are logged/exported
 - 🔄 Next: live-device polish after Phill tests Safari/PWA cache, first-screen fit, and whether the recommendation language feels useful during actual training days
 
