@@ -4001,18 +4001,6 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
       {hasHealthData && (hd.hrv?.length > 1 || hd.restingHr?.length > 1) && (
         <RecoveryTrendCard healthData={hd} trendDays={trendDays} setTrendDays={setTrendDays} onTrendTap={() => setHomeInsight({ type: 'trend' })} />
       )}
-      <ThisWeekSummaryCard sessions={sessions} rides={rides} watchSummary={watchSummary} />
-
-      {/* ── Weekly Activity + Recent Workouts side by side ── */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'flex-start' }}>
-        <div style={{ flex: '0 0 auto', width: 'calc(45% - 4px)' }}>
-          <WeeklyHeatmap sessions={sessions} rides={rides} healthData={hd} />
-        </div>
-        <div style={{ flex: '1 1 auto', minWidth: 0 }}>
-          <RecentWorkoutsSection sessions={sessions} rides={rides} setView={setView} />
-        </div>
-      </div>
-
       {/* 7-day week strip */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 12 }}>
         {weekDays.map(({ dayLetter, sess, ride, isToday, dateStr }) => (
@@ -4034,6 +4022,17 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
             )}
           </div>
         ))}
+      </div>
+      <ThisWeekSummaryCard sessions={sessions} rides={rides} watchSummary={watchSummary} />
+
+      {/* ── Weekly Activity + Recent Workouts side by side ── */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'flex-start' }}>
+        <div style={{ flex: '0 0 auto', width: 'calc(45% - 4px)' }}>
+          <WeeklyHeatmap sessions={sessions} rides={rides} healthData={hd} />
+        </div>
+        <div style={{ flex: '1 1 auto', minWidth: 0 }}>
+          <RecentWorkoutsSection sessions={sessions} rides={rides} setView={setView} />
+        </div>
       </div>
 
       {/* Cloud sync status */}

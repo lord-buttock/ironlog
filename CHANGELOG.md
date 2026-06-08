@@ -4,6 +4,10 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-06-08 — Home week strip placement (Codex)
+
+- Moved the seven-day Home activity strip up between Recovery Trend and This Week so weekly progress is visible earlier on the screen
+
 ## 2026-06-08 — Cardio Fitness / VO2 pipeline fix (Codex)
 
 - Redeployed Supabase `ingest-health` Edge Function v10 so VO2/Cardio Fitness exports map to `health_metrics.metric = cardio`
