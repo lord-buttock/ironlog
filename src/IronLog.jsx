@@ -2559,6 +2559,18 @@ function chartColorKey() {
   ];
 }
 
+function metricChartColorKey(metric) {
+  if (metric?.key === 'activeCal') {
+    return [
+      { label: 'Low movement', color: '#45a8f5' },
+      { label: 'Usual activity', color: C.green },
+      { label: 'Active day', color: C.amber },
+      { label: 'Very active', color: C.purple },
+    ];
+  }
+  return chartColorKey();
+}
+
 function gradientStopsForPoints(points, metric, baseline, fallbackColor) {
   const safePoints = points || [];
   if (safePoints.length < 2) return [{ offset: '0%', color: fallbackColor || metric?.color || C.blue }];
@@ -2605,6 +2617,12 @@ function MetricSparkline({ data, color, height = 36, metric, baseline }) {
 
 function metricStatusColor(metric, value, baseline) {
   if (!Number.isFinite(value) || !baseline) return metric?.color || C.blue;
+  if (metric?.key === 'activeCal') {
+    if (value < baseline * 0.75) return '#45a8f5';
+    if (value <= baseline * 1.15) return C.green;
+    if (value <= baseline * 1.45) return C.amber;
+    return C.purple;
+  }
   if (metric?.key === 'steps' && metric?.target) {
     if (value >= metric.target) return C.green;
     if (value >= metric.target * 0.8) return '#45a8f5';
@@ -2701,7 +2719,7 @@ function MetricInsightChart({ metric, data, baseline }) {
         ))}
       </svg>
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginTop: -4 }}>
-        {chartColorKey().map(item => (
+        {metricChartColorKey(metric).map(item => (
           <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: C.fMono, fontSize: 8, color: C.muted }}>
             <span style={{ width: 8, height: 8, borderRadius: 4, background: item.color, display: 'inline-block' }} />
             {item.label}
@@ -3251,7 +3269,7 @@ function ReadinessInsightModal({ recovery, fatigue, healthData, watchSummary, on
   );
 }
 
-function ReadinessSummaryCard({ recovery, fatigue, healthData, watchSummary, setView, onSeeWhy, onWatchTap, onMetricTap }) {
+function ReadinessSummaryCard({ recovery, fatigue, healthData, watchSummary, setView, onSeeWhy, onWatchTap, onMetricTap, onSleepTap }) {
   const verdict = readinessVerdict(recovery, fatigue, watchSummary);
   const chips = readinessChips(recovery, healthData, watchSummary);
   const metricsByKey = Object.fromEntries(homeMetricDefs(healthData).map(m => [m.key, m]));
@@ -3261,6 +3279,7 @@ function ReadinessSummaryCard({ recovery, fatigue, healthData, watchSummary, set
   function handleChipClick(chip) {
     if (chip.text.startsWith('HRV')) return onMetricTap(metricsByKey.hrv);
     if (chip.text.startsWith('RHR')) return onMetricTap(metricsByKey.restingHr);
+    if (chip.text.startsWith('Sleep')) return onSleepTap();
     if (chip.text.includes('Watch')) return onWatchTap();
     return onSeeWhy();
   }
@@ -3351,8 +3370,12 @@ function metricInsightCopy(metric, latest, base, caption) {
     recommendation: val < 8000 ? 'A gentle walk can help recovery if you feel good, but it should not replace rest if recovery is low.' : 'You have hit your movement target. Keep extra work easy if recovery is low.',
   };
   return {
-    meaning: 'Active calories show total daily movement and training demand. High values can add to fatigue; low values are useful context.',
-    recommendation: caption?.includes('below') ? 'Active calories are below your recent average, so they are not the main limiting factor today.' : 'If active calories are high alongside low recovery, keep the next session lighter.',
+    meaning: 'Active calories estimate the energy you burned through movement and exercise. More burn can support weight loss; IronLog only treats unusually high burn as extra training-load context.',
+    recommendation: val && base && val < base * 0.75
+      ? 'Active calories are below your recent average. That is not a recovery problem by itself, but an easy walk can help your weight-loss goal if you feel good.'
+      : val && base && val > base * 1.15
+        ? 'This was an active day. That is useful for fat loss, but if recovery, sleep, or soreness are poor, keep the next strength session controlled.'
+        : 'Active calories are around your usual range. Use strength readiness, sleep, pain, and workout effort to decide how hard to train.',
   };
 }
 
@@ -3365,6 +3388,12 @@ function HomeMetricInsightModal({ metric, healthData, onClose }) {
   if (metric?.target && Number.isFinite(val)) caption = val >= metric.target ? 'goal hit' : 'below target';
   else if (base && Number.isFinite(val) && metric?.higherBetter === true) caption = val >= base ? 'above 7-day baseline' : 'below 7-day baseline';
   else if (base && Number.isFinite(val) && metric?.higherBetter === false) caption = val <= base ? 'improving vs baseline' : 'above 7-day baseline';
+  else if (base && Number.isFinite(val) && metric?.key === 'activeCal') {
+    if (val < base * 0.75) caption = 'low movement day';
+    else if (val <= base * 1.15) caption = 'usual activity';
+    else if (val <= base * 1.45) caption = 'active day';
+    else caption = 'very active day';
+  }
   else if (base && Number.isFinite(val)) caption = val >= base ? 'above 7-day average' : 'below 7-day average';
   const copy = metricInsightCopy(metric, latest, base, caption);
   const display = !latest ? 'No reading' : metric.key === 'steps'
@@ -3398,6 +3427,70 @@ function HomeMetricInsightModal({ metric, healthData, onClose }) {
       <div style={{ ...st.card(C.blue + '0c'), borderColor: C.blue + '33' }}>
         <div style={{ ...st.label, color: C.blue, marginBottom: 6 }}>Recommendation</div>
         <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.45 }}>{copy.recommendation}</div>
+      </div>
+    </HomeInsightShell>
+  );
+}
+
+function formatSleepHours(value) {
+  return Number.isFinite(value) ? `${Math.round(value * 10) / 10} h` : '—';
+}
+
+function sleepRecommendation(score) {
+  if (!score) return 'Export sleep from Health Auto Export to include sleep in readiness.';
+  if (score.score >= 60) return 'Sleep is supporting training today. Still keep the plan sensible if HRV, resting HR, pain, or Watch effort disagree.';
+  if (score.score >= 38) return 'Sleep is usable but not ideal. Keep the first sets controlled and avoid chasing personal records.';
+  return 'Sleep is a limiting factor today. Treat strength work as technique practice, mobility, or recovery unless your warm-up feels unusually good.';
+}
+
+function SleepInsightModal({ healthData, onClose }) {
+  const score = computeSleepScore(healthData);
+  const tone = score?.color || C.amber;
+  const rows = score ? [
+    ['Sleep score', `${score.score}% · ${score.label}`, score.color],
+    ['Total asleep', formatSleepHours(score.totalSleep), C.text],
+    ['Efficiency', Number.isFinite(score.efficiency) ? `${Math.round(score.efficiency)}%` : '—', C.text],
+    ['Deep sleep', formatSleepHours(score.deep), C.text],
+    ['REM sleep', formatSleepHours(score.rem), C.text],
+    ['Core sleep', formatSleepHours(score.core), C.text],
+    ['Awake time', formatSleepHours(score.awake), Number.isFinite(score.awake) && score.awake > 0.8 ? C.amber : C.text],
+  ] : [];
+  return (
+    <HomeInsightShell title="Sleep" tone={tone} onClose={onClose}>
+      <div style={{ ...st.card(tone + '10'), borderLeft: `3px solid ${tone}`, marginBottom: 12 }}>
+        <div style={{ ...st.label, color: tone, marginBottom: 5 }}>Last night</div>
+        <div style={{ fontFamily: C.fDisplay, fontSize: 26, color: C.text, lineHeight: 1 }}>
+          {score ? `${score.score}%` : 'No reading'}
+        </div>
+        <div style={{ fontSize: 13, color: tone, marginTop: 5 }}>
+          {score ? `${score.label} sleep quality` : 'Sleep export missing'}
+        </div>
+      </div>
+
+      <div style={{ ...st.card(), marginBottom: 12 }}>
+        <div style={{ ...st.label, marginBottom: 8 }}>Sleep detail</div>
+        {score ? rows.map(([label, value, color]) => (
+          <div key={label} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, padding: '8px 0', borderTop: `1px solid ${C.border}` }}>
+            <div style={{ fontSize: 12, color: C.muted }}>{label}</div>
+            <div style={{ fontSize: 12, color, textAlign: 'right', fontWeight: 700 }}>{value}</div>
+          </div>
+        )) : (
+          <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.45 }}>
+            No sleep reading is available for the latest health export.
+          </div>
+        )}
+      </div>
+
+      <div style={{ ...st.card(), marginBottom: 12 }}>
+        <div style={{ ...st.label, marginBottom: 6 }}>What it means</div>
+        <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.45 }}>
+          Sleep quality uses more than hours asleep. IronLog combines duration, sleep efficiency, deep sleep, REM sleep, and awake time where Apple Health exports those stages.
+        </div>
+      </div>
+
+      <div style={{ ...st.card(C.blue + '0c'), borderColor: C.blue + '33' }}>
+        <div style={{ ...st.label, color: C.blue, marginBottom: 6 }}>Recommendation</div>
+        <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.45 }}>{sleepRecommendation(score)}</div>
       </div>
     </HomeInsightShell>
   );
@@ -3493,6 +3586,12 @@ function DailySignalsStrip({ healthData, onMetricTap }) {
           if (m.target && val) caption = val >= m.target ? 'goal hit' : 'low today';
           else if (base && val && m.higherBetter === true) caption = val >= base ? 'above 7d avg' : 'below avg';
           else if (base && val && m.higherBetter === false) caption = val <= base ? 'improving' : 'above avg';
+          else if (base && val && m.key === 'activeCal') {
+            if (val < base * 0.75) caption = 'low movement';
+            else if (val <= base * 1.15) caption = 'usual activity';
+            else if (val <= base * 1.45) caption = 'active day';
+            else caption = 'very active';
+          }
           else if (base && val) caption = val >= base ? 'above avg' : 'below avg';
           const value = !latest ? '—' : m.key === 'steps'
             ? `${Math.round(val).toLocaleString()} / 8k`
@@ -3591,14 +3690,195 @@ function ThisWeekSummaryCard({ sessions, rides, watchSummary }) {
   );
 }
 
-function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, setSelectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, driveSync, onCloudSync, updateAvailable, onWarmupOpen, onDemoOpen, coachRec, showWhy, setShowWhy, healthData, watchData }) {
+function WorkoutPlanCard({ sessions, activeSession, selectedWorkout, setSelectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, coachRec, showWhy, setShowWhy, setView, onWarmupOpen, onDemoOpen }) {
   const [showExercises, setShowExercises] = useState(false);
   const [showWarmup, setShowWarmup] = useState(false);
   const [showCooldown, setShowCooldown] = useState(false);
+  const suggested = nextWorkout(sessions);
+  const wkt = WORKOUTS[selectedWorkout];
+  const extraIds = workoutCustom[selectedWorkout] || [];
+  const hiddenIds = new Set((workoutHidden || {})[selectedWorkout] || []);
+  const allWorkoutExIds = [...wkt.exercises, ...extraIds].filter(id => !hiddenIds.has(id));
+
+  return (
+    <div style={{ ...st.card(), marginBottom: 12, borderColor: C.border }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 18 }}>
+        <div style={{ ...st.label }}>Selected workout</div>
+        {!activeSession && (
+          <div style={{ display: 'flex', gap: 5 }}>
+            {['A', 'B', 'C'].map(key => {
+              const active = selectedWorkout === key;
+              return (
+                <button key={key} onClick={() => { setSelectedWorkout(key); setShowExercises(false); }} style={{
+                  background: active ? C.amber : C.dim,
+                  color: active ? '#fff' : C.muted,
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '6px 14px',
+                  fontFamily: C.fDisplay,
+                  fontSize: 16,
+                  fontWeight: 700,
+                  lineHeight: 1,
+                  cursor: 'pointer',
+                }}>{key}</button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <button onClick={() => setShowExercises(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, width: '100%', textAlign: 'left', marginBottom: showExercises ? 0 : 14 }}>
+        <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+          <div style={{ fontSize: 56, fontFamily: C.fDisplay, fontWeight: 700, color: C.amber, lineHeight: 1, flexShrink: 0 }}>
+            {selectedWorkout}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 20, fontWeight: 700, fontFamily: C.fDisplay, textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 1.1 }}>
+              {wkt.title}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
+              {(selectedWorkout === suggested || activeSession) && (
+                <span style={{ background: C.amberDim, color: C.amber, fontSize: 10, borderRadius: 4, padding: '2px 6px', fontFamily: C.fMono, textTransform: 'uppercase' }}>
+                  {activeSession ? 'active' : 'next'}
+                </span>
+              )}
+              <span style={{ fontSize: 12, color: C.muted, fontFamily: C.fMono }}>
+                {activeSession ? 'Session in progress' : `${allWorkoutExIds.length} exercises`}
+              </span>
+            </div>
+          </div>
+          <span style={{ color: C.muted, fontSize: 13, flexShrink: 0, paddingRight: 2 }}>{showExercises ? '▲' : '▼'}</span>
+        </div>
+      </button>
+
+      {showExercises && (
+        <div style={{ marginTop: 14 }}>
+          <div style={{ marginBottom: 8 }}>
+            {allWorkoutExIds.map(id => {
+              const ex = allExercises[id] || EXERCISES[id];
+              const isExtra = extraIds.includes(id);
+              return (
+                <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: `1px solid ${C.border}` }}>
+                  <div onClick={() => onDemoOpen && onDemoOpen(id)} style={{ cursor: 'pointer', flexShrink: 0 }}>
+                    <ExerciseIcon id={id} size={36} />
+                  </div>
+                  <span style={{ flex: 1, minWidth: 0, fontSize: 15, color: C.text }}>{ex?.name || id}</span>
+                  <span style={{ border: `1px solid ${C.border}`, borderRadius: 20, padding: '2px 9px', fontSize: 11, color: isExtra ? C.amber : C.muted, fontFamily: C.fMono, whiteSpace: 'nowrap' }}>
+                    {isExtra ? '+ Added' : ex?.primaryMuscle || ex?.muscle}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ borderTop: '1px solid ' + C.border, paddingTop: 10, marginBottom: 10 }}>
+            <button onClick={() => setShowWarmup(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
+              <span style={{ ...st.label, fontSize: 10, color: C.muted }}>Warm-Up Routine</span>
+              <span style={{ color: C.muted, fontSize: 11, marginLeft: 'auto' }}>{showWarmup ? '▲' : '▼'}</span>
+            </button>
+            {showWarmup && (
+              <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {WARMUP.map((item, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 10, fontSize: 12, color: C.muted, lineHeight: 1.4, alignItems: 'center' }}>
+                    <img src={`assets/icons/warmup/${item.id}.png`} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#EEF3FF', marginRight: 12, flexShrink: 0, cursor: 'pointer' }} onError={e => { e.target.style.display = 'none'; }} onClick={() => onWarmupOpen && onWarmupOpen(item)} />
+                    <span style={{ color: C.amber, fontFamily: C.fMono, minWidth: 16 }}>{i + 1}</span>
+                    <span>{item.text}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div style={{ borderTop: '1px solid ' + C.border, paddingTop: 10, marginBottom: 14 }}>
+            <button onClick={() => setShowCooldown(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
+              <span style={{ ...st.label, fontSize: 10, color: C.muted }}>Cool-Down / Finisher</span>
+              <span style={{ color: C.muted, fontSize: 11, marginLeft: 'auto' }}>{showCooldown ? '▲' : '▼'}</span>
+            </button>
+            {showCooldown && (
+              <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {wkt.finisher.map((item, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 10, fontSize: 12, color: C.muted, lineHeight: 1.4, alignItems: 'center' }}>
+                    <img src={`assets/icons/warmup/${item.id}.png`} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#EEF3FF', marginRight: 12, flexShrink: 0, cursor: 'pointer' }} onError={e => { e.target.style.display = 'none'; }} onClick={() => onWarmupOpen && onWarmupOpen(item)} />
+                    <span style={{ color: C.green, fontFamily: C.fMono, minWidth: 16 }}>{i + 1}</span>
+                    <span>{item.text}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {!activeSession && coachRec?.flags?.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+          {coachRec.flags.map(flag => (
+            <span key={flag.exerciseId} style={{ background: C.amber + '18', color: C.amber, border: `1px solid ${C.amber}44`, borderRadius: 20, padding: '3px 10px', fontSize: 11, fontFamily: C.fMono }}>
+              ⚠ {flag.exerciseName}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {!activeSession && coachRec && (
+        <div style={{ background: '#F0F4FF', borderRadius: 8, padding: '12px 14px', marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: showWhy ? 8 : 0 }}>
+            <span style={{ fontSize: 15, flexShrink: 0 }}>🤖</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, color: '#2a3f6f', lineHeight: 1.5 }}>{coachRec.note}</div>
+              <div style={{ display: 'flex', gap: 12, marginTop: 6 }}>
+                <button onClick={() => setShowWhy(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 12, color: '#4A82E8', fontFamily: C.fMono }}>
+                  {showWhy ? '✕ Hide' : 'Why? ›'}
+                </button>
+                {coachRec.flags.length > 0 && (
+                  <button onClick={() => setView('preStart')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 12, color: C.amber, fontFamily: C.fMono }}>
+                    Safe swaps ›
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+          {showWhy && (
+            <div style={{ borderTop: '1px solid #d0daff', paddingTop: 10, marginTop: 2 }}>
+              {coachRec.reasons.map((r, i) => (
+                <div key={i} style={{ fontSize: 12, color: '#4a5a7a', lineHeight: 1.5, marginBottom: 4, paddingLeft: 8 }}>• {r}</div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      <button style={{ ...st.btn(), display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}
+        onClick={() => activeSession ? setView('workout') : setView('preStart')}>
+        <Icon name="play" size={16} /> {activeSession ? 'Resume Workout' : `Start Workout ${selectedWorkout}`}
+      </button>
+    </div>
+  );
+}
+
+function StretchRoutineCard({ setView }) {
+  const cfg = getStretchConfig();
+  const totalSecs = cfg.reduce((sum, id) => {
+    const s = STRETCH_LIBRARY.find(x => x.id === id);
+    if (!s) return sum;
+    return sum + (s.bilateral ? s.suggestedSecs * 2 : s.suggestedSecs);
+  }, 0);
+  const mins = Math.round(totalSecs / 60);
+  return (
+    <div style={{ ...st.card(), marginBottom: 16, padding: '14px 16px' }}>
+      <div>
+        <div style={{ fontSize: 10, fontFamily: C.fMono, color: C.amber, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Stretch Routine</div>
+        <div style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 2 }}>Full-Body Flexibility</div>
+        <div style={{ fontSize: 12, color: C.muted }}>12 stretches · ≈{mins} min</div>
+      </div>
+      <button onClick={() => setView('stretch_setup')} style={{ ...st.btn(), marginTop: 12, width: '100%' }}>
+        ▶ Start Stretching
+      </button>
+    </div>
+  );
+}
+
+function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, setSelectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, driveSync, onCloudSync, updateAvailable, onWarmupOpen, onDemoOpen, coachRec, showWhy, setShowWhy, healthData, watchData }) {
   const [showReadinessInsight, setShowReadinessInsight] = useState(false);
   const [homeInsight, setHomeInsight] = useState(null);
   const [trendDays, setTrendDays] = useState(7);
-  const suggested = nextWorkout(sessions);
 
   // Recovery computations (only when health data present)
   const hd = healthData || {};
@@ -3632,10 +3912,6 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
     { key: 'steps',     title: 'Steps',       unit: '',      color: C.blue,  data: hd.steps,     target: 8000,        icon: 'footprints' },
     { key: 'activeCal', title: 'Active Cal',  unit: 'kcal',  color: C.amber, data: hd.activeCal,                      icon: 'flame'    },
   ];
-  const wkt = WORKOUTS[selectedWorkout];
-  const extraIds = workoutCustom[selectedWorkout] || [];
-  const hiddenIds = new Set((workoutHidden || {})[selectedWorkout] || []);
-  const allWorkoutExIds = [...wkt.exercises, ...extraIds].filter(id => !hiddenIds.has(id));
   const ws = weekStart();
   const weekSessions = sessions.filter(s => new Date(s.date) >= ws);
   const weekRides = rides.filter(r => new Date(r.date) >= ws);
@@ -3693,6 +3969,7 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
         onSeeWhy={() => setShowReadinessInsight(true)}
         onWatchTap={() => setHomeInsight({ type: 'watch' })}
         onMetricTap={metric => setHomeInsight({ type: 'metric', metric })}
+        onSleepTap={() => setHomeInsight({ type: 'sleep' })}
       />
       {showReadinessInsight && (
         <ReadinessInsightModal
@@ -3708,6 +3985,9 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
       )}
       {homeInsight?.type === 'watch' && (
         <WatchEffortInsightModal watchSummary={watchSummary} onClose={() => setHomeInsight(null)} />
+      )}
+      {homeInsight?.type === 'sleep' && (
+        <SleepInsightModal healthData={hd} onClose={() => setHomeInsight(null)} />
       )}
       {homeInsight?.type === 'trend' && (
         <TrendInsightModal healthData={hd} trendDays={trendDays} onClose={() => setHomeInsight(null)} />
@@ -3726,161 +4006,6 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
         <div style={{ flex: '1 1 auto', minWidth: 0 }}>
           <RecentWorkoutsSection sessions={sessions} rides={rides} setView={setView} />
         </div>
-      </div>
-
-      {/* Selected workout hero */}
-      <div style={{ ...st.card(), marginBottom: 12, borderColor: C.border }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 18 }}>
-          <div style={{ ...st.label }}>Selected workout</div>
-          {!activeSession && (
-            <div style={{ display: 'flex', gap: 5 }}>
-              {['A', 'B', 'C'].map(key => {
-                const active = selectedWorkout === key;
-                return (
-                  <button key={key} onClick={() => { setSelectedWorkout(key); setShowExercises(false); }} style={{
-                    background: active ? C.amber : C.dim,
-                    color: active ? '#fff' : C.muted,
-                    border: 'none',
-                    borderRadius: 8,
-                    padding: '6px 14px',
-                    fontFamily: C.fDisplay,
-                    fontSize: 16,
-                    fontWeight: 700,
-                    lineHeight: 1,
-                    cursor: 'pointer',
-                  }}>{key}</button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Compact summary row — always visible */}
-        <button onClick={() => setShowExercises(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, width: '100%', textAlign: 'left', marginBottom: showExercises ? 0 : 14 }}>
-          <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-            <div style={{ fontSize: 56, fontFamily: C.fDisplay, fontWeight: 700, color: C.amber, lineHeight: 1, flexShrink: 0 }}>
-              {selectedWorkout}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 20, fontWeight: 700, fontFamily: C.fDisplay, textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 1.1 }}>
-                {wkt.title}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
-                {(selectedWorkout === suggested || activeSession) && (
-                  <span style={{ background: C.amberDim, color: C.amber, fontSize: 10, borderRadius: 4, padding: '2px 6px', fontFamily: C.fMono, textTransform: 'uppercase' }}>
-                    {activeSession ? 'active' : 'next'}
-                  </span>
-                )}
-                <span style={{ fontSize: 12, color: C.muted, fontFamily: C.fMono }}>
-                  {activeSession ? 'Session in progress' : `${allWorkoutExIds.length} exercises`}
-                </span>
-              </div>
-            </div>
-            <span style={{ color: C.muted, fontSize: 13, flexShrink: 0, paddingRight: 2 }}>{showExercises ? '▲' : '▼'}</span>
-          </div>
-        </button>
-
-        {/* Expanded: exercise list + warmup + cooldown */}
-        {showExercises && (
-          <div style={{ marginTop: 14 }}>
-            <div style={{ marginBottom: 8 }}>
-              {allWorkoutExIds.map(id => {
-                const ex = allExercises[id] || EXERCISES[id];
-                const isExtra = extraIds.includes(id);
-                return (
-                  <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: `1px solid ${C.border}` }}>
-                    <div onClick={() => onDemoOpen && onDemoOpen(id)} style={{ cursor: 'pointer', flexShrink: 0 }}>
-                      <ExerciseIcon id={id} size={36} />
-                    </div>
-                    <span style={{ flex: 1, minWidth: 0, fontSize: 15, color: C.text }}>{ex?.name || id}</span>
-                    <span style={{ border: `1px solid ${C.border}`, borderRadius: 20, padding: '2px 9px', fontSize: 11, color: isExtra ? C.amber : C.muted, fontFamily: C.fMono, whiteSpace: 'nowrap' }}>
-                      {isExtra ? '+ Added' : ex?.primaryMuscle || ex?.muscle}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-            <div style={{ borderTop: '1px solid ' + C.border, paddingTop: 10, marginBottom: 10 }}>
-              <button onClick={() => setShowWarmup(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
-                <span style={{ ...st.label, fontSize: 10, color: C.muted }}>Warm-Up Routine</span>
-                <span style={{ color: C.muted, fontSize: 11, marginLeft: 'auto' }}>{showWarmup ? '▲' : '▼'}</span>
-              </button>
-              {showWarmup && (
-                <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {WARMUP.map((item, i) => (
-                    <div key={i} style={{ display: 'flex', gap: 10, fontSize: 12, color: C.muted, lineHeight: 1.4, alignItems: 'center' }}>
-                      <img src={`assets/icons/warmup/${item.id}.png`} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#EEF3FF', marginRight: 12, flexShrink: 0, cursor: 'pointer' }} onError={e => { e.target.style.display = 'none'; }} onClick={() => onWarmupOpen && onWarmupOpen(item)} />
-                      <span style={{ color: C.amber, fontFamily: C.fMono, minWidth: 16 }}>{i + 1}</span>
-                      <span>{item.text}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div style={{ borderTop: '1px solid ' + C.border, paddingTop: 10, marginBottom: 14 }}>
-              <button onClick={() => setShowCooldown(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
-                <span style={{ ...st.label, fontSize: 10, color: C.muted }}>Cool-Down / Finisher</span>
-                <span style={{ color: C.muted, fontSize: 11, marginLeft: 'auto' }}>{showCooldown ? '▲' : '▼'}</span>
-              </button>
-              {showCooldown && (
-                <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {wkt.finisher.map((item, i) => (
-                    <div key={i} style={{ display: 'flex', gap: 10, fontSize: 12, color: C.muted, lineHeight: 1.4, alignItems: 'center' }}>
-                      <img src={`assets/icons/warmup/${item.id}.png`} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#EEF3FF', marginRight: 12, flexShrink: 0, cursor: 'pointer' }} onError={e => { e.target.style.display = 'none'; }} onClick={() => onWarmupOpen && onWarmupOpen(item)} />
-                      <span style={{ color: C.green, fontFamily: C.fMono, minWidth: 16 }}>{i + 1}</span>
-                      <span>{item.text}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Flag pills */}
-        {!activeSession && coachRec?.flags?.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
-            {coachRec.flags.map(flag => (
-              <span key={flag.exerciseId} style={{ background: C.amber + '18', color: C.amber, border: `1px solid ${C.amber}44`, borderRadius: 20, padding: '3px 10px', fontSize: 11, fontFamily: C.fMono }}>
-                ⚠ {flag.exerciseName}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Coach note panel */}
-        {!activeSession && coachRec && (
-          <div style={{ background: '#F0F4FF', borderRadius: 8, padding: '12px 14px', marginBottom: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: showWhy ? 8 : 0 }}>
-              <span style={{ fontSize: 15, flexShrink: 0 }}>🤖</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, color: '#2a3f6f', lineHeight: 1.5 }}>{coachRec.note}</div>
-                <div style={{ display: 'flex', gap: 12, marginTop: 6 }}>
-                  <button onClick={() => setShowWhy(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 12, color: '#4A82E8', fontFamily: C.fMono }}>
-                    {showWhy ? '✕ Hide' : 'Why? ›'}
-                  </button>
-                  {coachRec.flags.length > 0 && (
-                    <button onClick={() => setView('preStart')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 12, color: C.amber, fontFamily: C.fMono }}>
-                      Safe swaps ›
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-            {showWhy && (
-              <div style={{ borderTop: '1px solid #d0daff', paddingTop: 10, marginTop: 2 }}>
-                {coachRec.reasons.map((r, i) => (
-                  <div key={i} style={{ fontSize: 12, color: '#4a5a7a', lineHeight: 1.5, marginBottom: 4, paddingLeft: 8 }}>• {r}</div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        <button style={{ ...st.btn(), display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}
-          onClick={() => activeSession ? setView('workout') : setView('preStart')}>
-          <Icon name="play" size={16} /> {activeSession ? 'Resume Workout' : `Start Workout ${selectedWorkout}`}
-        </button>
       </div>
 
       {/* 7-day week strip */}
@@ -3904,34 +4029,6 @@ function Dashboard({ sessions, rides, setView, activeSession, selectedWorkout, s
             )}
           </div>
         ))}
-      </div>
-
-      {/* Stretch Routine Card */}
-      <div style={{ ...st.card(), marginBottom: 16, padding: '14px 16px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
-            <div style={{ fontSize: 10, fontFamily: C.fMono, color: C.amber, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Stretch Routine</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 2 }}>Full-Body Flexibility</div>
-            <div style={{ fontSize: 12, color: C.muted }}>
-              {(() => {
-                const cfg = getStretchConfig();
-                const totalSecs = cfg.reduce((sum, id) => {
-                  const s = STRETCH_LIBRARY.find(x => x.id === id);
-                  if (!s) return sum;
-                  return sum + (s.bilateral ? s.suggestedSecs * 2 : s.suggestedSecs);
-                }, 0);
-                const mins = Math.round(totalSecs / 60);
-                return `12 stretches · ≈${mins} min`;
-              })()}
-            </div>
-          </div>
-        </div>
-        <button
-          onClick={() => setView('stretch_setup')}
-          style={{ ...st.btn(), marginTop: 12, width: '100%' }}
-        >
-          ▶ Start Stretching
-        </button>
       </div>
 
       {/* Cloud sync status */}
@@ -5152,7 +5249,7 @@ function ExerciseInsightModal({ exId, def, sessions, recovery, watchData, onClos
   );
 }
 
-function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, setView, selectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, onDemoOpen, onWarmupOpen, coachRec, recovery, watchData }) {
+function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, setView, selectedWorkout, setSelectedWorkout, allExercises = EXERCISES, workoutCustom = {}, workoutHidden = {}, onDemoOpen, onWarmupOpen, coachRec, showWhy, setShowWhy, recovery, watchData }) {
   const nextWkt = selectedWorkout;
   const [session, setSession] = useState(activeSession || null);
   const [phase, setPhase] = useState(() => {
@@ -5384,6 +5481,26 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
         </div>
         <div style={{ ...st.label, marginBottom: 4 }}>{isIron ? `Iron Series · Day ${ironDay}` : `Workout ${nextWkt}`}</div>
         <div style={{ fontFamily: C.fDisplay, fontSize: 26, textTransform: 'uppercase', marginBottom: 24 }}>{title}</div>
+        {!isIron && (
+          <>
+            <WorkoutPlanCard
+              sessions={sessions}
+              activeSession={activeSession}
+              selectedWorkout={selectedWorkout}
+              setSelectedWorkout={setSelectedWorkout}
+              allExercises={allExercises}
+              workoutCustom={workoutCustom}
+              workoutHidden={workoutHidden}
+              coachRec={coachRec}
+              showWhy={showWhy}
+              setShowWhy={setShowWhy}
+              setView={setView}
+              onWarmupOpen={onWarmupOpen}
+              onDemoOpen={onDemoOpen}
+            />
+            <StretchRoutineCard setView={setView} />
+          </>
+        )}
         <div style={{ ...st.card(), marginBottom: 16 }}>
           <div style={{ fontFamily: C.fDisplay, fontSize: 16, textTransform: 'uppercase', letterSpacing: 1, color: C.muted, marginBottom: 16 }}>Energy level today?</div>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -8321,6 +8438,7 @@ export default function App() {
                 onComplete={handleComplete}
                 setView={setView}
                 selectedWorkout={selectedWorkout}
+                setSelectedWorkout={setSelectedWorkout}
                 allExercises={allExercises}
                 workoutCustom={workoutCustom}
                 workoutHidden={workoutHidden}
@@ -8328,6 +8446,8 @@ export default function App() {
                 onDemoOpen={setDemoExId}
                 onWarmupOpen={setWarmupDemoItem}
                 coachRec={coachRec}
+                showWhy={showWhy}
+                setShowWhy={setShowWhy}
                 recovery={recovery}
                 watchData={watchData}
               />

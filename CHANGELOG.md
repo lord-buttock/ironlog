@@ -4,6 +4,12 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-06-08 — Home sleep and activity semantics cleanup (Codex)
+
+- Moved the Selected Workout and Stretch Routine cards from Home to the Workout tab while keeping the seven-day activity strip on Home
+- Added a sleep-specific Home insight modal with sleep score, total sleep, efficiency, deep, REM, core, awake time, explanation, and recommendation
+- Updated Active Cal chart colours, labels, and recommendations so calorie burn reads as activity/weight-loss context rather than automatically "worse" when higher
+
 ## 2026-06-08 — Sleep stage recovery scoring (Codex)
 
 - Redeployed Supabase `ingest-health` Edge Function v9 so `sleep_analysis` exports store deep, REM, core, awake, and derived efficiency metrics alongside total sleep
