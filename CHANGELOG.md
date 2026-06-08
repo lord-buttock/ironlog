@@ -4,6 +4,11 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-06-08 — Log workout effort review (Codex)
+
+- Added a completed-workout Apple Watch effort review inside Log, with matched workout summary, heart-rate timeline, hardest-exercise insight, exercise-level effort rows, and expandable set-level HR/kcal/sample-confidence detail
+- Tightened Watch sample handling so effort analysis filters heart-rate samples explicitly and fetches recent ordered workout samples for reliable Log review
+
 ## 2026-06-08 — Home week strip placement (Codex)
 
 - Moved the seven-day Home activity strip up between Recovery Trend and This Week so weekly progress is visible earlier on the screen

@@ -1013,7 +1013,8 @@ async function pullWatchWorkouts() {
         .limit(30),
       db.from('apple_workout_samples')
         .select('*')
-        .limit(2000),
+        .order('sample_at', { ascending: false })
+        .limit(3000),
       db.from('ecg_readings')
         .select('local_date,start_at,classification,average_heart_rate')
         .order('start_at', { ascending: false })
@@ -2306,6 +2307,16 @@ function sampleHeartRate(sample) {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
+function sampleValue(sample) {
+  const value = sample?.value ?? sample?.qty ?? sample?.quantity ?? sample?.amount;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function sampleType(sample) {
+  return String(sample?.sample_type || sample?.type || sample?.metric || '').toLowerCase();
+}
+
 function sampleSourceId(sample) {
   return sample?.source_id || sample?.workout_source_id || sample?.workout_id || sample?.uuid || null;
 }
@@ -2342,6 +2353,178 @@ function exerciseWindowMs(exercise) {
   return { start, end };
 }
 
+function sessionWindowMs(session) {
+  if (!session) return null;
+  const starts = [Number(session.startTime), session.date ? new Date(session.date).getTime() : null]
+    .filter(Number.isFinite);
+  const ends = [
+    session.completedAt ? new Date(session.completedAt).getTime() : null,
+    session.duration && starts.length ? starts[0] + Number(session.duration) * 60000 : null,
+  ].filter(Number.isFinite);
+  const exerciseWindows = (session.exercises || []).map(exerciseWindowMs).filter(Boolean);
+  const start = exerciseWindows.length ? Math.min(starts[0] || Infinity, ...exerciseWindows.map(w => w.start)) : starts[0];
+  const end = exerciseWindows.length ? Math.max(ends[0] || 0, ...exerciseWindows.map(w => w.end)) : ends[0];
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null;
+  return { start, end };
+}
+
+function getWatchWorkoutForSession(watchData, session) {
+  if (!watchData || !session) return null;
+  const match = getSessionWatchMatch(watchData, session);
+  const sourceId = matchSourceId(match);
+  const workouts = watchData.workouts || [];
+  if (sourceId) {
+    const direct = workouts.find(w => String(w.source_id || w.id || '') === String(sourceId));
+    if (direct) return direct;
+  }
+  const sessionWindow = sessionWindowMs(session);
+  if (!sessionWindow) return null;
+  return workouts.find(w => {
+    const start = new Date(w.start_at || w.startAt || '').getTime();
+    const end = new Date(w.end_at || w.endAt || '').getTime();
+    if (!Number.isFinite(start) || !Number.isFinite(end)) return false;
+    const overlap = Math.min(sessionWindow.end, end) - Math.max(sessionWindow.start, start);
+    return overlap > 10 * 60000;
+  }) || null;
+}
+
+function watchSourceForSession(watchData, session) {
+  const match = getSessionWatchMatch(watchData, session);
+  const workout = getWatchWorkoutForSession(watchData, session);
+  return matchSourceId(match) || workout?.source_id || null;
+}
+
+function filterWorkoutSamples(watchData, { sourceId, type, start, end } = {}) {
+  return (watchData?.samples || [])
+    .map(sample => ({ sample, t: sampleTimeMs(sample), value: sampleValue(sample), hr: sampleHeartRate(sample), type: sampleType(sample) }))
+    .filter(row => {
+      if (!row.t) return false;
+      if (sourceId && String(sampleSourceId(row.sample)) !== String(sourceId)) return false;
+      if (type && row.type !== type) return false;
+      if (Number.isFinite(start) && row.t < start) return false;
+      if (Number.isFinite(end) && row.t > end) return false;
+      return true;
+    })
+    .sort((a, b) => a.t - b.t);
+}
+
+function confidenceFromSamples(sampleCount, minutes, shortWindow = false) {
+  if (shortWindow) return { key: 'short', label: 'Timestamp too short', color: C.amber };
+  if (sampleCount >= 3 && sampleCount / Math.max(1, minutes) >= 0.6) return { key: 'high', label: 'Good sample', color: C.green };
+  if (sampleCount >= 2) return { key: 'medium', label: 'Limited sample', color: C.blue };
+  if (sampleCount === 1) return { key: 'low', label: 'Single sample', color: C.amber };
+  return { key: 'none', label: 'No Watch sample', color: C.muted };
+}
+
+function effortLabel(avgHr, maxHr) {
+  if (!Number.isFinite(avgHr) && !Number.isFinite(maxHr)) return { label: 'No effort data', color: C.muted };
+  if (maxHr >= 145 || avgHr >= 132) return { label: 'Hard effort', color: C.red };
+  if (maxHr >= 130 || avgHr >= 115) return { label: 'Moderate effort', color: C.amber };
+  return { label: 'Easy effort', color: C.green };
+}
+
+function setEffortStats(set, watchData, sourceId) {
+  const window = setWindowMs(set);
+  if (!window) return { status: 'missing', confidence: confidenceFromSamples(0, 0), sampleCount: 0 };
+  const durationSec = Math.round((window.end - window.start) / 1000);
+  const shortWindow = durationSec < 15;
+  const hrSamples = filterWorkoutSamples(watchData, { sourceId, type: 'heart_rate', start: window.start, end: window.end });
+  const energySamples = filterWorkoutSamples(watchData, { sourceId, type: 'active_energy', start: window.start, end: window.end });
+  const hrs = hrSamples.map(s => s.hr).filter(Number.isFinite);
+  const avgHr = hrs.length ? Math.round(hrs.reduce((s, v) => s + v, 0) / hrs.length) : null;
+  const maxHr = hrs.length ? Math.round(Math.max(...hrs)) : null;
+  const kcal = energySamples.length
+    ? Math.round((energySamples.reduce((s, row) => s + (row.value || 0), 0) / 4.184) * 10) / 10
+    : null;
+  const minutes = Math.max(1, Math.ceil(durationSec / 60));
+  const confidence = confidenceFromSamples(hrs.length, minutes, shortWindow);
+  const effort = effortLabel(avgHr, maxHr);
+  return { status: hrs.length ? 'ok' : 'missing', durationSec, avgHr, maxHr, kcal, sampleCount: hrs.length, energySampleCount: energySamples.length, confidence, effort };
+}
+
+function exerciseEffortStats(exercise, watchData, session, allExercises = EXERCISES) {
+  const sourceId = watchSourceForSession(watchData, session);
+  const window = exerciseWindowMs(exercise);
+  const doneSets = (exercise?.sets || []).filter(set => set.done);
+  const setStats = doneSets.map((set, i) => ({ setNo: i + 1, set, ...setEffortStats(set, watchData, sourceId) }));
+  if (!window) {
+    return { status: 'missing', confidence: confidenceFromSamples(0, 0), setStats, sampleCount: 0, sourceId };
+  }
+  const hrSamples = filterWorkoutSamples(watchData, { sourceId, type: 'heart_rate', start: window.start, end: window.end });
+  const energySamples = filterWorkoutSamples(watchData, { sourceId, type: 'active_energy', start: window.start, end: window.end });
+  const hrs = hrSamples.map(s => s.hr).filter(Number.isFinite);
+  const avgHr = hrs.length ? Math.round(hrs.reduce((s, v) => s + v, 0) / hrs.length) : null;
+  const maxHr = hrs.length ? Math.round(Math.max(...hrs)) : null;
+  const minutes = Math.max(1, Math.round((window.end - window.start) / 60000));
+  const kcal = energySamples.length
+    ? Math.round((energySamples.reduce((s, row) => s + (row.value || 0), 0) / 4.184) * 10) / 10
+    : null;
+  const setKcal = setStats.map(row => row.kcal).filter(Number.isFinite).reduce((sum, v) => sum + v, 0);
+  const volume = doneSets.reduce((sum, set) => sum + (Number(set.weight) || 0) * (Number(set.reps) || 0), 0);
+  const rpes = doneSets.map(set => Number(set.rpe)).filter(n => Number.isFinite(n) && n > 0);
+  const avgRpe = rpes.length ? Math.round((rpes.reduce((a, b) => a + b, 0) / rpes.length) * 10) / 10 : null;
+  const pain = Math.max(0, ...doneSets.map(set => Number(set.pain) || 0));
+  const confidence = confidenceFromSamples(hrs.length, minutes);
+  const effort = effortLabel(avgHr, maxHr);
+  return {
+    status: hrs.length ? 'ok' : 'missing',
+    sourceId,
+    window,
+    minutes,
+    avgHr,
+    maxHr,
+    kcal: setKcal > 0 ? Math.round(setKcal * 10) / 10 : kcal,
+    sampleCount: hrs.length,
+    confidence,
+    effort,
+    volume,
+    avgRpe,
+    pain,
+    setStats,
+    name: allExercises?.[exercise.id]?.name || exercise.id,
+  };
+}
+
+function sessionEffortReview(session, watchData, allExercises = EXERCISES) {
+  const workout = getWatchWorkoutForSession(watchData, session);
+  const sourceId = watchSourceForSession(watchData, session) || workout?.source_id || null;
+  const workoutStart = workout?.start_at ? new Date(workout.start_at).getTime() : null;
+  const workoutEnd = workout?.end_at ? new Date(workout.end_at).getTime() : null;
+  const sessionWindow = sessionWindowMs(session);
+  const window = Number.isFinite(workoutStart) && Number.isFinite(workoutEnd) && workoutEnd > workoutStart
+    ? { start: workoutStart, end: workoutEnd }
+    : sessionWindow;
+  const hrSamples = filterWorkoutSamples(watchData, { sourceId, type: 'heart_rate', start: window?.start, end: window?.end });
+  const hrs = hrSamples.map(s => s.hr).filter(Number.isFinite);
+  const avgHr = Number(workout?.avg_heart_rate) || (hrs.length ? Math.round(hrs.reduce((s, v) => s + v, 0) / hrs.length) : null);
+  const maxHr = Number(workout?.max_heart_rate) || (hrs.length ? Math.round(Math.max(...hrs)) : null);
+  const durationMin = Number(workout?.duration_sec)
+    ? Math.round(Number(workout.duration_sec) / 60)
+    : session?.duration || (window ? Math.round((window.end - window.start) / 60000) : null);
+  const activeKcal = Number(workout?.active_energy_kcal) || null;
+  const exerciseStats = (session?.exercises || [])
+    .filter(ex => (ex.sets || []).some(set => set.done))
+    .map(ex => exerciseEffortStats(ex, watchData, session, allExercises));
+  const hardest = [...exerciseStats]
+    .filter(ex => Number.isFinite(ex.maxHr) || Number.isFinite(ex.avgHr))
+    .sort((a, b) => (b.maxHr || b.avgHr || 0) - (a.maxHr || a.avgHr || 0))[0] || null;
+  return {
+    matched: !!workout || !!sourceId,
+    workout,
+    sourceId,
+    window,
+    hrSamples,
+    avgHr: avgHr ? Math.round(avgHr) : null,
+    maxHr: maxHr ? Math.round(maxHr) : null,
+    durationMin,
+    activeKcal: activeKcal ? Math.round(activeKcal) : null,
+    intensity: Number(workout?.intensity) || null,
+    confidence: confidenceFromSamples(hrs.length, durationMin || 1),
+    exerciseStats,
+    hardest,
+  };
+}
+
 function analyseExerciseEffort(exercise, watchData, session = null) {
   const window = exerciseWindowMs(exercise);
   const samples = watchData ? (watchData.samples || []) : [];
@@ -2352,6 +2535,7 @@ function analyseExerciseEffort(exercise, watchData, session = null) {
     .map(sample => ({ t: sampleTimeMs(sample), hr: sampleHeartRate(sample) }))
     .filter((sample, idx) => {
       if (!sample.t || !sample.hr || sample.t < window.start || sample.t > window.end) return false;
+      if (sampleType(samples[idx]) !== 'heart_rate') return false;
       if (!sourceId) return true;
       return String(sampleSourceId(samples[idx])) === String(sourceId);
     });
@@ -6013,7 +6197,185 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
 // ═══════════════════════════════════════════════════════════════════════
 // HISTORY
 // ═══════════════════════════════════════════════════════════════════════
-function History({ sessions, setSessions, allExercises = EXERCISES }) {
+function WatchEffortTimeline({ review }) {
+  const samples = review?.hrSamples || [];
+  const window = review?.window;
+  if (!window || samples.length < 2) return null;
+  const W = 360, H = 132, p = { top: 18, right: 12, bottom: 22, left: 34 };
+  const innerW = W - p.left - p.right;
+  const innerH = H - p.top - p.bottom;
+  const hrs = samples.map(s => s.hr).filter(Number.isFinite);
+  const min = Math.max(50, Math.floor((Math.min(...hrs) - 8) / 5) * 5);
+  const max = Math.ceil((Math.max(...hrs) + 8) / 5) * 5;
+  const span = max === min ? 1 : max - min;
+  const xOf = t => p.left + ((t - window.start) / Math.max(1, window.end - window.start)) * innerW;
+  const yOf = hr => p.top + innerH - ((hr - min) / span) * innerH;
+  const points = samples
+    .filter(s => Number.isFinite(s.hr) && Number.isFinite(s.t))
+    .map(s => ({ x: xOf(s.t), y: yOf(s.hr), hr: s.hr, t: s.t }));
+  const path = smoothLinePath(points, 0.85);
+  const ticks = [min, Math.round((min + max) / 2), max];
+  const startLabel = new Date(window.start).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' });
+  const endLabel = new Date(window.end).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' });
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: '10px 8px 6px', marginTop: 10 }}>
+      <div style={{ ...st.label, fontSize: 9, margin: '0 0 4px 4px' }}>Heart rate timeline</div>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: H, display: 'block' }}>
+        {ticks.map(t => (
+          <g key={t}>
+            <line x1={p.left} x2={W - p.right} y1={yOf(t)} y2={yOf(t)} stroke={C.border} strokeDasharray="4 5" />
+            <text x={p.left - 6} y={yOf(t) + 3} textAnchor="end" fill={C.muted} fontSize="9" fontFamily={C.fMono}>{t}</text>
+          </g>
+        ))}
+        {review.exerciseStats.map((ex, i) => {
+          if (!ex.window) return null;
+          const x1 = Math.max(p.left, Math.min(W - p.right, xOf(ex.window.start)));
+          const x2 = Math.max(p.left, Math.min(W - p.right, xOf(ex.window.end)));
+          const color = i % 2 ? C.blue : C.green;
+          return (
+            <rect key={ex.name + i} x={x1} y={p.top} width={Math.max(2, x2 - x1)} height={innerH}
+              fill={color} opacity="0.07" rx="3" />
+          );
+        })}
+        <path d={path} fill="none" stroke={C.blue} strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.18" />
+        <path d={path} fill="none" stroke={C.green} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+        {points.map((pt, i) => i % Math.max(1, Math.floor(points.length / 8)) === 0 || i === points.length - 1 ? (
+          <circle key={i} cx={pt.x} cy={pt.y} r="3.2" fill={pt.hr >= 145 ? C.red : pt.hr >= 130 ? C.amber : C.green} stroke={C.card} strokeWidth="1.5" />
+        ) : null)}
+        <text x={p.left} y={H - 5} textAnchor="start" fill={C.muted} fontSize="9" fontFamily={C.fMono}>{startLabel}</text>
+        <text x={W - p.right} y={H - 5} textAnchor="end" fill={C.muted} fontSize="9" fontFamily={C.fMono}>{endLabel}</text>
+        <text x={p.left} y={11} fill={C.muted} fontSize="9" fontFamily={C.fMono}>bpm</text>
+      </svg>
+    </div>
+  );
+}
+
+function WorkoutEffortReview({ session, watchData, allExercises = EXERCISES }) {
+  const [openExercise, setOpenExercise] = useState(null);
+  const review = sessionEffortReview(session, watchData, allExercises);
+  if (!review.matched && !review.hrSamples.length) {
+    return (
+      <div style={{ ...st.card(C.dim), marginBottom: 12, padding: 12 }}>
+        <div style={{ ...st.label, color: C.muted, marginBottom: 5 }}>Watch effort</div>
+        <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.45 }}>
+          No matched Apple Watch workout has been found for this session yet. Export workouts after training to unlock effort review here.
+        </div>
+      </div>
+    );
+  }
+  const summary = [
+    ['Duration', review.durationMin ? `${review.durationMin} min` : '—'],
+    ['Active', review.activeKcal ? `${review.activeKcal} kcal` : '—'],
+    ['Avg HR', review.avgHr ? `${review.avgHr} bpm` : '—'],
+    ['Peak HR', review.maxHr ? `${review.maxHr} bpm` : '—'],
+  ];
+  const insight = review.hardest
+    ? `${review.hardest.name} created the highest Watch effort in this session (${review.hardest.maxHr || review.hardest.avgHr} bpm peak/avg signal).`
+    : 'Watch samples are matched to this workout. More timestamped sets will make exercise-level insight stronger.';
+  return (
+    <div style={{ ...st.card(C.blue + '08'), borderColor: C.blue + '33', marginBottom: 12, padding: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'flex-start', marginBottom: 10 }}>
+        <div>
+          <div style={{ ...st.label, color: C.blue, marginBottom: 3 }}>Workout effort review</div>
+          <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.35 }}>
+            Matched to Apple Watch · {review.confidence.label.toLowerCase()}
+          </div>
+        </div>
+        {review.intensity && <span style={st.pill(C.amber)}>Intensity {Math.round(review.intensity * 10) / 10}</span>}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
+        {summary.map(([label, value]) => (
+          <div key={label} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, padding: '8px 5px', minWidth: 0 }}>
+            <div style={{ ...st.label, fontSize: 7, marginBottom: 3 }}>{label}</div>
+            <div style={{ fontFamily: C.fMono, fontSize: 11, color: C.text, whiteSpace: 'nowrap' }}>{value}</div>
+          </div>
+        ))}
+      </div>
+
+      <WatchEffortTimeline review={review} />
+
+      <div style={{ marginTop: 10, fontSize: 12, color: C.text, lineHeight: 1.4 }}>
+        <span style={{ color: C.green, marginRight: 5 }}>✓</span>{insight}
+      </div>
+      <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.4, marginTop: 5 }}>
+        Set values use minute-level Apple Watch samples, so short sets are estimates and carry a confidence label.
+      </div>
+
+      <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {review.exerciseStats.map((ex, i) => {
+          const isOpen = openExercise === i;
+          return (
+            <div key={`${ex.name}-${i}`} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 9, overflow: 'hidden' }}>
+              <button onClick={() => setOpenExercise(isOpen ? null : i)} style={{
+                width: '100%', border: 'none', background: 'transparent', padding: 10, textAlign: 'left',
+                display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center', cursor: 'pointer',
+              }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontFamily: C.fDisplay, fontSize: 15, color: C.text, textTransform: 'uppercase', lineHeight: 1 }}>{ex.name}</div>
+                  <div style={{ fontSize: 11, color: C.muted, marginTop: 3 }}>
+                    {ex.avgHr ? `Avg ${ex.avgHr} · Peak ${ex.maxHr} bpm` : 'No exercise-level Watch sample'}
+                    {ex.kcal ? ` · ${ex.kcal} kcal` : ''}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                  <span style={st.pill(ex.effort.color)}>{ex.effort.label}</span>
+                  <span style={{ color: C.muted, fontSize: 12 }}>{isOpen ? '▲' : '▼'}</span>
+                </div>
+              </button>
+              {isOpen && (
+                <div style={{ borderTop: `1px solid ${C.border}`, padding: '9px 10px 10px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 8 }}>
+                    {[
+                      ['Volume', ex.volume ? `${Math.round(ex.volume)}kg` : '—'],
+                      ['RPE', ex.avgRpe || '—'],
+                      ['Pain', ex.pain ?? '—'],
+                      ['Sample', ex.confidence.label],
+                    ].map(([label, value]) => (
+                      <div key={label} style={{ background: C.dim, borderRadius: 7, padding: '7px 4px' }}>
+                        <div style={{ ...st.label, fontSize: 7, marginBottom: 2 }}>{label}</div>
+                        <div style={{ fontFamily: C.fMono, fontSize: 10, color: label === 'Sample' ? ex.confidence.color : C.text }}>{value}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                    {ex.setStats.map(row => {
+                      const set = row.set;
+                      const load = set.duration ? `${set.duration}s`
+                        : set.weight || set.reps ? `${set.weight || 'BW'}kg × ${set.reps || '—'}` : '—';
+                      return (
+                        <div key={row.setNo} style={{ display: 'grid', gridTemplateColumns: '26px 1fr 1fr', gap: 6, alignItems: 'center',
+                          background: C.bg, borderRadius: 7, padding: '7px 8px' }}>
+                          <div style={{ ...st.mono(11, C.muted) }}>S{row.setNo}</div>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontFamily: C.fMono, fontSize: 10, color: C.text }}>{load}</div>
+                            <div style={{ fontSize: 10, color: C.muted }}>
+                              {row.durationSec ? `${row.durationSec}s` : 'no timer'}{set.rpe ? ` · RPE ${set.rpe}` : ''}{set.pain != null ? ` · pain ${set.pain}` : ''}
+                            </div>
+                          </div>
+                          <div style={{ textAlign: 'right', minWidth: 0 }}>
+                            <div style={{ fontFamily: C.fMono, fontSize: 10, color: row.effort.color }}>
+                              {row.avgHr ? `${row.avgHr}/${row.maxHr} bpm` : row.confidence.label}
+                            </div>
+                            <div style={{ fontSize: 10, color: C.muted }}>
+                              {row.kcal ? `${row.kcal} kcal · ` : ''}{row.sampleCount} sample{row.sampleCount === 1 ? '' : 's'}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function History({ sessions, setSessions, allExercises = EXERCISES, watchData }) {
   const [expanded, setExpanded] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null); // sess.id pending delete
   const [editingId, setEditingId] = useState(null);   // sess.id being edited, or null
@@ -6138,6 +6500,9 @@ function History({ sessions, setSessions, allExercises = EXERCISES }) {
 
             {expanded === sess.id && (
               <div style={{ marginTop: 12, borderTop: `1px solid ${C.border}`, paddingTop: 12 }}>
+                {editingId !== sess.id && sess.completed && (
+                  <WorkoutEffortReview session={sess} watchData={watchData} allExercises={allExercises} />
+                )}
                 {(editingId === sess.id ? draft.exercises : sess.exercises)?.map((ex, exIdx) => {
                   const def = allExercises[ex.id] || EXERCISES[ex.id];
                   const isEditing = editingId === sess.id;
@@ -8660,7 +9025,7 @@ export default function App() {
         )}
         {(view === 'stretch' || view === 'stretch_setup') && <StretchSetup onBegin={() => setView('stretch_active')} onSkip={() => setView('dashboard')} />}
         {view === 'stretch_active' && <StretchActive onDone={() => setView('dashboard')} />}
-        {view === 'history' && <History sessions={sessions} setSessions={setSessions} allExercises={allExercises} />}
+        {view === 'history' && <History sessions={sessions} setSessions={setSessions} allExercises={allExercises} watchData={watchData} />}
         {view === 'progress' && <Progress sessions={sessions} allExercises={allExercises} />}
         {view === 'health'   && <HealthView sessions={sessions} allExercises={allExercises} healthData={healthData} setHealthData={setHealthData} />}
         {view === 'rides' && <Rides rides={rides} setRides={setRides} />}
