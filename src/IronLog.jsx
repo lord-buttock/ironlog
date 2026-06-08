@@ -2425,7 +2425,7 @@ function effortLabel(avgHr, maxHr) {
 
 function setEffortStats(set, watchData, sourceId) {
   const window = setWindowMs(set);
-  if (!window) return { status: 'missing', confidence: confidenceFromSamples(0, 0), sampleCount: 0 };
+  if (!window) return { status: 'missing', confidence: confidenceFromSamples(0, 0), effort: effortLabel(null, null), sampleCount: 0 };
   const durationSec = Math.round((window.end - window.start) / 1000);
   const shortWindow = durationSec < 15;
   const hrSamples = filterWorkoutSamples(watchData, { sourceId, type: 'heart_rate', start: window.start, end: window.end });
@@ -2448,7 +2448,18 @@ function exerciseEffortStats(exercise, watchData, session, allExercises = EXERCI
   const doneSets = (exercise?.sets || []).filter(set => set.done);
   const setStats = doneSets.map((set, i) => ({ setNo: i + 1, set, ...setEffortStats(set, watchData, sourceId) }));
   if (!window) {
-    return { status: 'missing', confidence: confidenceFromSamples(0, 0), setStats, sampleCount: 0, sourceId };
+    return {
+      status: 'missing',
+      confidence: confidenceFromSamples(0, 0),
+      effort: effortLabel(null, null),
+      setStats,
+      sampleCount: 0,
+      sourceId,
+      volume: doneSets.reduce((sum, set) => sum + (Number(set.weight) || 0) * (Number(set.reps) || 0), 0),
+      avgRpe: null,
+      pain: Math.max(0, ...doneSets.map(set => Number(set.pain) || 0)),
+      name: allExercises?.[exercise.id]?.name || exercise.id,
+    };
   }
   const hrSamples = filterWorkoutSamples(watchData, { sourceId, type: 'heart_rate', start: window.start, end: window.end });
   const energySamples = filterWorkoutSamples(watchData, { sourceId, type: 'active_energy', start: window.start, end: window.end });

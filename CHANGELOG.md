@@ -4,6 +4,10 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-06-08 — Log effort missing-data crash fix (Codex)
+
+- Fixed a crash when expanding older Log workouts that have matched Apple Watch summaries but no timestamped exercise/set windows; they now show no-sample labels instead of blanking the app
+
 ## 2026-06-08 — Workout effort chart drill-down (Codex)
 
 - Made Log workout effort timelines interactive: tapping exercise bands or numbered exercise chips shows the exercise name and opens its effort breakdown
