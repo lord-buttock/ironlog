@@ -4,6 +4,12 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-06-08 — Cardio Fitness / VO2 pipeline fix (Codex)
+
+- Redeployed Supabase `ingest-health` Edge Function v10 so VO2/Cardio Fitness exports map to `health_metrics.metric = cardio`
+- Updated IronLog health cloud restore and push mappings so `cardio` rows load into the Health tab and sync with other health metrics
+- Expanded local Health Auto Export parser aliases for common VO2/Cardio Fitness metric names
+
 ## 2026-06-08 — Health tab analysis upgrade (Codex)
 
 - Reworked Health into a deeper analysis screen with Readiness Breakdown, Sleep, Cardiovascular, Movement & Energy, Training Response, and Data Tools sections

@@ -987,7 +987,7 @@ async function pullHealthMetrics() {
       sleepDeep: [], sleepRem: [], sleepCore: [], sleepAwake: [], sleepInBed: [], sleepEfficiency: [],
     };
     const keyMap = {
-      hrv: 'hrv', resting_hr: 'restingHr', steps: 'steps', active_cal: 'activeCal', sleep: 'sleep', blood_oxygen: 'bloodOxygen',
+      hrv: 'hrv', resting_hr: 'restingHr', steps: 'steps', active_cal: 'activeCal', cardio: 'cardio', sleep: 'sleep', blood_oxygen: 'bloodOxygen',
       sleep_deep: 'sleepDeep', sleep_rem: 'sleepRem', sleep_core: 'sleepCore', sleep_awake: 'sleepAwake',
       sleep_in_bed: 'sleepInBed', sleep_efficiency: 'sleepEfficiency',
     };
@@ -1037,7 +1037,7 @@ async function pushHealthMetrics(healthData) {
   if (!db) return;
   try {
     const keyMap = {
-      hrv: 'hrv', restingHr: 'resting_hr', steps: 'steps', activeCal: 'active_cal', sleep: 'sleep', bloodOxygen: 'blood_oxygen',
+      hrv: 'hrv', restingHr: 'resting_hr', steps: 'steps', activeCal: 'active_cal', cardio: 'cardio', sleep: 'sleep', bloodOxygen: 'blood_oxygen',
       sleepDeep: 'sleep_deep', sleepRem: 'sleep_rem', sleepCore: 'sleep_core', sleepAwake: 'sleep_awake',
       sleepInBed: 'sleep_in_bed', sleepEfficiency: 'sleep_efficiency',
     };
@@ -1516,7 +1516,7 @@ function normaliseHealthReadings(input) {
   throw new Error('JSON must be either an array of {date, value} objects or an object with dates and values strings.');
 }
 
-// Parse a Health Auto Export JSON file and return {hrv, restingHr, steps, activeCal} all at once
+// Parse a Health Auto Export JSON file and return supported metric arrays at once
 const HEALTH_EXPORT_MAP = {
   heart_rate_variability: 'hrv',
   hrv:                    'hrv',
@@ -1530,7 +1530,12 @@ const HEALTH_EXPORT_MAP = {
   blood_oxygen:           'bloodOxygen',
   oxygen_saturation:      'bloodOxygen',
   vo2_max:                'cardio',
+  vo2max:                 'cardio',
+  vo2_maximum:            'cardio',
+  cardio:                 'cardio',
   cardio_fitness:         'cardio',
+  cardio_fitness_vo2_max: 'cardio',
+  oxygen_consumption:     'cardio',
   sleep_analysis:         'sleep',
   sleep:                  'sleep',
   sleep_deep:             'sleepDeep',
