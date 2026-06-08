@@ -4,6 +4,11 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-06-09 — Sleep score calibration (Codex)
+
+- Recalibrated Sleep Quality so meeting duration, efficiency, deep, REM, and awake-time targets scores as good rather than barely fair; last night's 7.9h / 98% efficient sleep now reads as a strong sleep signal
+- Kept Home readiness balanced by converting the display sleep score back to a neutral-at-target recovery z-score before combining it with HRV and resting HR
+
 ## 2026-06-08 — Log effort missing-data crash fix (Codex)
 
 - Fixed a crash when expanding older Log workouts that have matched Apple Watch summaries but no timestamped exercise/set windows; they now show no-sample labels instead of blanking the app

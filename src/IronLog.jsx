@@ -2037,6 +2037,12 @@ function scoreAgainstTarget(value, target, spread, higherBetter = true) {
   return clamp(50 + (delta / spread) * 15, 0, 100);
 }
 
+function scoreSleepComponent(value, target, spread, higherBetter = true) {
+  if (!Number.isFinite(value) || !Number.isFinite(target) || !Number.isFinite(spread) || spread <= 0) return 75;
+  const delta = higherBetter ? value - target : target - value;
+  return clamp(75 + (delta / spread) * 15, 0, 100);
+}
+
 function computeSleepScore(healthData) {
   const total = healthData?.sleep || [];
   const latest = getLatestReading(total);
@@ -2065,11 +2071,11 @@ function computeSleepScore(healthData) {
   const deepTarget = deep7.length >= 3 ? avg(deep7) : 1.1;
   const remTarget = rem7.length >= 3 ? avg(rem7) : 1.5;
 
-  const totalScore = scoreAgainstTarget(totalSleep, totalTarget, 1.5, true);
-  const efficiencyScore = Number.isFinite(efficiency) ? scoreAgainstTarget(efficiency, 88, 8, true) : 50;
-  const deepScore = Number.isFinite(deep) ? scoreAgainstTarget(deep, deepTarget, 0.45, true) : 50;
-  const remScore = Number.isFinite(rem) ? scoreAgainstTarget(rem, remTarget, 0.55, true) : 50;
-  const awakeScore = Number.isFinite(awake) ? scoreAgainstTarget(awake, 0.6, 0.45, false) : 50;
+  const totalScore = scoreSleepComponent(totalSleep, totalTarget, 1.5, true);
+  const efficiencyScore = Number.isFinite(efficiency) ? scoreSleepComponent(efficiency, 88, 8, true) : 75;
+  const deepScore = Number.isFinite(deep) ? scoreSleepComponent(deep, deepTarget, 0.45, true) : 75;
+  const remScore = Number.isFinite(rem) ? scoreSleepComponent(rem, remTarget, 0.55, true) : 75;
+  const awakeScore = Number.isFinite(awake) ? scoreSleepComponent(awake, 0.6, 0.45, false) : 75;
 
   const score = Math.round(clamp(
     totalScore * 0.35 + efficiencyScore * 0.20 + deepScore * 0.20 + remScore * 0.15 + awakeScore * 0.10,
@@ -2131,7 +2137,7 @@ function computeRecovery(healthData) {
 
   let zCombined, formula;
   if (hasSleep) {
-    const zSleep = (sleepScore.score - 50) / 15;
+    const zSleep = (sleepScore.score - 75) / 15;
     zCombined = zHRV * 0.40 + zRHR * 0.30 + zSleep * 0.30;
     formula   = sleepScore.hasStages ? 'hrv+rhr+sleep-quality' : 'hrv+rhr+sleep-duration';
   } else {

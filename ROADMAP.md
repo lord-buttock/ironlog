@@ -73,8 +73,9 @@ zHRV   = (todayHRV   - mean7HRV)  / sd7HRV   // higher HRV = positive = good
 zRHR   = (mean7RHR   - todayRHR)  / sd7RHR   // lower  RHR = positive = good (inverted)
 
 // WITH sleep_analysis:
+// Sleep display score: target-level sleep components score around 75 ("Good"), not 50.
 sleepScore = 35% total sleep + 20% sleep efficiency + 20% deep sleep + 15% REM sleep + 10% awake-time penalty
-zSleep = (sleepScore - 50) / 15
+zSleep = (sleepScore - 75) / 15
 zComb  = zHRV × 0.40 + zRHR × 0.30 + zSleep × 0.30
 
 // WITHOUT sleep (watch not worn overnight):
