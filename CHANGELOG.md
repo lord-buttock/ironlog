@@ -4,6 +4,11 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-06-08 — Workout effort chart drill-down (Codex)
+
+- Made Log workout effort timelines interactive: tapping exercise bands or numbered exercise chips shows the exercise name and opens its effort breakdown
+- Added per-exercise heart-rate charts with set-window markers so expanded exercises show where each set sits on the Watch HR line
+
 ## 2026-06-08 — Log workout effort review (Codex)
 
 - Added a completed-workout Apple Watch effort review inside Log, with matched workout summary, heart-rate timeline, hardest-exercise insight, exercise-level effort rows, and expandable set-level HR/kcal/sample-confidence detail

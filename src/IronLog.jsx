@@ -2475,6 +2475,7 @@ function exerciseEffortStats(exercise, watchData, session, allExercises = EXERCI
     maxHr,
     kcal: setKcal > 0 ? Math.round(setKcal * 10) / 10 : kcal,
     sampleCount: hrs.length,
+    hrSamples,
     confidence,
     effort,
     volume,
@@ -6197,7 +6198,7 @@ function ActiveWorkout({ sessions, activeSession, setActiveSession, onComplete, 
 // ═══════════════════════════════════════════════════════════════════════
 // HISTORY
 // ═══════════════════════════════════════════════════════════════════════
-function WatchEffortTimeline({ review }) {
+function WatchEffortTimeline({ review, selectedExercise, onSelectExercise }) {
   const samples = review?.hrSamples || [];
   const window = review?.window;
   if (!window || samples.length < 2) return null;
@@ -6217,9 +6218,18 @@ function WatchEffortTimeline({ review }) {
   const ticks = [min, Math.round((min + max) / 2), max];
   const startLabel = new Date(window.start).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' });
   const endLabel = new Date(window.end).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' });
+  const selected = selectedExercise != null ? review.exerciseStats[selectedExercise] : null;
+  const selectedBand = selected?.window ? {
+    x1: Math.max(p.left, Math.min(W - p.right, xOf(selected.window.start))),
+    x2: Math.max(p.left, Math.min(W - p.right, xOf(selected.window.end))),
+  } : null;
+  const labelX = selectedBand ? Math.max(80, Math.min(W - 92, (selectedBand.x1 + selectedBand.x2) / 2)) : 0;
   return (
     <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: '10px 8px 6px', marginTop: 10 }}>
-      <div style={{ ...st.label, fontSize: 9, margin: '0 0 4px 4px' }}>Heart rate timeline</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', margin: '0 0 4px 4px' }}>
+        <div style={{ ...st.label, fontSize: 9 }}>Heart rate timeline</div>
+        <div style={{ fontSize: 10, color: C.muted, fontFamily: C.fMono }}>Tap bands</div>
+      </div>
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: H, display: 'block' }}>
         {ticks.map(t => (
           <g key={t}>
@@ -6233,8 +6243,14 @@ function WatchEffortTimeline({ review }) {
           const x2 = Math.max(p.left, Math.min(W - p.right, xOf(ex.window.end)));
           const color = i % 2 ? C.blue : C.green;
           return (
-            <rect key={ex.name + i} x={x1} y={p.top} width={Math.max(2, x2 - x1)} height={innerH}
-              fill={color} opacity="0.07" rx="3" />
+            <g key={ex.name + i} onClick={() => onSelectExercise?.(i)} style={{ cursor: 'pointer', pointerEvents: 'all' }}>
+              <rect x={x1} y={p.top} width={Math.max(2, x2 - x1)} height={innerH}
+                fill={color} opacity={selectedExercise === i ? '0.18' : '0.07'} rx="3" />
+              <rect x={Math.max(p.left, x1 - 6)} y={p.top - 4} width={Math.max(14, x2 - x1 + 12)} height={innerH + 8}
+                fill="rgba(255,255,255,0.001)" rx="5" style={{ pointerEvents: 'all' }}>
+                <title>{ex.name} · {ex.avgHr ? `Avg ${ex.avgHr} bpm` : 'No HR sample'}</title>
+              </rect>
+            </g>
           );
         })}
         <path d={path} fill="none" stroke={C.blue} strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.18" />
@@ -6245,6 +6261,97 @@ function WatchEffortTimeline({ review }) {
         <text x={p.left} y={H - 5} textAnchor="start" fill={C.muted} fontSize="9" fontFamily={C.fMono}>{startLabel}</text>
         <text x={W - p.right} y={H - 5} textAnchor="end" fill={C.muted} fontSize="9" fontFamily={C.fMono}>{endLabel}</text>
         <text x={p.left} y={11} fill={C.muted} fontSize="9" fontFamily={C.fMono}>bpm</text>
+        {selected && selectedBand && (
+          <g>
+            <line x1={(selectedBand.x1 + selectedBand.x2) / 2} x2={(selectedBand.x1 + selectedBand.x2) / 2}
+              y1={p.top} y2={H - p.bottom} stroke={selected.effort.color} strokeWidth="1.5" strokeDasharray="3 3" />
+            <rect x={labelX - 78} y={p.top + 4} width="156" height="28" rx="7"
+              fill={C.card} stroke={selected.effort.color} strokeWidth="1.2" />
+            <text x={labelX} y={p.top + 16} textAnchor="middle" fill={C.text} fontSize="9" fontFamily={C.fMono} fontWeight="700">
+              {selected.name.length > 22 ? `${selected.name.slice(0, 20)}…` : selected.name}
+            </text>
+            <text x={labelX} y={p.top + 27} textAnchor="middle" fill={C.muted} fontSize="8" fontFamily={C.fMono}>
+              {selected.avgHr ? `Avg ${selected.avgHr} · Peak ${selected.maxHr} bpm` : selected.confidence.label}
+            </text>
+          </g>
+        )}
+      </svg>
+      <div style={{ display: 'flex', gap: 5, overflowX: 'auto', padding: '2px 0 0 2px', WebkitOverflowScrolling: 'touch' }}>
+        {review.exerciseStats.map((ex, i) => (
+          <button key={ex.name + i} onClick={() => onSelectExercise?.(i)} style={{
+            border: `1px solid ${selectedExercise === i ? ex.effort.color : C.border}`,
+            background: selectedExercise === i ? ex.effort.color + '14' : C.bg,
+            color: selectedExercise === i ? ex.effort.color : C.muted,
+            borderRadius: 999,
+            padding: '4px 8px',
+            fontFamily: C.fMono,
+            fontSize: 9,
+            whiteSpace: 'nowrap',
+            cursor: 'pointer',
+          }}>
+            {i + 1}. {ex.name}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ExerciseEffortLineChart({ ex }) {
+  const samples = ex?.hrSamples || [];
+  const window = ex?.window;
+  if (!window || samples.length < 2) return (
+    <div style={{ background: C.bg, borderRadius: 8, padding: 10, marginBottom: 8, fontSize: 11, color: C.muted, lineHeight: 1.4 }}>
+      Not enough heart-rate samples to draw an exercise graph yet.
+    </div>
+  );
+  const W = 340, H = 142, p = { top: 18, right: 12, bottom: 28, left: 34 };
+  const innerW = W - p.left - p.right;
+  const innerH = H - p.top - p.bottom;
+  const hrs = samples.map(s => s.hr).filter(Number.isFinite);
+  const min = Math.max(50, Math.floor((Math.min(...hrs) - 6) / 5) * 5);
+  const max = Math.ceil((Math.max(...hrs) + 6) / 5) * 5;
+  const span = max === min ? 1 : max - min;
+  const xOf = t => p.left + ((t - window.start) / Math.max(1, window.end - window.start)) * innerW;
+  const yOf = hr => p.top + innerH - ((hr - min) / span) * innerH;
+  const points = samples.map(s => ({ x: xOf(s.t), y: yOf(s.hr), hr: s.hr, t: s.t }));
+  const path = smoothLinePath(points, 0.9);
+  const ticks = [min, Math.round((min + max) / 2), max];
+  return (
+    <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 9, padding: '9px 7px 5px', marginBottom: 8 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, margin: '0 2px 2px' }}>
+        <div style={{ ...st.label, fontSize: 8 }}>Exercise HR + set windows</div>
+        <div style={{ fontSize: 9, color: C.muted, fontFamily: C.fMono }}>{ex.confidence.label}</div>
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: H, display: 'block' }}>
+        {ticks.map(t => (
+          <g key={t}>
+            <line x1={p.left} x2={W - p.right} y1={yOf(t)} y2={yOf(t)} stroke={C.border} strokeDasharray="4 5" />
+            <text x={p.left - 6} y={yOf(t) + 3} textAnchor="end" fill={C.muted} fontSize="8" fontFamily={C.fMono}>{t}</text>
+          </g>
+        ))}
+        {ex.setStats.map(row => {
+          const win = setWindowMs(row.set);
+          if (!win) return null;
+          const x1 = Math.max(p.left, Math.min(W - p.right, xOf(win.start)));
+          const x2 = Math.max(p.left, Math.min(W - p.right, xOf(win.end)));
+          return (
+            <g key={row.setNo}>
+              <rect x={x1} y={p.top} width={Math.max(3, x2 - x1)} height={innerH} rx="3"
+                fill={row.confidence.key === 'none' ? C.muted : row.effort.color} opacity="0.12" />
+              <line x1={x1} x2={x1} y1={p.top} y2={p.top + innerH} stroke={C.border} strokeWidth="1" />
+              <text x={Math.max(p.left + 8, Math.min(W - p.right - 8, (x1 + x2) / 2))} y={H - 9}
+                textAnchor="middle" fill={row.effort.color} fontSize="8" fontFamily={C.fMono}>S{row.setNo}</text>
+            </g>
+          );
+        })}
+        <path d={path} fill="none" stroke={C.blue} strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" opacity="0.16" />
+        <path d={path} fill="none" stroke={ex.effort.color} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+        {points.map((pt, i) => (
+          <circle key={i} cx={pt.x} cy={pt.y} r="3" fill={pt.hr >= 145 ? C.red : pt.hr >= 130 ? C.amber : C.green} stroke={C.card} strokeWidth="1.4" />
+        ))}
+        <text x={p.left} y={11} fill={C.muted} fontSize="8" fontFamily={C.fMono}>bpm</text>
+        <text x={p.left} y={H - 9} textAnchor="start" fill={C.muted} fontSize="8" fontFamily={C.fMono}>sets</text>
       </svg>
     </div>
   );
@@ -6252,6 +6359,7 @@ function WatchEffortTimeline({ review }) {
 
 function WorkoutEffortReview({ session, watchData, allExercises = EXERCISES }) {
   const [openExercise, setOpenExercise] = useState(null);
+  const [selectedTimelineExercise, setSelectedTimelineExercise] = useState(null);
   const review = sessionEffortReview(session, watchData, allExercises);
   if (!review.matched && !review.hrSamples.length) {
     return (
@@ -6293,7 +6401,14 @@ function WorkoutEffortReview({ session, watchData, allExercises = EXERCISES }) {
         ))}
       </div>
 
-      <WatchEffortTimeline review={review} />
+      <WatchEffortTimeline
+        review={review}
+        selectedExercise={selectedTimelineExercise}
+        onSelectExercise={i => {
+          setSelectedTimelineExercise(i);
+          setOpenExercise(i);
+        }}
+      />
 
       <div style={{ marginTop: 10, fontSize: 12, color: C.text, lineHeight: 1.4 }}>
         <span style={{ color: C.green, marginRight: 5 }}>✓</span>{insight}
@@ -6325,6 +6440,7 @@ function WorkoutEffortReview({ session, watchData, allExercises = EXERCISES }) {
               </button>
               {isOpen && (
                 <div style={{ borderTop: `1px solid ${C.border}`, padding: '9px 10px 10px' }}>
+                  <ExerciseEffortLineChart ex={ex} />
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 8 }}>
                     {[
                       ['Volume', ex.volume ? `${Math.round(ex.volume)}kg` : '—'],
