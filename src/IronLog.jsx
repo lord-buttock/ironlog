@@ -6430,6 +6430,199 @@ function MiniLineChart({ data, dataKey, color, height = 160, domain }) {
   );
 }
 
+function healthAvg(readings, days = 7) {
+  const vals = lastNDaysReadings(readings || [], days).map(r => Number(r.value)).filter(Number.isFinite);
+  return vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null;
+}
+
+function healthMetricLatest(healthData, key) {
+  return getLatestReading(healthData?.[key] || []);
+}
+
+function readinessFactors(healthData, sessions) {
+  const recovery = computeRecovery(healthData);
+  const fatigue = computeFatigue(healthData, sessions);
+  const hrv = healthMetricLatest(healthData, 'hrv');
+  const rhr = healthMetricLatest(healthData, 'restingHr');
+  const hrvBase = healthAvg(healthData?.hrv, 7);
+  const rhrBase = healthAvg(healthData?.restingHr, 7);
+  const sleep = computeSleepScore(healthData);
+  const factors = [];
+  if (hrv && hrvBase) {
+    const val = Number(hrv.value);
+    factors.push({
+      label: 'HRV',
+      value: `${Math.round(val * 10) / 10} ms`,
+      detail: val >= hrvBase ? 'above recent baseline' : 'below recent baseline',
+      color: val >= hrvBase ? C.green : C.amber,
+    });
+  }
+  if (rhr && rhrBase) {
+    const val = Number(rhr.value);
+    factors.push({
+      label: 'Resting HR',
+      value: `${Math.round(val)} bpm`,
+      detail: val <= rhrBase ? 'down vs baseline' : 'elevated vs baseline',
+      color: val <= rhrBase ? C.green : C.amber,
+    });
+  }
+  if (sleep) {
+    factors.push({
+      label: 'Sleep',
+      value: `${sleep.score}%`,
+      detail: `${sleep.label.toLowerCase()} quality`,
+      color: sleep.color,
+    });
+  }
+  if (fatigue) {
+    factors.push({
+      label: 'Training load',
+      value: `${Math.round(fatigue.level)}%`,
+      detail: fatigue.level >= 60 ? 'high recent load' : fatigue.level >= 30 ? 'moderate recent load' : 'low recent load',
+      color: fatigue.level >= 60 ? C.red : fatigue.level >= 30 ? C.amber : C.green,
+    });
+  }
+  const limiting = factors.find(f => f.color === C.red) || factors.find(f => f.color === C.amber);
+  const summary = recovery
+    ? limiting
+      ? `${limiting.label} is the main limiter today. Use this tab to see the trend behind the Home recommendation.`
+      : 'Recovery signals are broadly supportive. Use the detail below to watch for slow changes over time.'
+    : 'Import health metrics to connect training, sleep, and recovery trends.';
+  return { recovery, fatigue, factors, summary };
+}
+
+function sleepStageRows(healthData) {
+  const score = computeSleepScore(healthData);
+  if (!score) return { score: null, rows: [] };
+  const rows = [
+    { label: 'Total asleep', value: score.totalSleep, unit: 'h', target: 7.5, color: C.blue, detail: 'overall duration' },
+    { label: 'Efficiency', value: score.efficiency, unit: '%', target: 88, color: C.green, detail: 'time asleep while in bed' },
+    { label: 'Deep', value: score.deep, unit: 'h', target: 1.1, color: C.purple, detail: 'physical recovery' },
+    { label: 'REM', value: score.rem, unit: 'h', target: 1.5, color: C.amber, detail: 'mental recovery' },
+    { label: 'Awake', value: score.awake, unit: 'h', target: 0.6, color: C.red, detail: 'restlessness', lowerBetter: true },
+  ].filter(r => Number.isFinite(r.value));
+  return { score, rows };
+}
+
+function HealthSectionHeader({ label, icon }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+      <Icon name={icon} size={16} color={C.muted} />
+      <span style={{ fontFamily: C.fDisplay, fontSize: 13, fontWeight: 700, color: C.muted,
+        textTransform: 'uppercase', letterSpacing: 1.5 }}>{label}</span>
+    </div>
+  );
+}
+
+function HealthInsightCard({ title, subtitle, tone = C.blue, children }) {
+  return (
+    <div style={{ ...st.card(), marginBottom: 16, borderLeft: `3px solid ${tone}` }}>
+      <div style={{ fontFamily: C.fDisplay, fontSize: 19, fontWeight: 800, color: C.text, textTransform: 'uppercase', lineHeight: 1 }}>{title}</div>
+      {subtitle && <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.4, marginTop: 6 }}>{subtitle}</div>}
+      {children && <div style={{ marginTop: 12 }}>{children}</div>}
+    </div>
+  );
+}
+
+function HealthFactorGrid({ factors }) {
+  if (!factors?.length) return null;
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+      {factors.map(f => (
+        <div key={f.label} style={{ background: C.dim, borderRadius: 8, padding: 10, minWidth: 0 }}>
+          <div style={{ ...st.label, fontSize: 8, color: f.color }}>{f.label}</div>
+          <div style={{ fontFamily: C.fDisplay, fontSize: 20, fontWeight: 800, color: C.text, lineHeight: 1, marginTop: 4 }}>{f.value}</div>
+          <div style={{ fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.25 }}>{f.detail}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SleepBreakdownCard({ healthData }) {
+  const { score, rows } = sleepStageRows(healthData);
+  if (!score) {
+    return (
+      <HealthInsightCard title="Sleep quality" subtitle="No sleep reading is available yet." tone={C.amber}>
+        <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.45 }}>Export sleep from Health Auto Export to include duration, stages, awake time, and efficiency in Health.</div>
+      </HealthInsightCard>
+    );
+  }
+  return (
+    <HealthInsightCard title="Sleep quality" subtitle={score.summary || 'Sleep stages imported from Apple Health.'} tone={score.color}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
+        <RecoveryRing score={score.score} color={score.color} label={score.label} size={82} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.45 }}>
+            Sleep score combines duration, efficiency, deep sleep, REM sleep, and awake time. It helps explain why Home may recommend a lighter or stronger session.
+          </div>
+        </div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {rows.map(row => {
+          const rawPct = row.lowerBetter
+            ? row.target / Math.max(row.value, row.target)
+            : row.value / row.target;
+          const pct = Math.max(8, Math.min(100, rawPct * 100));
+          const display = row.unit === '%' ? `${Math.round(row.value)}%` : `${Math.round(row.value * 10) / 10} ${row.unit}`;
+          return (
+            <div key={row.label}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
+                <span style={{ fontFamily: C.fMono, fontSize: 10, color: C.muted }}>{row.label} · {row.detail}</span>
+                <span style={{ fontFamily: C.fMono, fontSize: 10, color: C.text }}>{display}</span>
+              </div>
+              <div style={{ height: 7, background: C.dim, borderRadius: 999, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${pct}%`, background: row.color, borderRadius: 999 }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </HealthInsightCard>
+  );
+}
+
+function HealthMetricPanel({ metric, readings, chartData, latest, trainedDates, annotation, onImport }) {
+  return (
+    <div style={{ ...st.card(), marginBottom: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', marginBottom: 10 }}>
+        <div>
+          <div style={{ fontFamily: C.fDisplay, fontSize: 18, fontWeight: 800, color: C.text, textTransform: 'uppercase' }}>{metric.title}</div>
+          <div style={{ fontFamily: C.fMono, fontSize: 10, color: C.muted, textTransform: 'uppercase', marginTop: 2 }}>{metric.subtitle}</div>
+        </div>
+        <button onClick={() => onImport(metric)} style={{ ...st.btnSm(C.dim, C.text), width: 'auto', display: 'flex', alignItems: 'center', gap: 6, padding: '8px 10px' }}>
+          <Icon name="upload" size={14} /> Import
+        </button>
+      </div>
+      {latest && (
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 8 }}>
+          <span style={{ fontFamily: C.fDisplay, fontSize: 26, fontWeight: 900, color: metric.color }}>{Number(latest.value).toLocaleString()}</span>
+          <span style={{ fontFamily: C.fMono, fontSize: 11, color: C.muted }}>{metric.unit}</span>
+          <span style={{ fontFamily: C.fMono, fontSize: 10, color: C.muted, marginLeft: 'auto' }}>{fmtHealthDate(latest.date)}</span>
+        </div>
+      )}
+      {!readings.length ? (
+        <div style={{ background: C.dim, borderRadius: 6, padding: 16, textAlign: 'center', color: C.muted, fontSize: 12 }}>
+          No data yet — auto-syncs nightly via Health Auto Export.
+        </div>
+      ) : chartData.length < (metric.type === 'line' && !metric.sparse ? 2 : 1) ? (
+        <div style={{ background: C.dim, borderRadius: 6, padding: 16, textAlign: 'center', color: C.muted, fontSize: 12 }}>
+          Import more readings to draw this chart.
+        </div>
+      ) : metric.type === 'line' ? (
+        <HealthLineChart data={chartData} metric={metric} trainedDates={trainedDates} />
+      ) : (
+        <HealthBarChart data={chartData} metric={metric} trainedDates={trainedDates} />
+      )}
+      {annotation}
+      {metric.sparse && <div style={{ fontSize: 12, color: C.muted, marginTop: 8 }}>Apple updates this estimate infrequently — requires outdoor GPS activity.</div>}
+      {trainedDates.size > 0 && chartData.length > 0 && (
+        <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, marginTop: 6 }}>▲ workout days</div>
+      )}
+    </div>
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // PROGRESS
 // ═══════════════════════════════════════════════════════════════════════
@@ -6556,6 +6749,7 @@ function HealthView({ sessions, allExercises, healthData, setHealthData }) {
   const rpeTrend    = healthRPETrend(sessions);
   const maxWeekVol  = Math.max(...weeklyVol.map(w => w.volume), 1);
   const hrvCorrelation = healthWorkoutCorrelation(sessions, healthData.hrv || []);
+  const readiness = readinessFactors(healthData, sessions);
 
   const rpeW = 280, rpeH = 56;
   const rpeMin = 4, rpeMax = 10;
@@ -6566,13 +6760,7 @@ function HealthView({ sessions, allExercises, healthData, setHealthData }) {
   });
   const rpePath = rpePts.length >= 2 ? `M${rpePts.join('L')}` : null;
 
-  const sectionHeader = (label, icon) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-      <Icon name={icon} size={16} color={C.muted} />
-      <span style={{ fontFamily: C.fDisplay, fontSize: 13, fontWeight: 700, color: C.muted,
-        textTransform: 'uppercase', letterSpacing: 1.5 }}>{label}</span>
-    </div>
-  );
+  const sectionHeader = (label, icon) => <HealthSectionHeader label={label} icon={icon} />;
 
   function openImport(metric) {
     setImportMetric(metric);
@@ -6790,7 +6978,8 @@ function HealthView({ sessions, allExercises, healthData, setHealthData }) {
     sessions.filter(s => s.completed).map(s => s.date ? localDateStr(new Date(s.date)) : null).filter(Boolean)
   );
 
-  const metricCards = HEALTH_METRICS.map(metric => {
+  const metricPanels = {};
+  HEALTH_METRICS.forEach(metric => {
     const readings = healthData[metric.key] || [];
     const chartData = metric.sparse ? readings.slice(-12) : lastNDaysReadings(readings, metric.days);
     const latest = readings[readings.length - 1];
@@ -6842,45 +7031,17 @@ function HealthView({ sessions, allExercises, healthData, setHealthData }) {
       }
     }
 
-    return (
-      <div key={metric.id} style={{ ...st.card(), marginBottom: 16 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', marginBottom: 10 }}>
-          <div>
-            <div style={{ fontFamily: C.fDisplay, fontSize: 18, fontWeight: 800, color: C.text, textTransform: 'uppercase' }}>{metric.title}</div>
-            <div style={{ fontFamily: C.fMono, fontSize: 10, color: C.muted, textTransform: 'uppercase', marginTop: 2 }}>{metric.subtitle}</div>
-          </div>
-          <button onClick={() => openImport(metric)} style={{ ...st.btnSm(C.dim, C.text), width: 'auto', display: 'flex', alignItems: 'center', gap: 6, padding: '8px 10px' }}>
-            <Icon name="upload" size={14} /> Import
-          </button>
-        </div>
-        {latest && (
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 8 }}>
-            <span style={{ fontFamily: C.fDisplay, fontSize: 26, fontWeight: 900, color: metric.color }}>{Number(latest.value).toLocaleString()}</span>
-            <span style={{ fontFamily: C.fMono, fontSize: 11, color: C.muted }}>{metric.unit}</span>
-            <span style={{ fontFamily: C.fMono, fontSize: 10, color: C.muted, marginLeft: 'auto' }}>{fmtHealthDate(latest.date)}</span>
-          </div>
-        )}
-        {!readings.length ? (
-          <div style={{ background: C.dim, borderRadius: 6, padding: 16, textAlign: 'center', color: C.muted, fontSize: 12 }}>
-            No data yet — auto-syncs nightly via Health Auto Export.
-          </div>
-        ) : chartData.length < (metric.type === 'line' && !metric.sparse ? 2 : 1) ? (
-          <div style={{ background: C.dim, borderRadius: 6, padding: 16, textAlign: 'center', color: C.muted, fontSize: 12 }}>
-            Import more readings to draw this chart.
-          </div>
-        ) : metric.type === 'line' ? (
-          <HealthLineChart data={chartData} metric={metric} trainedDates={trainedDates} />
-        ) : (
-          <HealthBarChart data={chartData} metric={metric} trainedDates={trainedDates} />
-        )}
-        {annotation}
-        {metric.sparse && <div style={{ fontSize: 12, color: C.muted, marginTop: 8 }}>Apple updates this estimate infrequently — requires outdoor GPS activity.</div>}
-        {trainedDates.size > 0 && chartData.length > 0 && (
-          <div style={{ fontFamily: C.fMono, fontSize: 9, color: C.muted, marginTop: 6 }}>
-            ▲ workout days
-          </div>
-        )}
-      </div>
+    metricPanels[metric.key] = (
+      <HealthMetricPanel
+        key={metric.key}
+        metric={metric}
+        readings={readings}
+        chartData={chartData}
+        latest={latest}
+        trainedDates={trainedDates}
+        annotation={annotation}
+        onImport={openImport}
+      />
     );
   });
 
@@ -6891,12 +7052,31 @@ function HealthView({ sessions, allExercises, healthData, setHealthData }) {
         Health
       </div>
 
-      {sectionHeader('Training', 'activity')}
-      {renderTraining()}
+      {sectionHeader('Readiness Breakdown', 'activity')}
+      <HealthInsightCard
+        title={readiness.recovery ? `${readiness.recovery.score}% · ${readiness.recovery.label}` : 'Health data needed'}
+        subtitle={readiness.summary}
+        tone={readiness.recovery?.color || C.amber}
+      >
+        <HealthFactorGrid factors={readiness.factors} />
+      </HealthInsightCard>
 
       <div style={{ marginTop: 24 }}>
-        {sectionHeader('Body', 'heart')}
-        {metricCards}
+        {sectionHeader('Sleep', 'moon')}
+        <SleepBreakdownCard healthData={healthData} />
+      </div>
+
+      <div style={{ marginTop: 24 }}>
+        {sectionHeader('Cardiovascular', 'heart')}
+        <HealthInsightCard
+          title="Recovery signals"
+          subtitle="HRV and resting heart rate are the main daily nervous-system signals. Blood oxygen and cardio fitness are useful context, but they should not be treated as diagnoses."
+          tone={C.green}
+        />
+        {metricPanels.hrv}
+        {metricPanels.restingHr}
+        {metricPanels.bloodOxygen}
+        {metricPanels.cardio}
         {hrvCorrelation && (
           <div style={{ ...st.card(), marginBottom: 16, borderColor: hrvCorrelation.pct >= 0 ? C.green + '55' : C.amber + '55' }}>
             {sectionHeader('Workout Correlation', 'activity')}
@@ -6910,6 +7090,26 @@ function HealthView({ sessions, allExercises, healthData, setHealthData }) {
             </div>
           </div>
         )}
+      </div>
+
+      <div style={{ marginTop: 24 }}>
+        {sectionHeader('Movement & Energy', 'footprints')}
+        <HealthInsightCard
+          title="Daily movement"
+          subtitle="Steps and active calories support weight loss and general fitness. IronLog treats very high activity as extra load only when recovery is also under pressure."
+          tone={C.blue}
+        />
+        {metricPanels.steps}
+        {metricPanels.activeCal}
+      </div>
+
+      <div style={{ marginTop: 24 }}>
+        {sectionHeader('Training Response', 'dumbbell')}
+        {renderTraining()}
+      </div>
+
+      <div style={{ marginTop: 24 }}>
+        {sectionHeader('Data Tools', 'upload')}
         <div style={{ textAlign: 'center', marginBottom: 8 }}>
           <button onClick={() => { setBulkImportOpen(true); setBulkText(''); setBulkError(''); setBulkResult(''); }}
             style={{ background: 'none', border: 'none', color: C.muted, fontSize: 11, fontFamily: C.fMono, cursor: 'pointer', textDecoration: 'underline' }}>
@@ -6927,7 +7127,7 @@ function HealthView({ sessions, allExercises, healthData, setHealthData }) {
                 <div style={{ fontFamily: C.fDisplay, fontSize: 18, fontWeight: 800, color: C.text, textTransform: 'uppercase' }}>
                   Health Auto Export
                 </div>
-                <div style={{ fontFamily: C.fMono, fontSize: 10, color: C.muted }}>HRV · Resting HR · Steps · Active Cal</div>
+                <div style={{ fontFamily: C.fMono, fontSize: 10, color: C.muted }}>HRV · Resting HR · Sleep · Steps · Active Cal · SpO2</div>
               </div>
               <button onClick={() => setBulkImportOpen(false)} style={{ background: C.dim, border: 'none', borderRadius: 6, width: 34, height: 34, color: C.text, cursor: 'pointer' }}>
                 <Icon name="x" size={18} />

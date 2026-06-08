@@ -4,6 +4,12 @@ Reverse-chronological log of all meaningful changes. One entry per change — da
 
 ---
 
+## 2026-06-08 — Health tab analysis upgrade (Codex)
+
+- Reworked Health into a deeper analysis screen with Readiness Breakdown, Sleep, Cardiovascular, Movement & Energy, Training Response, and Data Tools sections
+- Added sleep-stage breakdown inside Health using total sleep, efficiency, deep, REM, and awake time from Apple Health exports
+- Added focused health summary cards so Health explains what is helping or limiting recovery instead of acting as a raw metric dump
+
 ## 2026-06-08 — Home sleep and activity semantics cleanup (Codex)
 
 - Moved the Selected Workout and Stretch Routine cards from Home to the Workout tab while keeping the seven-day activity strip on Home
